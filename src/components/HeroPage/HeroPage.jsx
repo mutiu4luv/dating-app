@@ -1,40 +1,53 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Box, Typography, Button } from "@mui/material";
-// import '../HeroPage/'
+import bgImg from "../../assets/images/background.jpeg";
+import { Typewriter } from "react-simple-typewriter";
+
+import "../HeroPage/HeroPage.css";
+
 const HeroPage = () => {
   return (
     <Box
       sx={{
+        backgroundImage: `url(${bgImg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
         position: "relative",
         height: "100vh",
         display: "flex",
-        alignItems: "center",
+        alignItems: "flex-start", // changed from center
         justifyContent: "center",
         overflow: "hidden",
-        bgcolor: "#fff0f5",
+        pt: 5, // push content down to avoid overlapping with navbar
       }}
     >
+      {/* Gradient Blur Layer */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           background:
             "linear-gradient(to bottom right, #f472b6, #fca5a5, #fde68a)",
-          opacity: 0.3,
+          opacity: 0.25,
           filter: "blur(120px)",
           zIndex: 0,
         }}
       />
 
-      {/* Main Content */}
+      {/* Overlay Container for text */}
       <Box
         sx={{
           position: "relative",
           zIndex: 10,
           textAlign: "center",
           px: 3,
+          py: 4,
           maxWidth: 800,
+          borderRadius: 4,
+          backgroundColor: "rgba(0, 0, 0, 0.5)", // overlay for better readability
+          color: "#fff",
         }}
       >
         <motion.div
@@ -57,7 +70,7 @@ const HeroPage = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.8 }}
         >
-          <Typography variant="h6" color="textSecondary" gutterBottom>
+          <Typography variant="h6" sx={{ color: "#fce7f3" }} gutterBottom>
             Join thousands who have already started their love journey. Swipe,
             chat, and find your person.
           </Typography>
@@ -88,17 +101,41 @@ const HeroPage = () => {
       </Box>
 
       {/* Footer Text */}
+      {/* <Box
+        sx={{
+          position: "absolute",
+          bottom: 16,
+          width: "100%",
+          textAlign: "center",
+          color: "#f5f5f5",
+          fontSize: 14,
+          zIndex: 10,
+        }}
+      >
+        Made with ❤️ for modern love
+      </Box> */}
       <Box
         sx={{
           position: "absolute",
           bottom: 16,
           width: "100%",
           textAlign: "center",
-          color: "gray",
+          color: "#f5f5f5",
           fontSize: 14,
+          zIndex: 10,
+          backgroundColor: "rgba(0, 0, 0, 0.4)", // optional: adds overlay background
+          py: 1,
         }}
       >
-        Made with ❤️ for modern love
+        <Typewriter
+          words={["Made with ❤️ for modern love"]}
+          loop={false}
+          cursor
+          cursorStyle="|"
+          typeSpeed={80}
+          deleteSpeed={50}
+          delaySpeed={2000}
+        />
       </Box>
     </Box>
   );
