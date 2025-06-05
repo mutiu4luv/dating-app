@@ -46,11 +46,11 @@ const Login = () => {
       console.log(data);
       // Save userId to localStorage
       const userId = data.member?._id;
+      // Save token correctly
+      localStorage.setItem("token", data.token);
       localStorage.setItem("userId", userId);
       // Redirect to the subscription page with the user id
       navigate(`/members/${userId}`, { replace: true });
-      // Or for external URL:
-      // window.location.href = `${import.meta.env.VITE_BASE_URL}/api/subscription/create/Pro/${userId}`;
     } catch (err) {
       setError(
         err.response?.data?.message ||

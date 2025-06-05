@@ -26,7 +26,9 @@ const Members = () => {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({}); // Track which cards are expanded
   const userId = getCurrentUserId();
-
+  // const getCurrentUserId = () => {
+  //   return localStorage.getItem("userId");
+  // };
   useEffect(() => {
     const fetchMembers = async () => {
       setLoading(true);
