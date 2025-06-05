@@ -10,17 +10,25 @@ import {
   IconButton,
   Avatar,
   CircularProgress,
+  Stack,
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
-const genders = ["Male", "Female", "Other"];
+const genders = ["Male", "Female"];
 const maritalStatuses = ["Single", "Married", "Divorced", "Widowed"];
-const relationshipTypes = ["Friendship", "Dating", "Marriage", "Other"];
+const relationshipTypes = [
+  "friendship",
+  "dating",
+  "marriage",
+  "Gay",
+  "Lesbian",
+  "Other",
+];
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -44,18 +52,16 @@ const Signup = () => {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // Handle text input changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Handle photo upload, compress, and store file
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
       const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.05, // 50KB
+        maxSizeMB: 0.05,
         maxWidthOrHeight: 300,
         useWebWorker: true,
       });
@@ -93,11 +99,14 @@ const Signup = () => {
         }
       );
 
-      // Always log the response
       console.log("Registration response:", res);
 
       if ((res.status === 201 || res.status === 200) && res.data.token) {
+        const userId = res.data.member?._id;
+        console.log("User ID:", userId);
+        // Save token and userId to localStorage
         localStorage.setItem("token", res.data.token);
+        localStorage.setItem("userId", userId); // Save userId
         setMessage("Registration successful! Redirecting...");
         setTimeout(() => {
           navigate(`/members/${userId}`, { replace: true });
@@ -122,7 +131,6 @@ const Signup = () => {
         setMessage(res.data.message || "Registration failed.");
       }
     } catch (err) {
-      // Always log the error
       console.log("Registration error:", err);
       setMessage(
         err.response?.data?.message || "Network error. Please try again."
@@ -131,6 +139,28 @@ const Signup = () => {
     setLoading(false);
   };
 
+  if (loading) {
+    return (
+      <Box
+        minHeight="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        sx={{
+          background:
+            "linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)",
+          zIndex: 9999,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+        }}
+      >
+        <CircularProgress size={64} thickness={5} sx={{ color: "#ec4899" }} />
+      </Box>
+    );
+  }
   return (
     <Box
       minHeight="100vh"
@@ -138,206 +168,222 @@ const Signup = () => {
       alignItems="center"
       justifyContent="center"
       sx={{
-        background: "linear-gradient(135deg, #ec4899 30%, #f9fafb 100%)",
+        background: `
+      linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)
+    `,
+        py: 6,
+        px: { xs: 1, sm: 2, md: 4 },
       }}
     >
       <Paper
-        elevation={8}
+        elevation={12}
         sx={{
           p: 4,
-          borderRadius: 3,
+          borderRadius: 5,
           minWidth: 370,
-          maxWidth: 420,
-          opacity: 0.97,
+          maxWidth: 440,
+          opacity: 0.98,
+          background: "rgba(255,255,255,0.10)",
+          boxShadow: "0 8px 32px 0 rgba(31,38,135,0.25)",
+          backdropFilter: "blur(8px)",
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <FavoriteIcon sx={{ color: "#ec4899", mr: 1 }} />
-          <Typography variant="h5" fontWeight="bold">
+          <FavoriteIcon sx={{ color: "#ec4899", mr: 1, fontSize: 32 }} />
+          <Typography variant="h5" fontWeight="bold" color="#ec4899">
             Create Your Account
           </Typography>
         </Box>
         <form onSubmit={handleSubmit}>
-          <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
-            <Avatar
-              src={photoPreview}
-              sx={{ width: 64, height: 64, mb: 1, bgcolor: "#ec4899" }}
+          <Stack spacing={2}>
+            <Box display="flex" flexDirection="column" alignItems="center">
+              <Avatar
+                src={photoPreview}
+                sx={{
+                  width: 72,
+                  height: 72,
+                  mb: 1,
+                  bgcolor: "#ec4899",
+                  border: "3px solid #fff",
+                  boxShadow: "0 2px 8px #ec4899",
+                }}
+              />
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{
+                  mb: 1,
+                  borderColor: "#ec4899",
+                  color: "#ec4899",
+                  fontWeight: "bold",
+                  letterSpacing: 1,
+                }}
+              >
+                Upload Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handlePhotoChange}
+                  required
+                />
+              </Button>
+            </Box>
+            <TextField
+              label="Name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Age"
+              name="age"
+              type="number"
+              value={form.age}
+              onChange={handleChange}
+              fullWidth
+              required
+              inputProps={{ min: 18, max: 100 }}
+            />
+            <TextField
+              select
+              label="Gender"
+              name="gender"
+              value={form.gender}
+              onChange={handleChange}
+              fullWidth
+              required
+            >
+              {genders.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Location"
+              name="location"
+              value={form.location}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Occupation"
+              name="occupation"
+              value={form.occupation}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="What are you looking for?"
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              select
+              label="Marital Status"
+              name="maritalStatus"
+              value={form.maritalStatus}
+              onChange={handleChange}
+              fullWidth
+              required
+            >
+              {maritalStatuses.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              label="Relationship Type"
+              name="relationshipType"
+              value={form.relationshipType}
+              onChange={handleChange}
+              fullWidth
+              required
+            >
+              {relationshipTypes.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="Username"
+              name="username"
+              value={form.username}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Phone Number"
+              name="phoneNumber"
+              value={form.phoneNumber}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={handleChange}
+              fullWidth
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={handleShowPassword} edge="end">
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button
-              variant="outlined"
-              component="label"
-              sx={{ mb: 1, borderColor: "#ec4899", color: "#ec4899" }}
+              type="submit"
+              variant="contained"
+              fullWidth
+              disabled={loading}
+              sx={{
+                mt: 1,
+                background: "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
+                fontWeight: "bold",
+                letterSpacing: 1,
+                fontSize: 18,
+                boxShadow: "0 2px 8px rgba(236,72,153,0.15)",
+                "&:hover": {
+                  background:
+                    "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",
+                },
+              }}
             >
-              Upload Photo
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handlePhotoChange}
-                required
-              />
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Sign Up"
+              )}
             </Button>
-          </Box>
-          <TextField
-            label="Name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Age"
-            name="age"
-            type="number"
-            value={form.age}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-            inputProps={{ min: 18, max: 100 }}
-          />
-          <TextField
-            select
-            label="Gender"
-            name="gender"
-            value={form.gender}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          >
-            {genders.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Location"
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Occupation"
-            name="occupation"
-            value={form.occupation}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="What are you looking for?"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            select
-            label="Marital Status"
-            name="maritalStatus"
-            value={form.maritalStatus}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          >
-            {maritalStatuses.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            label="Relationship Type"
-            name="relationshipType"
-            value={form.relationshipType}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          >
-            {relationshipTypes.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}
-              </MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            label="Username"
-            name="username"
-            value={form.username}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Phone Number"
-            name="phoneNumber"
-            value={form.phoneNumber}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-          />
-          <TextField
-            label="Password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            value={form.password}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            required
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={handleShowPassword} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            fullWidth
-            disabled={loading}
-            sx={{
-              mt: 2,
-              background: "#ec4899",
-              fontWeight: "bold",
-              "&:hover": { background: "#db2777" },
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Sign Up"
-            )}
-          </Button>
+          </Stack>
         </form>
         {message && (
           <Typography
@@ -350,7 +396,7 @@ const Signup = () => {
           </Typography>
         )}
         <Typography variant="body2" align="center" mt={2}>
-          Already have an account? <a href="/login">Login</a>
+          Already have an account? <Link to="/login">Login</Link>
         </Typography>
       </Paper>
     </Box>
