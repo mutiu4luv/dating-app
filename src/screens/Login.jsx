@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -8,6 +8,7 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Divider,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
@@ -21,6 +22,15 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // If already logged in, redirect to members page
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    if (token && userId) {
+      navigate(`/members/${userId}`, { replace: true });
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,13 +53,9 @@ const Login = () => {
         }
       );
       const data = res.data;
-      console.log(data);
-      // Save userId to localStorage
       const userId = data.member?._id;
-      // Save token correctly
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", userId);
-      // Redirect to the subscription page with the user id
       navigate(`/members/${userId}`, { replace: true });
     } catch (err) {
       setError(
@@ -66,13 +72,29 @@ const Login = () => {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      sx={{ background: "linear-gradient(135deg, #ec4899 30%, #f9fafb 100%)" }}
+      sx={{
+        background:
+          "linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)",
+        zIndex: 9999,
+      }}
     >
-      <Paper elevation={6} sx={{ p: 4, borderRadius: 3, minWidth: 340 }}>
-        <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <FavoriteIcon sx={{ color: "#ec4899", mr: 1 }} />
-          <Typography variant="h5" fontWeight="bold">
-            LoveLink Login
+      <Paper
+        elevation={8}
+        sx={{
+          p: { xs: 3, sm: 5 },
+          borderRadius: 4,
+          minWidth: { xs: 320, sm: 400 },
+          maxWidth: 420,
+          width: "100%",
+        }}
+      >
+        <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
+          <FavoriteIcon sx={{ color: "#ec4899", fontSize: 40, mb: 1 }} />
+          <Typography variant="h4" fontWeight="bold" color="#ec4899" mb={0.5}>
+            Welcome Back!
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary" mb={2}>
+            Sign in to your LoveLink account
           </Typography>
         </Box>
         <form onSubmit={handleSubmit}>
@@ -85,6 +107,7 @@ const Login = () => {
             fullWidth
             margin="normal"
             required
+            autoComplete="email"
           />
           <TextField
             label="Password"
@@ -95,6 +118,7 @@ const Login = () => {
             fullWidth
             margin="normal"
             required
+            autoComplete="current-password"
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -105,28 +129,37 @@ const Login = () => {
               ),
             }}
           />
+          {error && (
+            <Typography color="error" align="center" mt={1}>
+              {error}
+            </Typography>
+          )}
           <Button
             type="submit"
             variant="contained"
             fullWidth
             disabled={loading}
             sx={{
-              mt: 2,
-              background: "#ec4899",
+              mt: 3,
+              background: "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
               fontWeight: "bold",
-              "&:hover": { background: "#db2777" },
+              fontSize: 17,
+              borderRadius: 3,
+              boxShadow: "0 2px 8px rgba(236,72,153,0.15)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",
+              },
             }}
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
           </Button>
         </form>
-        {error && (
-          <Typography color="error" align="center" mt={2}>
-            {error}
-          </Typography>
-        )}
-        <Typography variant="body2" align="center" mt={2}>
-          Don't have an account? <Link to="/register">Sign Up</Link>
+        <Divider sx={{ my: 3 }}>or</Divider>
+        <Typography variant="body2" align="center">
+          Don't have an account?{" "}
+          <Link to="/register" style={{ color: "#ec4899", fontWeight: 600 }}>
+            Sign Up
+          </Link>
         </Typography>
       </Paper>
     </Box>

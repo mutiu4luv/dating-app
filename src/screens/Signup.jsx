@@ -25,9 +25,12 @@ const relationshipTypes = [
   "friendship",
   "dating",
   "marriage",
-  "Gay",
-  "Lesbian",
-  "Other",
+  "Online Dating ",
+  "Males Friends ",
+  "Female friends ",
+  "Chat mate ",
+  "Friends with Benefits  ",
+  "Sex chat  ",
 ];
 
 const Signup = () => {
