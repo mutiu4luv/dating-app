@@ -14,16 +14,29 @@ import {
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import { useNavigate } from "react-router-dom";
 
 const navItems = ["Home", "Matches", "Messages", "Profile"];
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const user = null;
+  const navigate = useNavigate();
+
+  const navItems = user
+    ? ["Home", "Matches", "Messages", "Profile"]
+    : ["Home", "Login/SignIn"];
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
+  //  handler for navigation
+  const handleNavClick = (item) => {
+    if (item === "Login/SignIn") {
+      navigate("/login");
+    }
+  };
   const drawer = (
     <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
       <Typography variant="h6" sx={{ my: 2 }}>
@@ -32,7 +45,10 @@ const Navbar = () => {
       <List>
         {navItems.map((item) => (
           <ListItem key={item} disablePadding>
-            <ListItemButton sx={{ textAlign: "center" }}>
+            <ListItemButton
+              sx={{ textAlign: "center" }}
+              onClick={() => handleNavClick(item)}
+            >
               <ListItemText primary={item} />
             </ListItemButton>
           </ListItem>
@@ -92,5 +108,4 @@ const Navbar = () => {
     </>
   );
 };
-
 export default Navbar;
