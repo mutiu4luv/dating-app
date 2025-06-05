@@ -40,6 +40,7 @@ const Members = () => {
             },
           }
         );
+        console.log("VITE_BASE_URL:", import.meta.env.VITE_BASE_URL);
         if (Array.isArray(res.data)) {
           setMembers(res.data);
         } else if (Array.isArray(res.data.members)) {
