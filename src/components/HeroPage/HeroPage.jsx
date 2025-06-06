@@ -5,6 +5,7 @@ import bgImg from "../../assets/images/background.jpeg";
 import { Typewriter } from "react-simple-typewriter";
 
 import "../HeroPage/HeroPage.css";
+import { Link } from "react-router-dom";
 
 const HeroPage = () => {
   return (
@@ -95,7 +96,12 @@ const HeroPage = () => {
               boxShadow: 3,
             }}
           >
-            Get Started
+            <Link
+              to="/login"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              Get Started
+            </Link>
           </Button>
         </motion.div>
       </Box>

@@ -17,7 +17,6 @@ const Footer = () => {
         background: "linear-gradient(90deg, #db2777 0%, #ec4899 100%)",
         color: "#fff",
         py: 6,
-        mt: 10,
       }}
     >
       <Container maxWidth="lg">

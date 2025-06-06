@@ -19,6 +19,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
+import LoginIcon from "@mui/icons-material/Login";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Navbar = () => {
@@ -29,6 +30,7 @@ const Navbar = () => {
   );
   const navigate = useNavigate();
   const location = useLocation();
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -51,11 +53,13 @@ const Navbar = () => {
     } else if (item === "Home") {
       navigate("/");
     } else if (item === "Matches") {
-      navigate("/matches");
+      navigate(`/members/${userId}`, { replace: true });
     } else if (item === "Messages") {
       navigate("/messages");
     } else if (item === "Profile") {
       navigate("/profile");
+    } else if (item === "Login/SignIn") {
+      navigate("/login");
     }
   };
 
@@ -140,12 +144,22 @@ const Navbar = () => {
               </Menu>
             </>
           ) : (
-            <Button
-              sx={{ color: "#fff", fontWeight: "600" }}
-              onClick={() => navigate("/login")}
-            >
-              Login/SignIn
-            </Button>
+            <>
+              <Button
+                sx={{ color: "#fff", fontWeight: "600", mr: 1 }}
+                startIcon={<HomeIcon />}
+                onClick={() => handleMenuClick("Home")}
+              >
+                Home
+              </Button>
+              <Button
+                sx={{ color: "#fff", fontWeight: "600" }}
+                startIcon={<LoginIcon />}
+                onClick={() => handleMenuClick("Login/SignIn")}
+              >
+                Login/SignIn
+              </Button>
+            </>
           )}
         </Box>
       </Toolbar>
