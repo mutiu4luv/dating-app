@@ -56,7 +56,9 @@ const Login = () => {
       const userId = data.member?._id;
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", userId);
+      localStorage.setItem("username", data.member?.username); // <-- Save username
       navigate(`/members/${userId}`, { replace: true });
+      console.log(data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -65,7 +67,13 @@ const Login = () => {
     }
     setLoading(false);
   };
-
+  if (localStorage.getItem("username")) {
+    // Username exists in localStorage
+    console.log("Username is:", localStorage.getItem("username"));
+  } else {
+    // Username not found
+    console.log("No username found in localStorage");
+  }
   return (
     <Box
       minHeight="100vh"

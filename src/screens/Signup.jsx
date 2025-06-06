@@ -110,6 +110,7 @@ const Signup = () => {
         // Save token and userId to localStorage
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userId", userId); // Save userId
+        localStorage.setItem("userName", data.member?.username);
         setMessage("Registration successful! Redirecting...");
         setTimeout(() => {
           navigate(`/members/${userId}`, { replace: true });
