@@ -102,19 +102,15 @@ const Signup = () => {
         }
       );
 
-      console.log("Registration response:", res);
-
       if ((res.status === 201 || res.status === 200) && res.data.token) {
         const userId = res.data.member?._id;
         console.log("User ID:", userId);
         // Save token and userId to localStorage
         localStorage.setItem("token", res.data.token);
-        localStorage.setItem("userId", userId); // Save userId
-        localStorage.setItem("userName", data.member?.username);
+        localStorage.setItem("userId", userId);
+        localStorage.setItem("username", res.data.member?.username);
         setMessage("Registration successful! Redirecting...");
-        setTimeout(() => {
-          navigate(`/members/${userId}`, { replace: true });
-        }, 1200);
+        navigate(`/members/${userId}`, { replace: true });
         setForm({
           name: "",
           age: "",
@@ -135,7 +131,6 @@ const Signup = () => {
         setMessage(res.data.message || "Registration failed.");
       }
     } catch (err) {
-      console.log("Registration error:", err);
       setMessage(
         err.response?.data?.message || "Network error. Please try again."
       );
@@ -143,28 +138,6 @@ const Signup = () => {
     setLoading(false);
   };
 
-  if (loading) {
-    return (
-      <Box
-        minHeight="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        sx={{
-          background:
-            "linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)",
-          zIndex: 9999,
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100vw",
-          height: "100vh",
-        }}
-      >
-        <CircularProgress size={64} thickness={5} sx={{ color: "#ec4899" }} />
-      </Box>
-    );
-  }
   return (
     <Box
       minHeight="100vh"
