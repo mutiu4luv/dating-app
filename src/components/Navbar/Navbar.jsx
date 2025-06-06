@@ -6,43 +6,48 @@ import {
   IconButton,
   Button,
   Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import HomeIcon from "@mui/icons-material/Home";
+import PeopleIcon from "@mui/icons-material/People";
+import ChatIcon from "@mui/icons-material/Chat";
+import PersonIcon from "@mui/icons-material/Person";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Navbar = () => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [username, setUsername] = useState(
+    localStorage.getItem("username") || ""
+  );
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
+    setUsername(localStorage.getItem("username") || "");
+  }, [location.pathname]);
 
-    // If not logged in and not on landing page, redirect to landing
-    if (!token && location.pathname !== "/") {
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleMenuClick = (item) => {
+    handleMenuClose();
+    if (item === "Logout") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("username");
+      setIsLoggedIn(false);
+      setUsername("");
       navigate("/");
-    }
-  }, [location.pathname, navigate]);
-
-  const navItems = isLoggedIn
-    ? ["Home", "Matches", "Messages", "Profile"]
-    : ["Home", "Login/SignIn"];
-
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
-
-  const handleNavClick = (item) => {
-    if (item === "Login/SignIn") {
-      navigate("/login");
     } else if (item === "Home") {
       navigate("/");
     } else if (item === "Matches") {
@@ -54,101 +59,97 @@ const Navbar = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    setIsLoggedIn(false);
-    navigate("/");
-  };
-
-  const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: "center" }}>
-      <Typography variant="h6" sx={{ my: 2 }}>
-        ❤️ LoveLink
-      </Typography>
-      <List>
-        {navItems.map((item) => (
-          <ListItem key={item} disablePadding>
-            <ListItemButton
-              sx={{ textAlign: "center" }}
-              onClick={() => handleNavClick(item)}
-            >
-              <ListItemText primary={item} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-        {isLoggedIn && (
-          <ListItem disablePadding>
-            <ListItemButton sx={{ textAlign: "center" }} onClick={handleLogout}>
-              <ListItemText primary="Logout" />
-            </ListItemButton>
-          </ListItem>
-        )}
-      </List>
-    </Box>
-  );
-
   return (
-    <>
-      <AppBar position="sticky" sx={{ backgroundColor: "#ec4899" }}>
-        <Toolbar sx={{ justifyContent: "space-between" }}>
-          <Box display="flex" alignItems="center">
-            <FavoriteIcon sx={{ mr: 1 }} />
-            <Typography
-              variant="h6"
-              component="div"
-              sx={{ fontWeight: "bold" }}
+    <AppBar position="sticky" sx={{ backgroundColor: "#ec4899" }}>
+      <Toolbar sx={{ justifyContent: "space-between" }}>
+        <Box display="flex" alignItems="center">
+          <FavoriteIcon sx={{ mr: 1 }} />
+          <Typography variant="h6" component="div" sx={{ fontWeight: "bold" }}>
+            LoveLink
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          {isLoggedIn && username ? (
+            <>
+              <Button
+                color="inherit"
+                startIcon={
+                  <Avatar
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      bgcolor: "#b993d6",
+                      color: "#fff",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {username[0]?.toUpperCase()}
+                  </Avatar>
+                }
+                endIcon={<ArrowDropDownIcon />}
+                onClick={handleMenuOpen}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: 16,
+                  color: "#fff",
+                }}
+              >
+                {username.split(" ")[0]}
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                PaperProps={{
+                  elevation: 4,
+                  sx: {
+                    borderRadius: 2,
+                    minWidth: 180,
+                    mt: 1,
+                    boxShadow: "0 4px 20px rgba(0,0,0,0.10)",
+                    "& .MuiMenuItem-root": {
+                      fontWeight: 500,
+                      fontSize: 15,
+                      "&:hover": {
+                        backgroundColor: "#f3e8ff",
+                        color: "#a21caf",
+                      },
+                    },
+                  },
+                }}
+              >
+                <MenuItem onClick={() => handleMenuClick("Home")}>
+                  <HomeIcon sx={{ mr: 1, color: "#ec4899" }} /> Home
+                </MenuItem>
+                <MenuItem onClick={() => handleMenuClick("Matches")}>
+                  <PeopleIcon sx={{ mr: 1, color: "#ec4899" }} /> Matches
+                </MenuItem>
+                <MenuItem onClick={() => handleMenuClick("Messages")}>
+                  <ChatIcon sx={{ mr: 1, color: "#ec4899" }} /> Messages
+                </MenuItem>
+                <MenuItem onClick={() => handleMenuClick("Profile")}>
+                  <PersonIcon sx={{ mr: 1, color: "#ec4899" }} /> Profile
+                </MenuItem>
+                <Divider sx={{ my: 1 }} />
+                <MenuItem onClick={() => handleMenuClick("Logout")}>
+                  <LogoutIcon sx={{ mr: 1, color: "#ef4444" }} /> Logout
+                </MenuItem>
+              </Menu>
+            </>
+          ) : (
+            <Button
+              sx={{ color: "#fff", fontWeight: "600" }}
+              onClick={() => navigate("/login")}
             >
-              LoveLink
-            </Typography>
-          </Box>
-
-          {/* Desktop Nav */}
-          <Box sx={{ display: { xs: "none", sm: "block" } }}>
-            {navItems.map((item) => (
-              <Button
-                key={item}
-                sx={{ color: "#fff", fontWeight: "600" }}
-                onClick={() => handleNavClick(item)}
-              >
-                {item}
-              </Button>
-            ))}
-            {isLoggedIn && (
-              <Button
-                sx={{ color: "#fff", fontWeight: "600" }}
-                onClick={handleLogout}
-              >
-                Logout
-              </Button>
-            )}
-          </Box>
-
-          {/* Hamburger Icon for Mobile */}
-          <IconButton
-            color="inherit"
-            edge="end"
-            onClick={handleDrawerToggle}
-            sx={{ display: { sm: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
-        </Toolbar>
-      </AppBar>
-
-      {/* Mobile Drawer */}
-      <Drawer
-        anchor="right"
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        sx={{
-          display: { xs: "block", sm: "none" },
-          "& .MuiDrawer-paper": { boxSizing: "border-box", width: 240 },
-        }}
-      >
-        {drawer}
-      </Drawer>
-    </>
+              Login/SignIn
+            </Button>
+          )}
+        </Box>
+      </Toolbar>
+    </AppBar>
   );
 };
 
