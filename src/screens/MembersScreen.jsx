@@ -15,6 +15,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
+import { useNavigate } from "react-router-dom";
 
 const getCurrentUserId = () => {
   return localStorage.getItem("userId");
@@ -24,6 +25,8 @@ const MAX_DESCRIPTION_LINES = 2;
 const CARD_HEIGHT = 450;
 const CARD_CONTENT_HEIGHT = 170;
 const Members = () => {
+  const navigate = useNavigate();
+
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({}); // Track which cards are expanded
@@ -70,11 +73,47 @@ const Members = () => {
   };
 
   // Handler for the Merge button (replace with your logic)
-  const handleMerge = (memberId) => {
-    alert(`Merge requested with member: ${memberId}`);
-    // You can implement your merge logic here
-  };
 
+  const currentUserId = getCurrentUserId();
+  if (!currentUserId) {
+    return (
+      <Box
+        minHeight="100vh"
+        sx={{
+          background: "#181c2b",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography variant="h6" color="#fff">
+          Please log in to view members.
+        </Typography>
+      </Box>
+    );
+  }
+  if (!members || members.length === 0) {
+    return (
+      <Box
+        minHeight="100vh"
+        sx={{
+          background: "#181c2b",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography variant="h6" color="#fff">
+          No members found for your relationship type.
+        </Typography>
+      </Box>
+    );
+  }
+
+  const handleMerge = (matchId) => {
+    navigate(`/merge/${currentUserId}/${matchId}`);
+  };
+  console.log("handleMerge", handleMerge);
   return (
     <>
       <Navbar />
