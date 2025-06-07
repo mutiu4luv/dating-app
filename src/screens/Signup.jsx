@@ -104,13 +104,11 @@ const Signup = () => {
 
       if ((res.status === 201 || res.status === 200) && res.data.token) {
         const userId = res.data.member?._id;
-        console.log("User ID:", userId);
-        // Save token and userId to localStorage
+        // Save token, userId, and username BEFORE navigating
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userId", userId);
-        localStorage.setItem("username", res.data.member?.username);
+        localStorage.setItem("username", res.data.member?.username || "");
         setMessage("Registration successful! Redirecting...");
-        navigate(`/members/${userId}`, { replace: true });
         setForm({
           name: "",
           age: "",
@@ -127,6 +125,7 @@ const Signup = () => {
         });
         setPhotoPreview("");
         setPhotoFile(null);
+        navigate(`/members/${userId}`, { replace: true });
       } else {
         setMessage(res.data.message || "Registration failed.");
       }
