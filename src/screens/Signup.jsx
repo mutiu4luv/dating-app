@@ -90,6 +90,10 @@ const Signup = () => {
       Object.entries(form).forEach(([key, value]) => {
         formData.append(key, value);
       });
+      if (!photoFile) {
+        setMessage("Please upload a photo.");
+        return;
+      }
       if (photoFile) {
         formData.append("photo", photoFile);
       }
@@ -201,7 +205,7 @@ const Signup = () => {
                   accept="image/*"
                   hidden
                   onChange={handlePhotoChange}
-                  required
+                  // required
                 />
               </Button>
             </Box>
