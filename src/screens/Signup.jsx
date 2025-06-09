@@ -141,9 +141,25 @@ const Signup = () => {
         err.message ||
         "Network error. Please try again.";
       setMessage(errorMsg);
-      setMessage(
-        err.response?.data?.message || "Network error. Please try again."
-      );
+      if (err.response?.status === 400) {
+        setMessage("Please fill in all required fields correctly.");
+      } else if (err.response?.status === 409) {
+        setMessage("Username or email already exists. Please choose another.");
+      }
+      // else if (err.response?.status === 500) {
+      //   setMessage("Server error. Please try again later.");
+      // }
+      else if (err.response?.status === 422) {
+        setMessage("Invalid input. Please check your data.");
+      } else if (err.response?.status === 403) {
+        setMessage("You are not authorized to perform this action.");
+      } else if (err.response?.status === 404) {
+        setMessage("Resource not found. Please try again.");
+      } else if (err.response?.status === 429) {
+        setMessage("Too many requests. Please try again later.");
+      } else {
+        setMessage("An unexpected error occurred. Please try again.");
+      }
     }
     setLoading(false);
   };
@@ -181,6 +197,7 @@ const Signup = () => {
             Create Your Account
           </Typography>
         </Box>
+        {/* Signup Form */}
         <form onSubmit={handleSubmit}>
           <Stack spacing={2}>
             <Box display="flex" flexDirection="column" alignItems="center">
