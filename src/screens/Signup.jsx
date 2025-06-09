@@ -135,33 +135,18 @@ const Signup = () => {
       }
     } catch (err) {
       console.error("Registration error:", err);
+
       let errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Network error. Please try again.";
+        (err.response?.data?.message &&
+        typeof err.response.data.message === "string"
+          ? err.response.data.message
+          : JSON.stringify(
+              err.response?.data?.message || err.response?.data || err.message
+            )) || "Network error. Please try again.";
+
       setMessage(errorMsg);
-      if (err.response?.status === 400) {
-        setMessage("Please fill in all required fields correctly.");
-      } else if (err.response?.status === 409) {
-        setMessage("Username or email already exists. Please choose another.");
-      }
-      // else if (err.response?.status === 500) {
-      //   setMessage("Server error. Please try again later.");
-      // }
-      else if (err.response?.status === 422) {
-        setMessage("Invalid input. Please check your data.");
-      } else if (err.response?.status === 403) {
-        setMessage("You are not authorized to perform this action.");
-      } else if (err.response?.status === 404) {
-        setMessage("Resource not found. Please try again.");
-      } else if (err.response?.status === 429) {
-        setMessage("Too many requests. Please try again later.");
-      } else {
-        setMessage("An unexpected error occurred. Please try again.");
-      }
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
