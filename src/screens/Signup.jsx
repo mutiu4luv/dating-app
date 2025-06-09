@@ -135,10 +135,12 @@ const Signup = () => {
       }
     } catch (err) {
       console.error("Registration error:", err);
-      res.status(500).json({
-        message: "Error registering user",
-        error: err.message || String(err),
-      });
+      let errorMsg =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Network error. Please try again.";
+      setMessage(errorMsg);
       setMessage(
         err.response?.data?.message || "Network error. Please try again."
       );
