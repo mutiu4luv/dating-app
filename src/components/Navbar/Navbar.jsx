@@ -146,13 +146,6 @@ const Navbar = () => {
           ) : (
             <>
               <Button
-                sx={{ color: "#fff", fontWeight: "600", mr: 1 }}
-                startIcon={<HomeIcon />}
-                onClick={() => handleMenuClick("Home")}
-              >
-                Home
-              </Button>
-              <Button
                 sx={{ color: "#fff", fontWeight: "600" }}
                 startIcon={<LoginIcon />}
                 onClick={() => handleMenuClick("Login/SignIn")}
