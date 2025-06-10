@@ -110,8 +110,8 @@ const Members = () => {
     );
   }
 
-  const handleMerge = (matchId) => {
-    navigate(`/merge/${currentUserId}/${matchId}`);
+  const handleMerge = (memberId2) => {
+    navigate(`/merge/${currentUserId}/${memberId2}`);
   };
   console.log("handleMerge", handleMerge);
   return (

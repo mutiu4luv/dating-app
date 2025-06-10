@@ -111,6 +111,7 @@ const Signup = () => {
         // Save token, userId, and username BEFORE navigating
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userId", userId);
+        localStorage.setItem("email", res.data.member?.email); // <-- Save username
         localStorage.setItem("username", res.data.member?.username || "");
         setMessage("Registration successful! Redirecting...");
         setForm({

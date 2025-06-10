@@ -6,47 +6,48 @@ import {
   CircularProgress,
   Paper,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { PaystackButton } from "react-paystack";
 import api from "../../components/api/Api";
 
 const VITE_PAYSTACK_PUBLIC_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
-const MergeScreen = ({ userId, matchId }) => {
+const MergeScreen = ({ member1: propmember1 }) => {
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
   const [showPaystack, setShowPaystack] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const navigate = useNavigate();
+  const { member2 } = useParams();
 
-  //   useEffect(() => {
-  //     const fetchStatus = async () => {
-  //       try {
-  //         const res = await api.get(
-  //           `/merge/status?userId=${userId}&matchId=${matchId}`
-  //         );
-  //         setHasPaid(res.data.hasPaid);
-  //         setUserEmail(res.data.email);
-  //       } catch (err) {
-  //         alert("Error fetching payment status");
-  //       }
-  //       setLoading(false);
-  //     };
-  //     fetchStatus();
-  //   }, [userId, matchId]);
+  // Get member1 and email from localStorage or props
+  const member1 = propmember1 || localStorage.getItem("userId");
+  const fallbackEmail = localStorage.getItem("email");
 
-  const paystackConfig = {
-    email: userEmail,
-    amount: 2000 * 100,
-    publicKey: VITE_PAYSTACK_PUBLIC_KEY,
-    metadata: { userId, matchId },
-  };
+  useEffect(() => {
+    if (!member1) return;
+
+    const fetchStatus = async () => {
+      try {
+        const res = await api.get(
+          `/merge/status?member1=${member1}&member2=${member2}`
+        );
+        setHasPaid(res.data.hasPaid);
+        setUserEmail(res.data.email || fallbackEmail); // fallback to localStorage email
+      } catch (err) {
+        alert("Error fetching payment status");
+      }
+      setLoading(false);
+    };
+
+    fetchStatus();
+  }, [member1, member2, fallbackEmail]);
 
   const onSuccess = async (reference) => {
     try {
       await api.post("/api/merge", {
-        userId,
-        matchId,
+        member1,
+        member2,
         reference: reference.reference,
       });
       setHasPaid(true);
@@ -58,13 +59,30 @@ const MergeScreen = ({ userId, matchId }) => {
   };
 
   const onClose = () => setShowPaystack(false);
+  if (typeof onSuccess !== "function") {
+    console.warn("onSuccess must be a valid function");
+  }
+  if (typeof onClose !== "function") {
+    console.warn("onClose must be a valid function");
+  }
 
   const handleMerge = () => {
     if (hasPaid) {
-      navigate(`/chat/${matchId}`);
+      navigate(`/chat/${member2}`);
     } else {
+      if (!userEmail) {
+        alert("Email is missing. Please log in again.");
+        return;
+      }
       setShowPaystack(true);
     }
+  };
+
+  const paystackConfig = {
+    email: userEmail,
+    amount: 2000 * 100,
+    publicKey: VITE_PAYSTACK_PUBLIC_KEY,
+    metadata: { member1, member2 },
   };
 
   if (loading) {
@@ -105,17 +123,21 @@ const MergeScreen = ({ userId, matchId }) => {
         >
           {hasPaid ? "Open Chat" : "Merge (Pay to Unlock)"}
         </Button>
-        {showPaystack && (
-          <Box mt={3}>
-            <PaystackButton
-              {...paystackConfig}
-              text="Pay with Paystack"
-              onSuccess={onSuccess}
-              onClose={onClose}
-              className="paystack-button"
-            />
-          </Box>
-        )}
+
+        {showPaystack &&
+          userEmail &&
+          typeof onSuccess === "function" &&
+          typeof onClose === "function" && (
+            <Box mt={3}>
+              <PaystackButton
+                {...paystackConfig}
+                text="Pay with Paystack"
+                onSuccess={onSuccess}
+                onClose={onClose}
+                className="paystack-button"
+              />
+            </Box>
+          )}
       </Paper>
     </Box>
   );

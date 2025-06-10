@@ -7,6 +7,13 @@ import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import Chat from "./screens/chat/Chat";
 import MergeScreen from "./screens/mergeScreen/MergeScreen";
 function App() {
+  const currentUserId = localStorage.getItem("userId");
+  if (!currentUserId) {
+    console.error("User ID not found in localStorage");
+    return <div>Error: User ID not found</div>;
+  }
+  console.log("Current User ID:", currentUserId);
+
   return (
     <>
       <Routes>
@@ -17,10 +24,10 @@ function App() {
         <Route path="/profile" element={<Profile />} /> */}
         {/* <Route path="/members/:userId" element={<Members />} /> */}
         <Route
-          path="/members/:userId"
+          path="/members/:matchId"
           element={
             <ProtectedRoute>
-              <Members />
+              <Members userId={currentUserId} />
             </ProtectedRoute>
           }
         />
@@ -33,7 +40,7 @@ function App() {
           }
         />
         <Route
-          path="/merge/:userId/:matchId"
+          path="/merge/:userId/:member2"
           element={
             <ProtectedRoute>
               <MergeScreen />
