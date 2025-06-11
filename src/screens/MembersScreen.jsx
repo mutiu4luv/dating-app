@@ -65,10 +65,10 @@ const Members = () => {
     fetchMembers();
   }, [userId]);
 
-  const handleExpandClick = (memberId) => {
+  const handleExpandClick = (member2) => {
     setExpanded((prev) => ({
       ...prev,
-      [memberId]: !prev[memberId],
+      [member2]: !prev[member2],
     }));
   };
 
@@ -110,8 +110,8 @@ const Members = () => {
     );
   }
 
-  const handleMerge = (memberId2) => {
-    navigate(`/merge/${currentUserId}/${memberId2}`);
+  const handleMerge = (member2) => {
+    navigate(`/merge/${currentUserId}/${member2}`);
   };
   console.log("handleMerge", handleMerge);
   return (
