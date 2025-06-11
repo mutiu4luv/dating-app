@@ -20,52 +20,32 @@ const MergeScreen = ({ member1: propmember1 }) => {
   const navigate = useNavigate();
   const { member2 } = useParams();
 
-  // Get member1 and email from localStorage or props
   const member1 = propmember1 || localStorage.getItem("userId");
-  const fallbackEmail = localStorage.getItem("email");
 
   useEffect(() => {
-    if (!member1) return;
-
     const fetchStatus = async () => {
+      if (!member1 || !member2) return;
+
       try {
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
         setHasPaid(res.data.hasPaid);
-        setUserEmail(res.data.email || fallbackEmail); // fallback to localStorage email
+        setUserEmail(res.data.email || localStorage.getItem("email") || "");
       } catch (err) {
+        console.error("Error fetching payment status", err);
         alert("Error fetching payment status");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchStatus();
-  }, [member1, member2, fallbackEmail]);
-
-  const onSuccess = async (reference) => {
-    try {
-      await api.post("/api/merge", {
-        member1,
-        member2,
-        reference: reference.reference,
-      });
-      setHasPaid(true);
-      setShowPaystack(false);
-      alert("Payment successful! You can now chat.");
-    } catch (err) {
-      alert("Payment verification failed. Please contact support.");
-    }
-  };
-
-  const onClose = () => setShowPaystack(false);
-  if (typeof onSuccess !== "function") {
-    console.warn("onSuccess must be a valid function");
+  }, [member1, member2]);
+  if (!VITE_PAYSTACK_PUBLIC_KEY) {
+    console.error("Missing Paystack public key");
+    return null;
   }
-  if (typeof onClose !== "function") {
-    console.warn("onClose must be a valid function");
-  }
-
   const handleMerge = () => {
     if (hasPaid) {
       navigate(`/chat/${member2}`);
@@ -78,11 +58,36 @@ const MergeScreen = ({ member1: propmember1 }) => {
     }
   };
 
+  // ✅ Always stable function
+  const onSuccess = async (reference) => {
+    try {
+      await api.post("/api/merge", {
+        member1,
+        member2,
+        reference: reference.reference,
+      });
+      setHasPaid(true);
+      setShowPaystack(false);
+      alert("Payment successful! You can now chat.");
+    } catch (err) {
+      console.error("Payment verification failed", err);
+      alert("Payment verification failed. Please contact support.");
+    }
+  };
+
+  const onClose = () => {
+    setShowPaystack(false);
+    console.log("Payment dialog closed");
+  };
+
   const paystackConfig = {
     email: userEmail,
     amount: 2000 * 100,
     publicKey: VITE_PAYSTACK_PUBLIC_KEY,
     metadata: { member1, member2 },
+    text: "Pay with Paystack",
+    callback: onSuccess,
+    onClose: onClose,
   };
 
   if (loading) {
@@ -124,20 +129,11 @@ const MergeScreen = ({ member1: propmember1 }) => {
           {hasPaid ? "Open Chat" : "Merge (Pay to Unlock)"}
         </Button>
 
-        {showPaystack &&
-          userEmail &&
-          typeof onSuccess === "function" &&
-          typeof onClose === "function" && (
-            <Box mt={3}>
-              <PaystackButton
-                {...paystackConfig}
-                text="Pay with Paystack"
-                onSuccess={onSuccess}
-                onClose={onClose}
-                className="paystack-button"
-              />
-            </Box>
-          )}
+        {showPaystack && userEmail && (
+          <Box mt={3}>
+            <PaystackButton {...paystackConfig} className="paystack-button" />
+          </Box>
+        )}
       </Paper>
     </Box>
   );
