@@ -149,7 +149,8 @@ const Signup = () => {
       setLoading(false);
     }
   };
-
+  // return (
+  // Main component return
   return (
     <Box
       minHeight="100vh"
