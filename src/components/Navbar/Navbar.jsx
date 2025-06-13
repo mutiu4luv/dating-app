@@ -34,6 +34,15 @@ const Navbar = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    if (!token) {
+      localStorage.clear(); // Just in case
+    }
+    setIsLoggedIn(!!token);
+    setUsername(localStorage.getItem("username") || "");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
     setUsername(localStorage.getItem("username") || "");
   }, [location.pathname]);

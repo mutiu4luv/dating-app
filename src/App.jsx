@@ -6,10 +6,17 @@ import Members from "./screens/MembersScreen";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import Chat from "./screens/chat/Chat";
 import MergeScreen from "./screens/mergeScreen/MergeScreen";
+import { useEffect } from "react";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
   console.log("Current User ID:", currentUserId);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      localStorage.clear(); // Clear everything
+    }
+  }, []);
 
   return (
     <>
