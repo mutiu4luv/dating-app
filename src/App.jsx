@@ -8,10 +8,7 @@ import Chat from "./screens/chat/Chat";
 import MergeScreen from "./screens/mergeScreen/MergeScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
-  if (!currentUserId) {
-    console.error("User ID not found in localStorage");
-    return <div>Error: User ID not found</div>;
-  }
+
   console.log("Current User ID:", currentUserId);
 
   return (
