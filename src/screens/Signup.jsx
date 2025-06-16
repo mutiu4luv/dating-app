@@ -31,6 +31,8 @@ const relationshipTypes = [
   "Chat mate ",
   "Friends with Benefits  ",
   "Sex chat  ",
+  "Gay",
+  "Lasbian",
 ];
 
 const Signup = () => {
@@ -270,7 +272,7 @@ const Signup = () => {
               required
             />
             <TextField
-              label="What are you looking for?"
+              label="Describe your kind of Man/Woman?"
               name="description"
               value={form.description}
               onChange={handleChange}
