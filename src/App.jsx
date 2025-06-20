@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import Chat from "./screens/chat/Chat";
 import MergeScreen from "./screens/mergeScreen/MergeScreen";
 import { useEffect } from "react";
+import PaymentSuccess from "./components/payment/PaymentScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -35,14 +36,19 @@ function App() {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/chat/:member2"
           element={
             <ProtectedRoute>
               <Chat />
             </ProtectedRoute>
           }
-        />
+        /> */}
+        {/* <Route path="/payment-success" element={<PaymentSuccess />} /> */}
+        <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
+
+        <Route path="/chat/:member2" element={<Chat />} />
+
         <Route
           path="/merge/:userId/:member2"
           element={
