@@ -7,7 +7,6 @@ const PaymentSuccess = () => {
 
   useEffect(() => {
     if (member2) {
-      // Delay briefly just for smooth UX
       setTimeout(() => {
         navigate(`/chat/${member2}`);
       }, 1500);
@@ -15,9 +14,19 @@ const PaymentSuccess = () => {
   }, [member2, navigate]);
 
   return (
-    <div style={{ padding: "3rem", textAlign: "center" }}>
-      <h2>Payment Successful ✅</h2>
-      <p>Redirecting to chat...</p>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        background: "#f8f9fa",
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <h2>Payment Successful ✅</h2>
+        <p>Redirecting to chat...</p>
+      </div>
     </div>
   );
 };
