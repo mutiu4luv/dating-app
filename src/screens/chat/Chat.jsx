@@ -2,62 +2,112 @@ import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Typography,
-  Paper,
-  IconButton,
   TextField,
   Button,
-  Divider,
+  Paper,
   List,
   ListItem,
   ListItemText,
 } from "@mui/material";
-import SendIcon from "@mui/icons-material/Send";
-import api from "../../components/api/Api"; // <-- Your API setup file
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import io from "socket.io-client";
+import axios from "axios";
 
-const ChatScreen = () => {
-  const { member2 } = useParams();
-  const member1 = localStorage.getItem("userId");
+const socket = io(import.meta.env.VITE_BASE_URL);
+
+const Chat = () => {
+  const { member1, member2 } = useParams(); // ✅ Get both IDs from URL
+  const navigate = useNavigate();
+  const room = [member1, member2].sort().join("_");
+
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const messageEndRef = useRef(null);
+  const [receiver, setReceiver] = useState(null);
+  const messagesEndRef = useRef();
 
+  // Guard against chatting with yourself
   useEffect(() => {
-    // Fetch existing messages between member1 and member2
-    const fetchMessages = async () => {
+    if (member1 === member2) {
+      alert("❌ You can't chat with yourself.");
+      navigate("/");
+    }
+  }, [member1, member2]);
+
+  // Join socket room
+  useEffect(() => {
+    if (!room.includes("undefined")) {
+      socket.emit("join_room", room);
+      socket.on("receive_message", (data) => {
+        setMessages((prev) => [...prev, data]);
+      });
+    }
+
+    return () => {
+      socket.off("receive_message");
+    };
+  }, [room]);
+
+  // Fetch chat history
+  useEffect(() => {
+    const fetchChats = async () => {
       try {
-        const res = await api.get(
-          `/chat?member1=${member1}&member2=${member2}`
+        const res = await axios.get(
+          `${
+            import.meta.env.VITE_BASE_URL
+          }/api/chat?member1=${member1}&member2=${member2}`
         );
-        setMessages(res.data.messages || []);
+        setMessages(res.data);
       } catch (err) {
-        console.error("Failed to load messages:", err);
+        console.error("❌ Error fetching messages:", err);
       }
     };
 
-    fetchMessages();
+    if (member1 && member2) fetchChats();
   }, [member1, member2]);
 
+  // Fetch receiver info
   useEffect(() => {
-    messageEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
-
-    const messageData = {
-      sender: member1,
-      receiver: member2,
-      content: newMessage.trim(),
+    const fetchReceiver = async () => {
+      try {
+        const res = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/api/user/single/${member2}`
+        );
+        setReceiver(res.data);
+      } catch (err) {
+        console.error("❌ Failed to fetch receiver info", err);
+      }
     };
 
+    if (member2) fetchReceiver();
+  }, [member2]);
+
+  // Auto-scroll
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Send message
+  const sendMessage = async () => {
+    if (!message.trim()) return;
+
+    const data = {
+      senderId: member1,
+      receiverId: member2,
+      content: message,
+      room,
+    };
+
+    console.log("Sending:", data);
+
+    socket.emit("send_message", data);
+
     try {
-      const res = await api.post("/chat/send", messageData);
-      setMessages((prev) => [...prev, res.data.message]);
-      setNewMessage("");
+      await axios.post(`${import.meta.env.VITE_BASE_URL}/api/chat/save`, data);
     } catch (err) {
-      console.error("Failed to send message:", err);
+      console.error("❌ Failed to save message:", err);
     }
+
+    setMessage("");
   };
 
   return (
@@ -65,71 +115,70 @@ const ChatScreen = () => {
       display="flex"
       flexDirection="column"
       height="100vh"
-      p={2}
-      sx={{ bgcolor: "#f0f2f5" }}
+      maxWidth="600px"
+      mx="auto"
+      pt={2}
     >
-      <Paper elevation={3} sx={{ p: 2, mb: 2, textAlign: "center" }}>
-        <Typography variant="h6" fontWeight="bold">
-          Chat Room
-        </Typography>
-        <Typography variant="body2">You're chatting with {member2}</Typography>
-      </Paper>
+      <Typography variant="h5" align="center" gutterBottom>
+        Chat with {receiver?.username || "User"}
+      </Typography>
 
       <Paper
-        elevation={1}
+        variant="outlined"
         sx={{
           flex: 1,
-          p: 2,
           overflowY: "auto",
-          bgcolor: "#ffffff",
+          p: 2,
+          mb: 2,
           borderRadius: 2,
+          background: "#f9f9f9",
         }}
       >
         <List>
-          {messages.map((msg, index) => (
+          {messages.map((msg, i) => (
             <ListItem
-              key={index}
+              key={i}
               sx={{
                 justifyContent:
-                  msg.sender === member1 ? "flex-end" : "flex-start",
+                  msg.senderId === member1 ? "flex-end" : "flex-start",
               }}
             >
-              <Paper
+              <ListItemText
+                primary={msg.content}
                 sx={{
+                  background: msg.senderId === member1 ? "#1976d2" : "#e0e0e0",
+                  color: msg.senderId === member1 ? "#fff" : "#000",
                   p: 1.5,
-                  bgcolor: msg.sender === member1 ? "#1976d2" : "#e0e0e0",
-                  color: msg.sender === member1 ? "#fff" : "#000",
-                  maxWidth: "70%",
-                  borderRadius: 3,
+                  borderRadius: 2,
+                  maxWidth: "75%",
                 }}
-              >
-                <ListItemText primary={msg.content} />
-              </Paper>
+              />
             </ListItem>
           ))}
-          <div ref={messageEndRef} />
+          <div ref={messagesEndRef} />
         </List>
       </Paper>
 
-      <Divider sx={{ my: 1 }} />
-
-      <Box display="flex" gap={1} mt={1}>
+      <Box display="flex" gap={1} px={2} pb={2}>
         <TextField
+          fullWidth
           variant="outlined"
           placeholder="Type a message..."
-          fullWidth
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={(e) => {
-            if (e.key === "Enter") handleSendMessage();
-          }}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
         />
-        <IconButton color="primary" onClick={handleSendMessage}>
-          <SendIcon />
-        </IconButton>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={sendMessage}
+          disabled={!message.trim()}
+        >
+          Send
+        </Button>
       </Box>
     </Box>
   );
 };
 
-export default ChatScreen;
+export default Chat;
