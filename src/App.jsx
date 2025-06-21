@@ -47,7 +47,7 @@ function App() {
         {/* <Route path="/payment-success" element={<PaymentSuccess />} /> */}
         <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
         <Route
-          path="/chat/:member1/:member2"
+          path="/chat/:member2"
           element={
             <ProtectedRoute>
               <Chat />
