@@ -118,20 +118,25 @@ const Chat = () => {
       maxWidth="600px"
       mx="auto"
       pt={2}
+      sx={{
+        backgroundColor: "#121212",
+        color: "#fff",
+      }}
     >
-      <Typography variant="h5" align="center" gutterBottom>
-        Chat with {receiver?.username || "User"}
+      <Typography variant="h6" align="center" gutterBottom sx={{ mb: 2 }}>
+        Chat with <strong>{receiver?.username || "User"}</strong>
       </Typography>
 
       <Paper
-        variant="outlined"
+        elevation={3}
         sx={{
           flex: 1,
           overflowY: "auto",
           p: 2,
           mb: 2,
-          borderRadius: 2,
-          background: "#f9f9f9",
+          borderRadius: 3,
+          background: "#1e1e1e",
+          boxShadow: "0 0 10px rgba(0,0,0,0.3)",
         }}
       >
         <List>
@@ -146,11 +151,12 @@ const Chat = () => {
               <ListItemText
                 primary={msg.content}
                 sx={{
-                  background: msg.senderId === member1 ? "#1976d2" : "#e0e0e0",
-                  color: msg.senderId === member1 ? "#fff" : "#000",
+                  background: msg.senderId === member1 ? "#2979ff" : "#424242",
+                  color: "#fff",
                   p: 1.5,
-                  borderRadius: 2,
+                  borderRadius: "12px",
                   maxWidth: "75%",
+                  wordWrap: "break-word",
                 }}
               />
             </ListItem>
@@ -159,7 +165,13 @@ const Chat = () => {
         </List>
       </Paper>
 
-      <Box display="flex" gap={1} px={2} pb={2}>
+      <Box
+        display="flex"
+        gap={1}
+        px={2}
+        pb={2}
+        sx={{ backgroundColor: "#1a1a1a", borderTop: "1px solid #333" }}
+      >
         <TextField
           fullWidth
           variant="outlined"
@@ -167,12 +179,32 @@ const Chat = () => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          sx={{
+            input: { color: "#fff" },
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: "#2a2a2a",
+              "& fieldset": {
+                borderColor: "#444",
+              },
+              "&:hover fieldset": {
+                borderColor: "#555",
+              },
+            },
+          }}
         />
         <Button
           variant="contained"
           color="primary"
           onClick={sendMessage}
           disabled={!message.trim()}
+          sx={{
+            textTransform: "none",
+            px: 3,
+            backgroundColor: "#2979ff",
+            "&:hover": {
+              backgroundColor: "#1565c0",
+            },
+          }}
         >
           Send
         </Button>
