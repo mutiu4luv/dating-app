@@ -16,7 +16,7 @@ import axios from "axios";
 const socket = io(import.meta.env.VITE_BASE_URL);
 
 const Chat = () => {
-  const { member1, member2 } = useParams(); // ✅ Get both IDs from URL
+  const { member1, member2 } = useParams();
   const navigate = useNavigate();
   const room = [member1, member2].sort().join("_");
 
@@ -25,7 +25,6 @@ const Chat = () => {
   const [receiver, setReceiver] = useState(null);
   const messagesEndRef = useRef();
 
-  // Guard against chatting with yourself
   useEffect(() => {
     if (member1 === member2) {
       alert("❌ You can't chat with yourself.");
@@ -33,7 +32,6 @@ const Chat = () => {
     }
   }, [member1, member2]);
 
-  // Join socket room
   useEffect(() => {
     if (!room.includes("undefined")) {
       socket.emit("join_room", room);
@@ -47,7 +45,6 @@ const Chat = () => {
     };
   }, [room]);
 
-  // Fetch chat history
   useEffect(() => {
     const fetchChats = async () => {
       try {
@@ -65,7 +62,6 @@ const Chat = () => {
     if (member1 && member2) fetchChats();
   }, [member1, member2]);
 
-  // Fetch receiver info
   useEffect(() => {
     const fetchReceiver = async () => {
       try {
@@ -81,12 +77,10 @@ const Chat = () => {
     if (member2) fetchReceiver();
   }, [member2]);
 
-  // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Send message
   const sendMessage = async () => {
     if (!message.trim()) return;
 
@@ -97,9 +91,8 @@ const Chat = () => {
       room,
     };
 
-    console.log("Sending:", data);
-
     socket.emit("send_message", data);
+    setMessages((prev) => [...prev, data]);
 
     try {
       await axios.post(`${import.meta.env.VITE_BASE_URL}/api/chat/save`, data);

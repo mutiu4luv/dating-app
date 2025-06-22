@@ -13,7 +13,7 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../components/api/Api";
 
-const MergeScreen = ({ member1: propmember1 }) => {
+const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
   const [userEmail, setUserEmail] = useState("");
@@ -21,12 +21,12 @@ const MergeScreen = ({ member1: propmember1 }) => {
 
   const navigate = useNavigate();
   const { member2 } = useParams();
-  const member1 = propmember1 || localStorage.getItem("userId");
+  const member1 = localStorage.getItem("userId");
 
   const subscriptionPlans = {
     basic: { label: "Basic - ₦2,000 (5 merges for one month)", amount: 2000 },
     standard: {
-      label: "Standard - ₦5,000 (10 merges for one month) ",
+      label: "Standard - ₦5,000 (10 merges for one month)",
       amount: 5000,
     },
     premium: { label: "Premium - ₦10,000 (unlimited)", amount: 10000 },
@@ -42,7 +42,7 @@ const MergeScreen = ({ member1: propmember1 }) => {
         setHasPaid(res.data.hasPaid);
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
       } catch (err) {
-        console.error("Error fetching payment status", err);
+        console.error("❌ Error fetching payment status", err);
         alert("Error checking status.");
       } finally {
         setLoading(false);
@@ -58,7 +58,7 @@ const MergeScreen = ({ member1: propmember1 }) => {
     }
 
     if (hasPaid) {
-      return navigate(`/chat/${member2}`);
+      return navigate(`/chat/${member1}/${member2}`);
     }
 
     try {
@@ -86,7 +86,7 @@ const MergeScreen = ({ member1: propmember1 }) => {
         alert("Failed to initialize payment.");
       }
     } catch (err) {
-      console.error("Error initiating payment:", err);
+      console.error("❌ Error initiating payment:", err);
       alert("Payment initiation failed.");
     }
   };

@@ -6,9 +6,10 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (member2) {
+    const member1 = localStorage.getItem("userId");
+    if (member1 && member2) {
       setTimeout(() => {
-        navigate(`/chat/${member2}`);
+        navigate(`/chat/${member1}/${member2}`);
       }, 1500);
     }
   }, [member2, navigate]);
