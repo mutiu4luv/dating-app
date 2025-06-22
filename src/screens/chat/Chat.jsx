@@ -92,7 +92,6 @@ const Chat = () => {
     };
 
     socket.emit("send_message", data);
-    setMessages((prev) => [...prev, data]);
 
     try {
       await axios.post(`${import.meta.env.VITE_BASE_URL}/api/chat/save`, data);
