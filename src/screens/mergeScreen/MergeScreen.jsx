@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../components/api/Api";
+import Navbar from "../../components/Navbar/Navbar";
 
 const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
@@ -105,53 +106,58 @@ const MergeScreen = () => {
   }
 
   return (
-    <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      minHeight="80vh"
-    >
-      <Paper sx={{ p: 4, borderRadius: 3, minWidth: 320, textAlign: "center" }}>
-        <Typography variant="h5" fontWeight="bold" mb={2}>
-          Merge with your Match
-        </Typography>
-        <Typography variant="body1" mb={3}>
-          {hasPaid
-            ? "You have already paid. Click below to start chatting!"
-            : "Please complete payment to start chatting."}
-        </Typography>
-
-        {!hasPaid && (
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel id="plan-select-label">
-              Choose Subscription Plan
-            </InputLabel>
-            <Select
-              labelId="plan-select-label"
-              value={selectedPlan}
-              onChange={(e) => setSelectedPlan(e.target.value)}
-              label="Choose Subscription Plan"
-            >
-              {Object.entries(subscriptionPlans).map(([key, plan]) => (
-                <MenuItem key={key} value={key}>
-                  {plan.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
-
-        <Button
-          variant="contained"
-          color={hasPaid ? "success" : "primary"}
-          size="large"
-          onClick={handleMerge}
-          sx={{ borderRadius: 8, px: 5, py: 1.5, fontWeight: 600 }}
+    <>
+      <Navbar />
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="80vh"
+      >
+        <Paper
+          sx={{ p: 4, borderRadius: 3, minWidth: 320, textAlign: "center" }}
         >
-          {hasPaid ? "Open Chat" : "Merge (Pay to Unlock)"}
-        </Button>
-      </Paper>
-    </Box>
+          <Typography variant="h5" fontWeight="bold" mb={2}>
+            Merge with your Match
+          </Typography>
+          <Typography variant="body1" mb={3}>
+            {hasPaid
+              ? "You have already paid. Click below to start chatting!"
+              : "Please complete payment to start chatting."}
+          </Typography>
+
+          {!hasPaid && (
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel id="plan-select-label">
+                Choose Subscription Plan
+              </InputLabel>
+              <Select
+                labelId="plan-select-label"
+                value={selectedPlan}
+                onChange={(e) => setSelectedPlan(e.target.value)}
+                label="Choose Subscription Plan"
+              >
+                {Object.entries(subscriptionPlans).map(([key, plan]) => (
+                  <MenuItem key={key} value={key}>
+                    {plan.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          <Button
+            variant="contained"
+            color={hasPaid ? "success" : "primary"}
+            size="large"
+            onClick={handleMerge}
+            sx={{ borderRadius: 8, px: 5, py: 1.5, fontWeight: 600 }}
+          >
+            {hasPaid ? "Open Chat" : "Merge (Pay to Unlock)"}
+          </Button>
+        </Paper>
+      </Box>
+    </>
   );
 };
 
