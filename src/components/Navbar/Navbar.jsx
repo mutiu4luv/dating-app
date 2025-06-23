@@ -62,7 +62,7 @@ const Navbar = () => {
     } else if (item === "Home") {
       navigate("/");
     } else if (item === "Matches") {
-      navigate(`/members/${userId}`, { replace: true });
+      navigate(`/members/${userId} `, { replace: true });
     } else if (item === "Messages") {
       navigate("/messages");
     } else if (item === "Profile") {
