@@ -8,6 +8,7 @@ import Chat from "./screens/chat/Chat";
 import MergeScreen from "./screens/mergeScreen/MergeScreen";
 import { useEffect } from "react";
 import PaymentSuccess from "./components/payment/PaymentScreen";
+import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -46,6 +47,8 @@ function App() {
         /> */}
         {/* <Route path="/payment-success" element={<PaymentSuccess />} /> */}
         <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
+        {/* <Route path="/merge/success/:member2" element={<MergeSuccess />} /> */}
+
         <Route
           path="/chat/:member1/:member2"
           element={
