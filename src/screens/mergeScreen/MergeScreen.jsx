@@ -5,36 +5,52 @@ import {
   Typography,
   CircularProgress,
   Paper,
-  MenuItem,
-  Select,
-  FormControl,
-  InputLabel,
+  Grid,
 } from "@mui/material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
+import StarIcon from "@mui/icons-material/Star";
+import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
+import DiamondIcon from "@mui/icons-material/Diamond";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
 const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
-  const [isMerged, setIsMerged] = useState(false); // ✅ New state
+  const [isMerged, setIsMerged] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  const [selectedPlan, setSelectedPlan] = useState("basic");
-
   const navigate = useNavigate();
   const location = useLocation();
   const { userId: member1, member2 } = useParams();
 
   const subscriptionPlans = {
-    basic: { label: "Basic - ₦2000 (5 merges for one month)", amount: 2000 },
-    standard: {
-      label: "Standard - ₦5000 (10 merges for one month)",
-      amount: 5000,
+    free: {
+      label: "Free Plan",
+      amount: 0,
+      description: "Access 3 merges per month. Great for exploring!",
+      icon: <FavoriteBorderIcon sx={{ fontSize: 40, color: "#22c55e" }} />,
     },
-    premium: { label: "Premium - ₦10000 (unlimited)", amount: 10000 },
+    basic: {
+      label: "Basic Plan",
+      amount: 2000,
+      description: "10 merges/month for casual users.",
+      icon: <StarIcon sx={{ fontSize: 40, color: "#3b82f6" }} />,
+    },
+    standard: {
+      label: "Standard Plan",
+      amount: 3000,
+      description: "20 merges/month. Best for serious users.",
+      icon: <WorkspacePremiumIcon sx={{ fontSize: 40, color: "#f59e0b" }} />,
+    },
+    premium: {
+      label: "Premium Plan",
+      amount: 5000,
+      description: "Unlimited merges. Full experience unlocked.",
+      icon: <DiamondIcon sx={{ fontSize: 40, color: "#a855f7" }} />,
+    },
   };
 
-  // Step 1: Check existing merge/payment status
   useEffect(() => {
     const fetchStatus = async () => {
       if (!member1 || !member2) return;
@@ -43,7 +59,7 @@ const MergeScreen = () => {
           `/merge/status?member1=${member1}&member2=${member2}`
         );
         setHasPaid(res.data.hasPaid);
-        setIsMerged(res.data.isMerged); // ✅ store isMerged from backend
+        setIsMerged(res.data.isMerged);
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
       } catch (err) {
         console.error("Error fetching merge status:", err);
@@ -55,7 +71,6 @@ const MergeScreen = () => {
     fetchStatus();
   }, [member1, member2]);
 
-  // Step 2: Merge after Paystack redirects with reference
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const reference = urlParams.get("reference");
@@ -88,8 +103,9 @@ const MergeScreen = () => {
     mergeAfterPayment();
   }, [location.search, member1, member2, navigate]);
 
-  // Step 3: Handle payment initiation
-  const handleMerge = async () => {
+  const handlePlanClick = async (planKey) => {
+    const plan = subscriptionPlans[planKey];
+
     if (!userEmail) {
       alert("Email missing. Please log in again.");
       return;
@@ -99,8 +115,7 @@ const MergeScreen = () => {
       return navigate(`/chat/${member1}/${member2}`);
     }
 
-    if (hasPaid) {
-      // Paid but not merged, so finalize merge
+    if (hasPaid && plan.amount > 0) {
       try {
         const res = await api.post(
           "/merge",
@@ -124,16 +139,38 @@ const MergeScreen = () => {
       return;
     }
 
-    // Initiate payment
+    if (plan.amount === 0) {
+      try {
+        const res = await api.post(
+          "/merge",
+          { memberId1: member1, memberId2: member2 },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.data.match) {
+          navigate(`/merge/success/${member2}`);
+        } else {
+          alert("Merge failed: " + res.data.message);
+        }
+      } catch (err) {
+        console.error("Error using free plan:", err);
+        alert("Merge failed. Try again.");
+      }
+      return;
+    }
+
     try {
       const paymentRes = await api.post(
         "/subscription/initiate",
         {
           email: userEmail,
-          amount: subscriptionPlans[selectedPlan].amount * 100,
+          amount: plan.amount * 100,
           member1,
           member2,
-          plan: selectedPlan,
+          plan: planKey,
           redirect_url: `${window.location.origin}/merge/${member1}/${member2}`,
         },
         {
@@ -171,60 +208,73 @@ const MergeScreen = () => {
   return (
     <>
       <Navbar />
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="80vh"
-      >
-        <Paper
-          sx={{ p: 4, borderRadius: 3, minWidth: 320, textAlign: "center" }}
+      <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
+        <Typography variant="h5" fontWeight="bold" mb={2}>
+          Merge with Your Match
+        </Typography>
+        <Typography variant="body1" mb={4}>
+          {isMerged
+            ? "You are already merged! Click a plan below to chat."
+            : hasPaid
+            ? "Payment received. Click to finalize your merge."
+            : "Choose a subscription plan to unlock chat access."}
+        </Typography>
+
+        <Grid
+          container
+          spacing={3}
+          justifyContent="center"
+          sx={{ maxWidth: 1100 }}
         >
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Merge with your Match
-          </Typography>
-          <Typography variant="body1" mb={3}>
-            {isMerged
-              ? "You are already merged! Click below to chat."
-              : hasPaid
-              ? "Payment received. Finalize your merge below."
-              : "Please complete payment to unlock chat access."}
-          </Typography>
-
-          {!hasPaid && (
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel id="plan-select-label">
-                Choose Subscription Plan
-              </InputLabel>
-              <Select
-                labelId="plan-select-label"
-                value={selectedPlan}
-                onChange={(e) => setSelectedPlan(e.target.value)}
-                label="Choose Subscription Plan"
+          {Object.entries(subscriptionPlans).map(([key, plan]) => (
+            <Grid item xs={12} sm={6} md={3} key={key}>
+              <Paper
+                elevation={2}
+                sx={{
+                  p: 3,
+                  borderRadius: 4,
+                  border: "1px solid #ddd",
+                  textAlign: "center",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
               >
-                {Object.entries(subscriptionPlans).map(([key, plan]) => (
-                  <MenuItem key={key} value={key}>
-                    {plan.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-
-          <Button
-            variant="contained"
-            color={isMerged ? "success" : hasPaid ? "primary" : "warning"}
-            size="large"
-            onClick={handleMerge}
-            sx={{ borderRadius: 8, px: 5, py: 1.5, fontWeight: 600 }}
-          >
-            {isMerged
-              ? "Open Chat"
-              : hasPaid
-              ? "Finalize Merge"
-              : "Merge (Pay to Unlock)"}
-          </Button>
-        </Paper>
+                <Box mb={2}>{plan.icon}</Box>
+                <Typography variant="h6" fontWeight="bold" mb={1}>
+                  {plan.label}
+                </Typography>
+                <Typography variant="body2" color="textSecondary" mb={2}>
+                  {plan.description}
+                </Typography>
+                <Typography variant="h6" color="primary" mb={2}>
+                  ₦{plan.amount.toLocaleString()}
+                </Typography>
+                <Button
+                  variant="contained"
+                  fullWidth
+                  onClick={() => handlePlanClick(key)}
+                  sx={{
+                    mt: "auto",
+                    borderRadius: 6,
+                    fontWeight: 600,
+                    px: 2,
+                    py: 1,
+                  }}
+                >
+                  {plan.amount === 0
+                    ? "Use Free Plan"
+                    : isMerged
+                    ? "Open Chat"
+                    : hasPaid
+                    ? "Finalize Merge"
+                    : "Subscribe & Merge"}
+                </Button>
+              </Paper>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
     </>
   );
