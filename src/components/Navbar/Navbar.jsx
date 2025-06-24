@@ -12,7 +12,6 @@ import {
   Divider,
   Badge,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import HomeIcon from "@mui/icons-material/Home";
@@ -22,7 +21,11 @@ import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import { useNavigate, useLocation } from "react-router-dom";
+import io from "socket.io-client";
 import api from "../../components/api/Api";
+
+// 🔌 Setup socket instance outside component
+const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:7000");
 
 const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -51,7 +54,22 @@ const Navbar = () => {
         console.error("Failed to fetch unread count", err);
       }
     };
-    if (userId) fetchUnreadMessages();
+
+    if (userId) {
+      fetchUnreadMessages();
+      socket.emit("join_room", userId); // 👈 join private room
+    }
+
+    // 📩 Listen for new message
+    socket.on("receive_message", (data) => {
+      if (data.receiverId === userId) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    });
+
+    return () => {
+      socket.off("receive_message");
+    };
   }, [userId]);
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
