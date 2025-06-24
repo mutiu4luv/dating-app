@@ -9,6 +9,7 @@ import MergeScreen from "./screens/mergeScreen/MergeScreen";
 import { useEffect } from "react";
 import PaymentSuccess from "./components/payment/PaymentScreen";
 import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
+import MessagesScreen from "./screens/messages/MessagesScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -67,6 +68,14 @@ function App() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Signup />} />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <MessagesScreen />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </>
   );

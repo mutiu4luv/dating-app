@@ -1,0 +1,134 @@
+import React, { useEffect, useState } from "react";
+import {
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  Typography,
+  CircularProgress,
+  Badge,
+  Box,
+  Paper,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import api from "../../components/api/Api";
+import Navbar from "../../components/Navbar/Navbar";
+
+const MessagesScreen = () => {
+  const [conversations, setConversations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const userId = localStorage.getItem("userId");
+
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const res = await api.get(`/chat/conversations/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+        setConversations(res.data);
+      } catch (err) {
+        console.error("❌ Failed to load conversations:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchConversations();
+  }, [userId]);
+
+  const handleClick = (matchId) => {
+    navigate(`/chat/${userId}/${matchId}`);
+  };
+
+  if (loading) {
+    return (
+      <Box textAlign="center" mt={8}>
+        <CircularProgress color="secondary" />
+        <Typography mt={2} color="textSecondary">
+          Loading conversations...
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <Box maxWidth="sm" mx="auto" mt={4} px={2}>
+        <Typography
+          variant="h5"
+          fontWeight="bold"
+          gutterBottom
+          sx={{ color: "#db2777" }}
+        >
+          Conversations
+        </Typography>
+
+        {conversations.length === 0 ? (
+          <Typography color="textSecondary" mt={4} textAlign="center">
+            You don’t have any messages yet.
+          </Typography>
+        ) : (
+          <Paper elevation={2} sx={{ borderRadius: 3, p: 1 }}>
+            <List>
+              {conversations.map((chat) => (
+                <ListItem
+                  key={chat.matchId}
+                  button
+                  onClick={() => handleClick(chat.matchId)}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 1,
+                    py: 2,
+                    px: 2,
+                    transition: "0.3s",
+                    backgroundColor: chat.unread ? "#fdf2f8" : "#fff",
+                    "&:hover": {
+                      backgroundColor: "#fce7f3",
+                    },
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Badge
+                      variant="dot"
+                      color="error"
+                      invisible={!chat.unread}
+                      overlap="circular"
+                    >
+                      <Avatar
+                        sx={{
+                          bgcolor: "#ec4899",
+                          color: "white",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {chat.username?.[0]?.toUpperCase()}
+                      </Avatar>
+                    </Badge>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Typography fontWeight={600} fontSize="1rem">
+                        {chat.username}
+                      </Typography>
+                    }
+                    secondary={
+                      <Typography variant="body2" color="textSecondary" noWrap>
+                        {chat.lastMessage || "Say hi..."}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        )}
+      </Box>
+    </>
+  );
+};
+
+export default MessagesScreen;

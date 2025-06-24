@@ -20,6 +20,8 @@ const MergeScreen = () => {
   const [hasPaid, setHasPaid] = useState(false);
   const [isMerged, setIsMerged] = useState(false);
   const [userEmail, setUserEmail] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); // 🔴 Error message state
+
   const navigate = useNavigate();
   const location = useLocation();
   const { userId: member1, member2 } = useParams();
@@ -92,11 +94,11 @@ const MergeScreen = () => {
         if (res.data.match) {
           navigate(`/merge/success/${member2}`);
         } else {
-          alert("Merge failed: " + res.data.message);
+          setErrorMessage(res.data.message || "Merge failed.");
         }
       } catch (err) {
         console.error("Error during merge after payment:", err);
-        alert("Something went wrong after payment.");
+        setErrorMessage("Something went wrong after payment.");
       }
     };
 
@@ -105,6 +107,7 @@ const MergeScreen = () => {
 
   const handlePlanClick = async (planKey) => {
     const plan = subscriptionPlans[planKey];
+    setErrorMessage(""); // 🔄 Reset error on each click
 
     if (!userEmail) {
       alert("Email missing. Please log in again.");
@@ -130,11 +133,11 @@ const MergeScreen = () => {
         if (res.data.match) {
           navigate(`/merge/success/${member2}`);
         } else {
-          alert("Merge failed: " + res.data.message);
+          setErrorMessage(res.data.message || "Merge failed.");
         }
       } catch (err) {
         console.error("Error finalizing merge:", err);
-        alert("Failed to finalize merge.");
+        setErrorMessage("Failed to finalize merge.");
       }
       return;
     }
@@ -153,11 +156,13 @@ const MergeScreen = () => {
         if (res.data.match) {
           navigate(`/merge/success/${member2}`);
         } else {
-          alert("Merge failed: " + res.data.message);
+          setErrorMessage(res.data.message || "Merge failed.");
         }
       } catch (err) {
         console.error("Error using free plan:", err);
-        alert("Merge failed. Try again.");
+        setErrorMessage(
+          err.response?.data?.message || "Merge failed. Try again."
+        );
       }
       return;
     }
@@ -184,11 +189,11 @@ const MergeScreen = () => {
       if (authorization_url) {
         window.location.href = authorization_url;
       } else {
-        alert("Failed to generate payment link.");
+        setErrorMessage("Failed to generate payment link.");
       }
     } catch (err) {
       console.error("Error initiating payment:", err);
-      alert("Something went wrong during payment setup.");
+      setErrorMessage("Something went wrong during payment setup.");
     }
   };
 
@@ -212,13 +217,25 @@ const MergeScreen = () => {
         <Typography variant="h5" fontWeight="bold" mb={2}>
           Merge with Your Match
         </Typography>
-        <Typography variant="body1" mb={4}>
+        <Typography variant="body1" mb={2}>
           {isMerged
             ? "You are already merged! Click a plan below to chat."
             : hasPaid
             ? "Payment received. Click to finalize your merge."
             : "Choose a subscription plan to unlock chat access."}
         </Typography>
+
+        {errorMessage && (
+          <Typography
+            variant="body1"
+            color="error"
+            mb={3}
+            fontWeight="bold"
+            textAlign="center"
+          >
+            {errorMessage}
+          </Typography>
+        )}
 
         <Grid
           container
