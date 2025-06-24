@@ -10,6 +10,7 @@ import {
   MenuItem,
   Avatar,
   Divider,
+  Badge,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -21,6 +22,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import { useNavigate, useLocation } from "react-router-dom";
+import api from "../../components/api/Api";
 
 const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -28,50 +30,62 @@ const Navbar = () => {
   const [username, setUsername] = useState(
     localStorage.getItem("username") || ""
   );
+  const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      localStorage.clear(); // Just in case
-    }
+    if (!token) localStorage.clear();
     setIsLoggedIn(!!token);
     setUsername(localStorage.getItem("username") || "");
   }, [location.pathname]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-    setUsername(localStorage.getItem("username") || "");
-  }, [location.pathname]);
+    const fetchUnreadMessages = async () => {
+      try {
+        const res = await api.get(`/chat/unread-count/${userId}`);
+        setUnreadCount(res.data.unreadCount || 0);
+      } catch (err) {
+        console.error("Failed to fetch unread count", err);
+      }
+    };
+    if (userId) fetchUnreadMessages();
+  }, [userId]);
 
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
 
   const handleMenuClick = (item) => {
     handleMenuClose();
-    if (item === "Logout") {
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("username");
-      setIsLoggedIn(false);
-      setUsername("");
-      navigate("/");
-    } else if (item === "Home") {
-      navigate("/");
-    } else if (item === "Matches") {
-      navigate(`/members/${userId} `, { replace: true });
-    } else if (item === "Messages") {
-      navigate("/messages");
-    } else if (item === "Profile") {
-      navigate("/profile");
-    } else if (item === "Login/SignIn") {
-      navigate("/login");
+    switch (item) {
+      case "Logout":
+        localStorage.clear();
+        setIsLoggedIn(false);
+        setUsername("");
+        navigate("/");
+        break;
+      case "Home":
+        navigate("/");
+        break;
+      case "Matches":
+        navigate(`/members/${userId}`);
+        break;
+      case "Messages":
+        navigate("/messages");
+        break;
+      case "Profile":
+        navigate("/profile");
+        break;
+      case "Login/SignIn":
+        navigate("/login");
+        break;
+      default:
+        break;
     }
   };
-  // return
+
   return (
     <AppBar position="sticky" sx={{ backgroundColor: "#ec4899" }}>
       <Toolbar sx={{ justifyContent: "space-between" }}>
@@ -84,6 +98,16 @@ const Navbar = () => {
         <Box sx={{ display: "flex", alignItems: "center" }}>
           {isLoggedIn && username ? (
             <>
+              <IconButton color="inherit" onClick={() => navigate("/messages")}>
+                <Badge
+                  badgeContent={unreadCount}
+                  color="error"
+                  max={9}
+                  invisible={unreadCount === 0}
+                >
+                  <ChatIcon />
+                </Badge>
+              </IconButton>
               <Button
                 color="inherit"
                 startIcon={
@@ -106,6 +130,7 @@ const Navbar = () => {
                   fontWeight: 600,
                   fontSize: 16,
                   color: "#fff",
+                  ml: 1,
                 }}
               >
                 {username.split(" ")[0]}
@@ -153,15 +178,13 @@ const Navbar = () => {
               </Menu>
             </>
           ) : (
-            <>
-              <Button
-                sx={{ color: "#fff", fontWeight: "600" }}
-                startIcon={<LoginIcon />}
-                onClick={() => handleMenuClick("Login/SignIn")}
-              >
-                Login/SignIn
-              </Button>
-            </>
+            <Button
+              sx={{ color: "#fff", fontWeight: "600" }}
+              startIcon={<LoginIcon />}
+              onClick={() => handleMenuClick("Login/SignIn")}
+            >
+              Login/SignIn
+            </Button>
           )}
         </Box>
       </Toolbar>
