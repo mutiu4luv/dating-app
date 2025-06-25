@@ -6,6 +6,8 @@ import {
   CircularProgress,
   Paper,
   Grid,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../components/api/Api";
@@ -20,36 +22,39 @@ const MergeScreen = () => {
   const [hasPaid, setHasPaid] = useState(false);
   const [isMerged, setIsMerged] = useState(false);
   const [userEmail, setUserEmail] = useState("");
-  const [errorMessage, setErrorMessage] = useState(""); // 🔴 Error message state
+  const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
   const { userId: member1, member2 } = useParams();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const subscriptionPlans = {
     free: {
       label: "Free Plan",
       amount: 0,
       description: "Access 3 merges per month. Great for exploring!",
-      icon: <FavoriteBorderIcon sx={{ fontSize: 40, color: "#22c55e" }} />,
+      icon: <FavoriteBorderIcon sx={{ fontSize: 32, color: "#22c55e" }} />,
     },
     basic: {
       label: "Basic Plan",
       amount: 2000,
-      description: "10 merges/month for casual users.",
-      icon: <StarIcon sx={{ fontSize: 40, color: "#3b82f6" }} />,
+      description: "Access 10 merges per month for casual users.",
+      icon: <StarIcon sx={{ fontSize: 32, color: "#3b82f6" }} />,
     },
     standard: {
       label: "Standard Plan",
       amount: 3000,
       description: "20 merges/month. Best for serious users.",
-      icon: <WorkspacePremiumIcon sx={{ fontSize: 40, color: "#f59e0b" }} />,
+      icon: <WorkspacePremiumIcon sx={{ fontSize: 32, color: "#f59e0b" }} />,
     },
     premium: {
       label: "Premium Plan",
       amount: 5000,
       description: "Unlimited merges. Full experience unlocked.",
-      icon: <DiamondIcon sx={{ fontSize: 40, color: "#a855f7" }} />,
+      icon: <DiamondIcon sx={{ fontSize: 32, color: "#a855f7" }} />,
     },
   };
 
@@ -107,7 +112,7 @@ const MergeScreen = () => {
 
   const handlePlanClick = async (planKey) => {
     const plan = subscriptionPlans[planKey];
-    setErrorMessage(""); // 🔄 Reset error on each click
+    setErrorMessage("");
 
     if (!userEmail) {
       alert("Email missing. Please log in again.");
@@ -213,11 +218,17 @@ const MergeScreen = () => {
   return (
     <>
       <Navbar />
-      <Box display="flex" flexDirection="column" alignItems="center" mt={4}>
-        <Typography variant="h5" fontWeight="bold" mb={2}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        mt={4}
+        px={isMobile ? 2 : 4}
+      >
+        <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
           Merge with Your Match
         </Typography>
-        <Typography variant="body1" mb={2}>
+        <Typography variant="body1" mb={2} textAlign="center">
           {isMerged
             ? "You are already merged! Click a plan below to chat."
             : hasPaid
@@ -241,21 +252,30 @@ const MergeScreen = () => {
           container
           spacing={3}
           justifyContent="center"
-          sx={{ maxWidth: 1100 }}
+          sx={{ maxWidth: 1100, width: "100%", px: isMobile ? 1 : 3 }}
         >
           {Object.entries(subscriptionPlans).map(([key, plan]) => (
-            <Grid item xs={12} sm={6} md={3} key={key}>
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={3}
+              key={key}
+              sx={{ mt: isMobile ? 6 : 3, display: "flex" }}
+            >
               <Paper
-                elevation={2}
+                elevation={3}
                 sx={{
                   p: 3,
+                  height: "100%",
                   borderRadius: 4,
                   border: "1px solid #ddd",
-                  textAlign: "center",
-                  height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  alignItems: "center",
                   justifyContent: "space-between",
+                  textAlign: "center",
+                  minHeight: 320,
                 }}
               >
                 <Box mb={2}>{plan.icon}</Box>
@@ -277,7 +297,7 @@ const MergeScreen = () => {
                     borderRadius: 6,
                     fontWeight: 600,
                     px: 2,
-                    py: 1,
+                    py: 1.5,
                   }}
                 >
                   {plan.amount === 0

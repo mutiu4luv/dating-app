@@ -20,14 +20,13 @@ const MessagesScreen = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const userId = localStorage.getItem("userId");
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
     const fetchConversations = async () => {
       try {
         const res = await api.get(`/chat/conversations/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setConversations(res.data);
       } catch (err) {
@@ -36,8 +35,29 @@ const MessagesScreen = () => {
         setLoading(false);
       }
     };
-    fetchConversations();
-  }, [userId]);
+
+    const markAllAsRead = async () => {
+      try {
+        await api.put(
+          `/chat/read/${userId}`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        // ✅ Notify Navbar to update unread count using custom event
+        window.dispatchEvent(new CustomEvent("unreadReset"));
+      } catch (err) {
+        console.error("❌ Failed to mark messages as read:", err);
+      }
+    };
+
+    if (userId && token) {
+      fetchConversations();
+      markAllAsRead();
+    }
+  }, [userId, token]);
 
   const handleClick = (matchId) => {
     navigate(`/chat/${userId}/${matchId}`);
@@ -111,7 +131,10 @@ const MessagesScreen = () => {
                   </ListItemAvatar>
                   <ListItemText
                     primary={
-                      <Typography fontWeight={600} fontSize="1rem">
+                      <Typography
+                        fontWeight={chat.unread ? 700 : 500}
+                        fontSize="1rem"
+                      >
                         {chat.username}
                       </Typography>
                     }

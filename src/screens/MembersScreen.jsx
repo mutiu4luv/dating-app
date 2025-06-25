@@ -15,22 +15,19 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useNavigate } from "react-router-dom";
-import ClipLoader from "react-spinners/ClipLoader"; // 🔥 added
+import ClipLoader from "react-spinners/ClipLoader";
 
-const getCurrentUserId = () => {
-  return localStorage.getItem("userId");
-};
-
+const getCurrentUserId = () => localStorage.getItem("userId");
 const MAX_DESCRIPTION_LINES = 2;
 const CARD_HEIGHT = 450;
 const CARD_CONTENT_HEIGHT = 170;
 
 const Members = () => {
   const navigate = useNavigate();
-
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
+  const [mergeStatuses, setMergeStatuses] = useState({});
   const userId = getCurrentUserId();
 
   useEffect(() => {
@@ -40,39 +37,73 @@ const Members = () => {
         const token = localStorage.getItem("token");
         const res = await axios.get(
           `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (Array.isArray(res.data)) {
-          setMembers(res.data);
-        } else if (Array.isArray(res.data.members)) {
-          setMembers(res.data.members);
-        } else if (Array.isArray(res.data.matches)) {
-          setMembers(res.data.matches);
-        } else {
-          setMembers([]);
-        }
+
+        const data = Array.isArray(res.data)
+          ? res.data
+          : res.data.members || res.data.matches || [];
+
+        const statuses = await Promise.all(
+          data.map(async (member) => {
+            try {
+              const statusRes = await axios.get(
+                `${
+                  import.meta.env.VITE_BASE_URL
+                }/merge/status?member1=${userId}&member2=${member._id}`
+              );
+              return { memberId: member._id, status: statusRes.data };
+            } catch (err) {
+              console.error("Error fetching status for member", member._id);
+              return { memberId: member._id, status: {} };
+            }
+          })
+        );
+
+        const statusMap = {};
+        statuses.forEach(({ memberId, status }) => {
+          statusMap[memberId] = status;
+        });
+
+        setMembers(data);
+        setMergeStatuses(statusMap);
       } catch (err) {
-        console.error("Error fetching members:", err, err.response?.data);
+        console.error("Error fetching members or statuses:", err);
         setMembers([]);
       }
       setLoading(false);
     };
-    fetchMembers();
+
+    if (userId) fetchMembers();
   }, [userId]);
 
   const handleExpandClick = (member2) => {
-    setExpanded((prev) => ({
-      ...prev,
-      [member2]: !prev[member2],
-    }));
+    setExpanded((prev) => ({ ...prev, [member2]: !prev[member2] }));
   };
 
-  const currentUserId = getCurrentUserId();
-  if (!currentUserId) {
+  const handleMerge = (member2) => {
+    navigate(`/merge/${userId}/${member2}`);
+  };
+
+  const handleChat = (member2) => {
+    navigate(`/chat/${member2}`);
+  };
+
+  const getButtonLabel = (status) => {
+    if (status?.isMerged && status?.subscriptionActive) {
+      return status?.hasChattedBefore ? "Open Chat" : "Chat";
+    }
+    return "Merge";
+  };
+
+  const getButtonAction = (status, memberId) => {
+    if (status?.isMerged && status?.subscriptionActive) {
+      return () => handleChat(memberId);
+    }
+    return () => handleMerge(memberId);
+  };
+
+  if (!userId) {
     return (
       <Box
         minHeight="100vh"
@@ -106,7 +137,7 @@ const Members = () => {
     );
   }
 
-  if (!members || members.length === 0) {
+  if (!members.length) {
     return (
       <Box
         minHeight="100vh"
@@ -123,10 +154,6 @@ const Members = () => {
       </Box>
     );
   }
-
-  const handleMerge = (member2) => {
-    navigate(`/merge/${currentUserId}/${member2}`);
-  };
 
   return (
     <>
@@ -146,10 +173,7 @@ const Members = () => {
             variant="h4"
             fontWeight="bold"
             color="#fff"
-            sx={{
-              textShadow: "0 2px 8px rgba(0,0,0,0.25)",
-              letterSpacing: 1,
-            }}
+            sx={{ textShadow: "0 2px 8px rgba(0,0,0,0.25)", letterSpacing: 1 }}
           >
             Members With Your Relationship Type
           </Typography>
@@ -158,8 +182,9 @@ const Members = () => {
         <Grid container spacing={4} justifyContent="center">
           {members.map((member) => {
             const isExpanded = expanded[member._id];
-            const isLong =
-              member.description && member.description.length > 100;
+            const isLong = member.description?.length > 100;
+            const status = mergeStatuses[member._id];
+
             return (
               <Grid item xs={12} sm={6} md={4} lg={3} key={member._id}>
                 <Card
@@ -215,7 +240,6 @@ const Members = () => {
                       color="#ec4899"
                       gutterBottom
                       align="center"
-                      sx={{ letterSpacing: 0.5 }}
                     >
                       {member.name}
                     </Typography>
@@ -242,17 +266,17 @@ const Members = () => {
                         color="#fff"
                         align="center"
                         sx={{
-                          minHeight: 48,
                           fontStyle: "italic",
                           opacity: 0.85,
                           display: "-webkit-box",
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
-                          WebkitLineClamp: isExpanded ? "unset" : 2,
+                          WebkitLineClamp: isExpanded
+                            ? "unset"
+                            : MAX_DESCRIPTION_LINES,
                           textOverflow: "ellipsis",
                           whiteSpace: isExpanded ? "normal" : "initial",
                           maxHeight: isExpanded ? "none" : "3.6em",
-                          transition: "all 0.2s",
                         }}
                       >
                         {member.description}
@@ -290,9 +314,9 @@ const Members = () => {
                             "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",
                         },
                       }}
-                      onClick={() => handleMerge(member._id)}
+                      onClick={getButtonAction(status, member._id)}
                     >
-                      Merge
+                      {getButtonLabel(status)}
                     </Button>
                   </CardContent>
                 </Card>
