@@ -87,7 +87,7 @@ const Members = () => {
               const statusRes = await axios.get(
                 `${
                   import.meta.env.VITE_BASE_URL
-                }/merge/status?member1=${userId}&member2=${member._id}`
+                }/api/merge/status?member1=${userId}&member2=${member._id}`
               );
               return { memberId: member._id, status: statusRes.data };
             } catch {

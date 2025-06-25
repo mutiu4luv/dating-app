@@ -13,18 +13,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
 
-const socket = io(import.meta.env.VITE_BASE_URL);
-
 const Chat = () => {
   const { member1, member2 } = useParams();
   const navigate = useNavigate();
   const room = [member1, member2].sort().join("_");
 
+  const [socketInstance, setSocketInstance] = useState(null);
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [receiver, setReceiver] = useState(null);
   const messagesEndRef = useRef();
 
+  // Prevent chatting with self
   useEffect(() => {
     if (member1 === member2) {
       alert("❌ You can't chat with yourself.");
@@ -32,19 +32,34 @@ const Chat = () => {
     }
   }, [member1, member2]);
 
+  // Initialize socket
   useEffect(() => {
-    if (!room.includes("undefined")) {
-      socket.emit("join_room", room);
-      socket.on("receive_message", (data) => {
-        setMessages((prev) => [...prev, data]);
-      });
-    }
+    const newSocket = io(import.meta.env.VITE_BASE_URL);
+    setSocketInstance(newSocket);
 
     return () => {
-      socket.off("receive_message");
+      newSocket.disconnect();
     };
-  }, [room]);
+  }, []);
 
+  // Join room and receive messages
+  useEffect(() => {
+    if (!socketInstance || room.includes("undefined")) return;
+
+    socketInstance.emit("join_room", room);
+
+    const handleReceive = (data) => {
+      setMessages((prev) => [...prev, data]);
+    };
+
+    socketInstance.on("receive_message", handleReceive);
+
+    return () => {
+      socketInstance.off("receive_message", handleReceive);
+    };
+  }, [socketInstance, room]);
+
+  // Fetch chat history once
   useEffect(() => {
     const fetchChats = async () => {
       try {
@@ -60,8 +75,9 @@ const Chat = () => {
     };
 
     if (member1 && member2) fetchChats();
-  }, [member1, member2]);
+  }, []); // only once on mount
 
+  // Fetch receiver info
   useEffect(() => {
     const fetchReceiver = async () => {
       try {
@@ -77,12 +93,13 @@ const Chat = () => {
     if (member2) fetchReceiver();
   }, [member2]);
 
+  // Auto-scroll to bottom on new message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !socketInstance) return;
 
     const data = {
       senderId: member1,
@@ -91,8 +108,13 @@ const Chat = () => {
       room,
     };
 
-    socket.emit("send_message", data);
+    // 🟢 Show message immediately for sender
+    setMessages((prev) => [...prev, data]);
 
+    // Emit to others in the room
+    socketInstance.emit("send_message", data);
+
+    // Save to DB
     try {
       await axios.post(`${import.meta.env.VITE_BASE_URL}/api/chat/save`, data);
     } catch (err) {
