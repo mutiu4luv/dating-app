@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import PaymentSuccess from "./components/payment/PaymentScreen";
 import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
 import MessagesScreen from "./screens/messages/MessagesScreen";
+import { io } from "socket.io-client";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -19,6 +20,19 @@ function App() {
     if (!token) {
       localStorage.clear(); // Clear everything
     }
+  }, []);
+
+  const socket = io("http://localhost:7000");
+
+  useEffect(() => {
+    const userId = localStorage.getItem("userId");
+    if (userId) {
+      socket.emit("user_connected", userId);
+    }
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   return (

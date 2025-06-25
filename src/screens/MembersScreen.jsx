@@ -19,8 +19,8 @@ import ClipLoader from "react-spinners/ClipLoader";
 
 const getCurrentUserId = () => localStorage.getItem("userId");
 const MAX_DESCRIPTION_LINES = 2;
-const CARD_HEIGHT = 450;
-const CARD_CONTENT_HEIGHT = 170;
+const CARD_HEIGHT = 480; // Increased
+const CARD_CONTENT_HEIGHT = 190; // Increased
 
 const Members = () => {
   const navigate = useNavigate();
@@ -28,6 +28,7 @@ const Members = () => {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
   const [mergeStatuses, setMergeStatuses] = useState({});
+  const [userStatuses, setUserStatuses] = useState({});
   const userId = getCurrentUserId();
 
   useEffect(() => {
@@ -53,8 +54,7 @@ const Members = () => {
                 }/merge/status?member1=${userId}&member2=${member._id}`
               );
               return { memberId: member._id, status: statusRes.data };
-            } catch (err) {
-              console.error("Error fetching status for member", member._id);
+            } catch {
               return { memberId: member._id, status: {} };
             }
           })
@@ -64,11 +64,32 @@ const Members = () => {
         statuses.forEach(({ memberId, status }) => {
           statusMap[memberId] = status;
         });
+        setMergeStatuses(statusMap);
+
+        const onlineStatuses = await Promise.all(
+          data.map(async (member) => {
+            try {
+              const res = await axios.get(
+                `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
+              );
+              return { memberId: member._id, status: res.data };
+            } catch {
+              return {
+                memberId: member._id,
+                status: { isOnline: false, lastSeen: null },
+              };
+            }
+          })
+        );
+
+        const statusObj = {};
+        onlineStatuses.forEach(({ memberId, status }) => {
+          statusObj[memberId] = status;
+        });
+        setUserStatuses(statusObj);
 
         setMembers(data);
-        setMergeStatuses(statusMap);
-      } catch (err) {
-        console.error("Error fetching members or statuses:", err);
+      } catch {
         setMembers([]);
       }
       setLoading(false);
@@ -184,13 +205,14 @@ const Members = () => {
             const isExpanded = expanded[member._id];
             const isLong = member.description?.length > 100;
             const status = mergeStatuses[member._id];
+            const onlineStatus = userStatuses[member._id];
 
             return (
               <Grid item xs={12} sm={6} md={4} lg={3} key={member._id}>
                 <Card
                   sx={{
                     borderRadius: 5,
-                    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.25)",
+                    boxShadow: "0 8px 32px rgba(31, 38, 135, 0.25)",
                     background: "rgba(255,255,255,0.08)",
                     backdropFilter: "blur(8px)",
                     border: "1.5px solid rgba(236,72,153,0.18)",
@@ -204,7 +226,7 @@ const Members = () => {
                     transition: "height 0.3s, box-shadow 0.2s, transform 0.2s",
                     "&:hover": {
                       transform: "translateY(-8px) scale(1.04)",
-                      boxShadow: "0 16px 40px 0 rgba(31,38,135,0.30)",
+                      boxShadow: "0 16px 40px rgba(31,38,135,0.30)",
                     },
                   }}
                 >
@@ -243,6 +265,7 @@ const Members = () => {
                     >
                       {member.name}
                     </Typography>
+
                     <Stack
                       direction="row"
                       alignItems="center"
@@ -260,6 +283,44 @@ const Members = () => {
                         {member.location}
                       </Typography>
                     </Stack>
+
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      mb={1}
+                    >
+                      {onlineStatus?.isOnline ? (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: "bold",
+                            fontSize: 14,
+                            background:
+                              "linear-gradient(to right, #32CD32, #7CFC00)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                          }}
+                        >
+                          🟢 Online
+                        </Typography>
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontSize: 13,
+                            color: "#facc15", // Yellow-400
+                            opacity: 0.85,
+                          }}
+                        >
+                          Last seen:{" "}
+                          {onlineStatus?.lastSeen
+                            ? new Date(onlineStatus.lastSeen).toLocaleString()
+                            : "Unknown"}
+                        </Typography>
+                      )}
+                    </Box>
+
                     <Box sx={{ width: "100%", mb: 2 }}>
                       <Typography
                         variant="body2"
@@ -276,7 +337,7 @@ const Members = () => {
                             : MAX_DESCRIPTION_LINES,
                           textOverflow: "ellipsis",
                           whiteSpace: isExpanded ? "normal" : "initial",
-                          maxHeight: isExpanded ? "none" : "3.6em",
+                          maxHeight: isExpanded ? "none" : "4.6em",
                         }}
                       >
                         {member.description}
