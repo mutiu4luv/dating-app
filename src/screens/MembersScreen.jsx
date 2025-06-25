@@ -9,7 +9,11 @@ import {
   Typography,
   Stack,
   Button,
+  TextField,
+  InputAdornment,
+  Pagination,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import Navbar from "../components/Navbar/Navbar";
@@ -19,16 +23,20 @@ import ClipLoader from "react-spinners/ClipLoader";
 
 const getCurrentUserId = () => localStorage.getItem("userId");
 const MAX_DESCRIPTION_LINES = 2;
-const CARD_HEIGHT = 480; // Increased
-const CARD_CONTENT_HEIGHT = 190; // Increased
+const CARD_HEIGHT = 480;
+const CARD_CONTENT_HEIGHT = 190;
+const CARDS_PER_PAGE = 8;
 
 const Members = () => {
   const navigate = useNavigate();
   const [members, setMembers] = useState([]);
+  const [filteredMembers, setFilteredMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState({});
   const [mergeStatuses, setMergeStatuses] = useState({});
   const [userStatuses, setUserStatuses] = useState({});
+  const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
   const userId = getCurrentUserId();
 
   useEffect(() => {
@@ -44,27 +52,6 @@ const Members = () => {
         const data = Array.isArray(res.data)
           ? res.data
           : res.data.members || res.data.matches || [];
-
-        const statuses = await Promise.all(
-          data.map(async (member) => {
-            try {
-              const statusRes = await axios.get(
-                `${
-                  import.meta.env.VITE_BASE_URL
-                }/merge/status?member1=${userId}&member2=${member._id}`
-              );
-              return { memberId: member._id, status: statusRes.data };
-            } catch {
-              return { memberId: member._id, status: {} };
-            }
-          })
-        );
-
-        const statusMap = {};
-        statuses.forEach(({ memberId, status }) => {
-          statusMap[memberId] = status;
-        });
-        setMergeStatuses(statusMap);
 
         const onlineStatuses = await Promise.all(
           data.map(async (member) => {
@@ -88,7 +75,35 @@ const Members = () => {
         });
         setUserStatuses(statusObj);
 
-        setMembers(data);
+        const sorted = [...data].sort((a, b) => {
+          const aOnline = statusObj[a._id]?.isOnline ? -1 : 1;
+          const bOnline = statusObj[b._id]?.isOnline ? -1 : 1;
+          return aOnline - bOnline;
+        });
+
+        const statuses = await Promise.all(
+          sorted.map(async (member) => {
+            try {
+              const statusRes = await axios.get(
+                `${
+                  import.meta.env.VITE_BASE_URL
+                }/merge/status?member1=${userId}&member2=${member._id}`
+              );
+              return { memberId: member._id, status: statusRes.data };
+            } catch {
+              return { memberId: member._id, status: {} };
+            }
+          })
+        );
+
+        const statusMap = {};
+        statuses.forEach(({ memberId, status }) => {
+          statusMap[memberId] = status;
+        });
+        setMergeStatuses(statusMap);
+
+        setMembers(sorted);
+        setFilteredMembers(sorted);
       } catch {
         setMembers([]);
       }
@@ -102,29 +117,25 @@ const Members = () => {
     setExpanded((prev) => ({ ...prev, [member2]: !prev[member2] }));
   };
 
-  const handleMerge = (member2) => {
-    navigate(`/merge/${userId}/${member2}`);
+  const handleMerge = (member2) => navigate(`/merge/${userId}/${member2}`);
+  const handleChat = (member2) => navigate(`/chat/${member2}`);
+
+  const handleSearch = (e) => {
+    const term = e.target.value.toLowerCase();
+    setSearchTerm(term);
+    const filtered = members.filter((m) =>
+      m.name?.toLowerCase().includes(term)
+    );
+    setFilteredMembers(filtered);
+    setCurrentPage(1);
   };
 
-  const handleChat = (member2) => {
-    navigate(`/chat/${member2}`);
-  };
+  const paginatedMembers = filteredMembers.slice(
+    (currentPage - 1) * CARDS_PER_PAGE,
+    currentPage * CARDS_PER_PAGE
+  );
 
-  const getButtonLabel = (status) => {
-    if (status?.isMerged && status?.subscriptionActive) {
-      return status?.hasChattedBefore ? "Open Chat" : "Chat";
-    }
-    return "Merge";
-  };
-
-  const getButtonAction = (status, memberId) => {
-    if (status?.isMerged && status?.subscriptionActive) {
-      return () => handleChat(memberId);
-    }
-    return () => handleMerge(memberId);
-  };
-
-  if (!userId) {
+  if (!userId)
     return (
       <Box
         minHeight="100vh"
@@ -135,14 +146,11 @@ const Members = () => {
           justifyContent: "center",
         }}
       >
-        <Typography variant="h6" color="#fff">
-          Please log in to view members.
-        </Typography>
+        <Typography color="#fff">Please log in to view members.</Typography>
       </Box>
     );
-  }
 
-  if (loading) {
+  if (loading)
     return (
       <Box
         minHeight="100vh"
@@ -156,25 +164,6 @@ const Members = () => {
         <ClipLoader size={70} color="#ec4899" />
       </Box>
     );
-  }
-
-  if (!members.length) {
-    return (
-      <Box
-        minHeight="100vh"
-        sx={{
-          background: "#181c2b",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Typography variant="h6" color="#fff">
-          No members found for your relationship type.
-        </Typography>
-      </Box>
-    );
-  }
 
   return (
     <>
@@ -188,27 +177,40 @@ const Members = () => {
           px: { xs: 1, sm: 2, md: 4 },
         }}
       >
-        <Box display="flex" alignItems="center" justifyContent="center" mb={4}>
+        <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
           <FavoriteIcon sx={{ color: "#ec4899", mr: 1, fontSize: 40 }} />
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            color="#fff"
-            sx={{ textShadow: "0 2px 8px rgba(0,0,0,0.25)", letterSpacing: 1 }}
-          >
+          <Typography variant="h4" fontWeight="bold" color="#fff">
             Members With Your Relationship Type
           </Typography>
         </Box>
 
-        <Grid container spacing={4} justifyContent="center">
-          {members.map((member) => {
+        <Box display="flex" justifyContent="center" mb={4}>
+          <TextField
+            variant="outlined"
+            size="small"
+            placeholder="Search by name"
+            value={searchTerm}
+            onChange={handleSearch}
+            sx={{ backgroundColor: "#fff", borderRadius: 2, width: "300px" }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" />
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        <Grid container spacing={3} justifyContent="center">
+          {paginatedMembers.map((member) => {
             const isExpanded = expanded[member._id];
             const isLong = member.description?.length > 100;
             const status = mergeStatuses[member._id];
             const onlineStatus = userStatuses[member._id];
 
             return (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={member._id}>
+              <Grid item xs={6} sm={4} md={3} lg={3} key={member._id}>
                 <Card
                   sx={{
                     borderRadius: 5,
@@ -216,18 +218,9 @@ const Members = () => {
                     background: "rgba(255,255,255,0.08)",
                     backdropFilter: "blur(8px)",
                     border: "1.5px solid rgba(236,72,153,0.18)",
-                    width: "100%",
-                    maxWidth: 220,
+                    maxWidth: 240,
                     height: isExpanded ? "auto" : `${CARD_HEIGHT}px`,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
                     p: 0,
-                    transition: "height 0.3s, box-shadow 0.2s, transform 0.2s",
-                    "&:hover": {
-                      transform: "translateY(-8px) scale(1.04)",
-                      boxShadow: "0 16px 40px rgba(31,38,135,0.30)",
-                    },
                   }}
                 >
                   <CardMedia
@@ -235,7 +228,6 @@ const Members = () => {
                     image={member.photo}
                     alt={member.name}
                     sx={{
-                      width: "100%",
                       height: 210,
                       objectFit: "cover",
                       borderRadius: "18px 18px 0 0",
@@ -244,83 +236,58 @@ const Members = () => {
                   />
                   <CardContent
                     sx={{
-                      width: "100%",
-                      flexGrow: 1,
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
-                      justifyContent: "space-between",
-                      p: 2,
-                      overflow: "hidden",
                       height: isExpanded ? "auto" : `${CARD_CONTENT_HEIGHT}px`,
-                      transition: "height 0.3s",
+                      p: 2,
                     }}
                   >
                     <Typography
                       variant="h6"
-                      fontWeight="bold"
                       color="#ec4899"
+                      fontWeight="bold"
                       gutterBottom
                       align="center"
                     >
                       {member.name}
                     </Typography>
-
                     <Stack
                       direction="row"
                       alignItems="center"
-                      justifyContent="center"
                       spacing={1}
                       mb={1}
                     >
                       <LocationOnIcon sx={{ color: "#db2777", fontSize: 20 }} />
-                      <Typography
-                        variant="body2"
-                        color="#b993d6"
-                        fontWeight="medium"
-                        sx={{ fontSize: 15 }}
-                      >
+                      <Typography variant="body2" color="#b993d6">
                         {member.location}
                       </Typography>
                     </Stack>
-
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      mb={1}
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: 14,
+                        background: onlineStatus?.isOnline
+                          ? "linear-gradient(to right, #32CD32, #7CFC00)"
+                          : "none",
+                        WebkitBackgroundClip: onlineStatus?.isOnline
+                          ? "text"
+                          : "none",
+                        WebkitTextFillColor: onlineStatus?.isOnline
+                          ? "transparent"
+                          : "#facc15",
+                        opacity: 0.85,
+                      }}
                     >
-                      {onlineStatus?.isOnline ? (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: "bold",
-                            fontSize: 14,
-                            background:
-                              "linear-gradient(to right, #32CD32, #7CFC00)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                          }}
-                        >
-                          🟢 Online
-                        </Typography>
-                      ) : (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontSize: 13,
-                            color: "#facc15", // Yellow-400
-                            opacity: 0.85,
-                          }}
-                        >
-                          Last seen:{" "}
-                          {onlineStatus?.lastSeen
-                            ? new Date(onlineStatus.lastSeen).toLocaleString()
-                            : "Unknown"}
-                        </Typography>
-                      )}
-                    </Box>
-
+                      {onlineStatus?.isOnline
+                        ? "🟢 Online"
+                        : `Last seen: ${
+                            onlineStatus?.lastSeen
+                              ? new Date(onlineStatus.lastSeen).toLocaleString()
+                              : "Unknown"
+                          }`}
+                    </Typography>
                     <Box sx={{ width: "100%", mb: 2 }}>
                       <Typography
                         variant="body2"
@@ -349,8 +316,6 @@ const Members = () => {
                             color: "#ec4899",
                             textTransform: "none",
                             mt: 1,
-                            fontWeight: "bold",
-                            fontSize: 13,
                           }}
                           onClick={() => handleExpandClick(member._id)}
                         >
@@ -358,7 +323,6 @@ const Members = () => {
                         </Button>
                       )}
                     </Box>
-
                     <Button
                       variant="contained"
                       sx={{
@@ -368,16 +332,19 @@ const Members = () => {
                         fontWeight: "bold",
                         borderRadius: 3,
                         boxShadow: "0 2px 8px rgba(236,72,153,0.15)",
-                        letterSpacing: 1,
                         minWidth: 80,
-                        "&:hover": {
-                          background:
-                            "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",
-                        },
                       }}
-                      onClick={getButtonAction(status, member._id)}
+                      onClick={
+                        status?.isMerged && status?.subscriptionActive
+                          ? () => handleChat(member._id)
+                          : () => handleMerge(member._id)
+                      }
                     >
-                      {getButtonLabel(status)}
+                      {status?.isMerged && status?.subscriptionActive
+                        ? status?.hasChattedBefore
+                          ? "Open Chat"
+                          : "Chat"
+                        : "Merge"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -385,6 +352,16 @@ const Members = () => {
             );
           })}
         </Grid>
+
+        <Box mt={4} display="flex" justifyContent="center">
+          <Pagination
+            count={Math.ceil(filteredMembers.length / CARDS_PER_PAGE)}
+            page={currentPage}
+            onChange={(_, value) => setCurrentPage(value)}
+            color="secondary"
+            shape="rounded"
+          />
+        </Box>
       </Box>
       <Footer />
     </>

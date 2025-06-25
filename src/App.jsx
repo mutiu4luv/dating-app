@@ -11,6 +11,7 @@ import PaymentSuccess from "./components/payment/PaymentScreen";
 import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
 import MessagesScreen from "./screens/messages/MessagesScreen";
 import { io } from "socket.io-client";
+import UpdateProfileScreen from "./screens/UpdateProfileScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -72,6 +73,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <UpdateProfileScreen />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/merge/:userId/:member2"
           element={
