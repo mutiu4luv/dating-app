@@ -46,11 +46,11 @@ const EbookAdvert = () => {
       >
         <CardMedia
           component="img"
-          image="https://images.unsplash.com/photo-1603775020644-eb8decd79923?auto=format&fit=crop&w=800&q=80"
+          image="https://cdn.pixabay.com/photo/2016/11/29/05/08/adult-1867093_1280.jpg"
           alt="Relationship eBook"
           sx={{
             width: isMobile ? "100%" : 400,
-            height: isMobile ? 200 : "auto",
+            height: isMobile ? 250 : "100%",
             objectFit: "cover",
             borderRight: isMobile ? "none" : "2px solid #ec4899",
           }}

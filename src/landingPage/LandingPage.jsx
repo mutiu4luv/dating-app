@@ -6,6 +6,7 @@ import HowItWorks from "../components/HowItWorks/HowItWorks";
 import Footer from "../components/Footer/Footer";
 import CategoryGrid from "../components/CategoryGrid/CategoryGrid";
 import EbookAdvert from "../components/E-book/EbookAdvert";
+// import TestimonyScreen from "../components/testimony/Testimony";
 
 const LandingPage = () => {
   return (
@@ -15,6 +16,7 @@ const LandingPage = () => {
       <LoveStory />
       <CategoryGrid />
       <HowItWorks />
+      {/* <TestimonyScreen /> */}
       <EbookAdvert />
       <Footer />
     </div>
