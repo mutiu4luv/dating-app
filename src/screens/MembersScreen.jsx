@@ -265,7 +265,11 @@ const Members = () => {
                       </Typography>
                     </Stack>
 
-                    <Tooltip title={onlineStatus?.lastSeen?.exact || "Unknown"}>
+                    <Tooltip
+                      title={
+                        onlineStatus?.lastSeen?.exact.relative || "Unknown"
+                      }
+                    >
                       <Typography
                         variant="body2"
                         sx={{
