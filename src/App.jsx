@@ -24,7 +24,14 @@ function App() {
     }
   }, []);
 
-  const socket = io("http://localhost:7000");
+  // const socket = io("http://localhost:7000");
+
+  const socket = io(
+    import.meta.env.VITE_BACKEND_URL || "http://localhost:7000",
+    {
+      transports: ["websocket"],
+    }
+  );
 
   useEffect(() => {
     const userId = localStorage.getItem("userId");
