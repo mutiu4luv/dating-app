@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "..//utility/axiosInstance";
 import {
   Box,
   Grid,
@@ -45,7 +45,7 @@ const Members = () => {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get(
+        const res = await axiosInstance.get(
           `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -57,7 +57,7 @@ const Members = () => {
         const onlineStatuses = await Promise.all(
           data.map(async (member) => {
             try {
-              const res = await axios.get(
+              const res = await axiosInstance.get(
                 `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
               );
               return { memberId: member._id, status: res.data };
@@ -69,7 +69,7 @@ const Members = () => {
             }
           })
         );
-        console.log(onlineStatuses);
+
         const statusObj = {};
         onlineStatuses.forEach(({ memberId, status }) => {
           statusObj[memberId] = status;
@@ -85,7 +85,7 @@ const Members = () => {
         const statuses = await Promise.all(
           sorted.map(async (member) => {
             try {
-              const statusRes = await axios.get(
+              const statusRes = await axiosInstance.get(
                 `${
                   import.meta.env.VITE_BASE_URL
                 }/api/merge/status?member1=${userId}&member2=${member._id}`
@@ -101,8 +101,8 @@ const Members = () => {
         statuses.forEach(({ memberId, status }) => {
           statusMap[memberId] = status;
         });
-        setMergeStatuses(statusMap);
 
+        setMergeStatuses(statusMap);
         setMembers(sorted);
         setFilteredMembers(sorted);
       } catch {
