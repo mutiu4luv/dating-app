@@ -12,6 +12,7 @@ import {
   TextField,
   InputAdornment,
   Pagination,
+  Tooltip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -263,31 +264,34 @@ const Members = () => {
                         {member.location}
                       </Typography>
                     </Stack>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: 14,
-                        background: onlineStatus?.isOnline
-                          ? "linear-gradient(to right, #32CD32, #7CFC00)"
-                          : "none",
-                        WebkitBackgroundClip: onlineStatus?.isOnline
-                          ? "text"
-                          : "none",
-                        WebkitTextFillColor: onlineStatus?.isOnline
-                          ? "transparent"
-                          : "#facc15",
-                        opacity: 0.85,
-                      }}
-                    >
-                      {onlineStatus?.isOnline
-                        ? "🟢 Online"
-                        : `Last seen: ${
-                            onlineStatus?.lastSeen
-                              ? new Date(onlineStatus.lastSeen).toLocaleString()
-                              : "Unknown"
-                          }`}
-                    </Typography>
+
+                    <Tooltip title={onlineStatus?.lastSeen?.exact || "Unknown"}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: "bold",
+                          fontSize: 14,
+                          background: onlineStatus?.isOnline
+                            ? "linear-gradient(to right, #32CD32, #7CFC00)"
+                            : "none",
+                          WebkitBackgroundClip: onlineStatus?.isOnline
+                            ? "text"
+                            : "none",
+                          WebkitTextFillColor: onlineStatus?.isOnline
+                            ? "transparent"
+                            : "#facc15",
+                          opacity: 0.85,
+                          cursor: "help",
+                        }}
+                      >
+                        {onlineStatus?.isOnline
+                          ? "🟢 Online"
+                          : `Last seen: ${
+                              onlineStatus?.lastSeen?.relative || "Unknown"
+                            }`}
+                      </Typography>
+                    </Tooltip>
+
                     <Box sx={{ width: "100%", mb: 2 }}>
                       <Typography
                         variant="body2"

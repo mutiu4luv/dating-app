@@ -12,6 +12,7 @@ import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
 import MessagesScreen from "./screens/messages/MessagesScreen";
 import { io } from "socket.io-client";
 import UpdateProfileScreen from "./screens/UpdateProfileScreen";
+import OtpScreen from "./screens/OtpScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -93,6 +94,7 @@ function App() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Signup />} />
+        <Route path="/verify-registration" element={<OtpScreen />} />
         <Route
           path="/messages"
           element={

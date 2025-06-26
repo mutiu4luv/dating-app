@@ -352,6 +352,7 @@ const Signup = () => {
                 ),
               }}
             />
+
             <Button
               type="submit"
               variant="contained"
@@ -397,3 +398,94 @@ const Signup = () => {
 };
 
 export default Signup;
+// import React, { useState } from "react";
+// import {
+//   Box,
+//   Button,
+//   TextField,
+//   Typography,
+//   Paper,
+//   Stack,
+//   CircularProgress,
+// } from "@mui/material";
+// import axios from "axios";
+// import { useNavigate } from "react-router-dom";
+
+// const RegisterEmail = () => {
+//   const [email, setEmail] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [message, setMessage] = useState("");
+//   const navigate = useNavigate();
+
+//   const handleSendOtp = async (e) => {
+//     e.preventDefault();
+//     setLoading(true);
+//     setMessage("");
+//     try {
+//       const res = await axios.post(
+//         `${import.meta.env.VITE_BACKEND_URL}/api/user/register`,
+//         { email }
+//       );
+//       setMessage(res.data.message || "OTP sent!");
+//       localStorage.setItem("pendingEmail", email);
+//       navigate("/verify-registration");
+//     } catch (err) {
+//       setMessage(err.response?.data?.message || "Failed to send OTP.");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <Box
+//       minHeight="100vh"
+//       display="flex"
+//       justifyContent="center"
+//       alignItems="center"
+//       sx={{
+//         background:
+//           "linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)",
+//         px: 2,
+//       }}
+//     >
+//       <Paper elevation={6} sx={{ p: 4, borderRadius: 4, width: 400 }}>
+//         <Typography
+//           variant="h5"
+//           mb={2}
+//           align="center"
+//           color="#ec4899"
+//           fontWeight="bold"
+//         >
+//           Enter Your Email
+//         </Typography>
+//         <form onSubmit={handleSendOtp}>
+//           <Stack spacing={2}>
+//             <TextField
+//               type="email"
+//               label="Email Address"
+//               value={email}
+//               onChange={(e) => setEmail(e.target.value)}
+//               required
+//               fullWidth
+//             />
+//             <Button
+//               type="submit"
+//               variant="contained"
+//               disabled={loading}
+//               sx={{ background: "#ec4899", fontWeight: "bold" }}
+//             >
+//               {loading ? <CircularProgress size={24} /> : "Send OTP"}
+//             </Button>
+//           </Stack>
+//         </form>
+//         {message && (
+//           <Typography variant="body2" mt={2} align="center" color="error">
+//             {message}
+//           </Typography>
+//         )}
+//       </Paper>
+//     </Box>
+//   );
+// };
+
+// export default RegisterEmail;
