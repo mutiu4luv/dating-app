@@ -69,7 +69,7 @@ const Members = () => {
             }
           })
         );
-
+        console.log(onlineStatuses);
         const statusObj = {};
         onlineStatuses.forEach(({ memberId, status }) => {
           statusObj[memberId] = status;
@@ -286,7 +286,9 @@ const Members = () => {
                       >
                         {onlineStatus?.isOnline
                           ? "🟢 Online"
-                          : `Last seen: ${onlineStatus?.lastSeen || "Unknown"}`}
+                          : `Last seen: ${
+                              onlineStatus?.lastSeen?.relative || "Unknown"
+                            }`}
                       </Typography>
                     </Tooltip>
 
