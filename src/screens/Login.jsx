@@ -58,6 +58,8 @@ const Login = () => {
       localStorage.setItem("userId", userId);
       localStorage.setItem("username", data.member?.username); // <-- Save username
       localStorage.setItem("email", data.member?.email); // <-- Save username
+      console.log("✅ Token stored:", localStorage.getItem("token"));
+      console.log("✅ User ID stored:", localStorage.getItem("userId"));
       navigate(`/members/${userId}`, { replace: true });
       console.log(data);
     } catch (err) {

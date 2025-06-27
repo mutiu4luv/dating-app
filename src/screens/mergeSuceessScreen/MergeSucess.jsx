@@ -13,6 +13,7 @@ import {
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
+import jwtDecode from "jwt-decode";
 
 const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
@@ -51,6 +52,31 @@ const MergeScreen = () => {
     };
     fetchStatus();
   }, [member1, member2]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+
+    if (!token || !userId) {
+      localStorage.clear();
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const decoded = jwtDecode(token);
+      const now = Date.now() / 1000; // in seconds
+      if (decoded.exp < now) {
+        console.warn("🔐 Token expired. Logging out...");
+        localStorage.clear();
+        navigate("/login");
+      }
+    } catch (err) {
+      console.warn("🔐 Invalid token format. Logging out...");
+      localStorage.clear();
+      navigate("/login");
+    }
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);

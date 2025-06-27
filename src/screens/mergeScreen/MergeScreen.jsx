@@ -70,9 +70,8 @@ const MergeScreen = () => {
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
 
         if (res.data.hasPaid) {
-          // localStorage.setItem("hasPaid", "true");
           localStorage.setItem(
-            "hasPaid",
+            `hasPaid_${member2}`,
             JSON.stringify({ status: true, paidAt: Date.now() })
           );
         }
@@ -93,10 +92,16 @@ const MergeScreen = () => {
     const mergeAfterPayment = async () => {
       if (!reference || !member1 || !member2) return;
 
+      const selectedPlan = sessionStorage.getItem("selectedPlan");
+
       try {
         const res = await api.post(
           "/merge",
-          { memberId1: member1, memberId2: member2 },
+          {
+            memberId1: member1,
+            memberId2: member2,
+            plan: selectedPlan || "free",
+          },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -105,14 +110,33 @@ const MergeScreen = () => {
         );
 
         if (res.data.match) {
-          localStorage.setItem("hasPaid", "true");
+          localStorage.setItem(
+            `hasPaid_${member2}`,
+            JSON.stringify({ status: true, paidAt: Date.now() })
+          );
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
         }
       } catch (err) {
+        const msg =
+          err?.response?.data?.message || "Merge failed after payment.";
+
+        // If plan is free and limit exceeded, advise upgrade
+        if (
+          err.response &&
+          err.response.status === 403 &&
+          msg.toLowerCase().includes("monthly limit")
+        ) {
+          setHasPaid(false); // Unlock other plans
+          setErrorMessage(
+            "Free plan limit exceeded. Please choose a higher plan to continue."
+          );
+          return;
+        }
+
+        setErrorMessage(msg);
         console.error("Error during merge after payment:", err);
-        setErrorMessage("Something went wrong after payment.");
       }
     };
 
@@ -136,7 +160,7 @@ const MergeScreen = () => {
       try {
         const res = await api.post(
           "/merge",
-          { memberId1: member1, memberId2: member2 },
+          { memberId1: member1, memberId2: member2, plan: planKey },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -145,14 +169,36 @@ const MergeScreen = () => {
         );
 
         if (res.data.match) {
-          localStorage.setItem("hasPaid", "true");
+          localStorage.setItem(
+            `hasPaid_${member2}`,
+            JSON.stringify({ status: true, paidAt: Date.now() })
+          );
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
+
+          if (
+            res.data.message &&
+            res.data.message.toLowerCase().includes("monthly limit")
+          ) {
+            setHasPaid(false);
+          }
         }
       } catch (err) {
+        const msg =
+          err?.response?.data?.message ||
+          "Something went wrong. Try again or choose another plan.";
+        setErrorMessage(msg);
+
+        if (
+          err.response &&
+          err.response.status === 403 &&
+          msg.toLowerCase().includes("monthly limit")
+        ) {
+          setHasPaid(false);
+        }
+
         console.error("Error finalizing merge:", err);
-        setErrorMessage("Failed to finalize merge.");
       }
       return;
     }
@@ -169,16 +215,27 @@ const MergeScreen = () => {
           }
         );
         if (res.data.match) {
-          localStorage.setItem("hasPaid", "true");
+          localStorage.setItem(
+            `hasPaid_${member2}`,
+            JSON.stringify({ status: true, paidAt: Date.now() })
+          );
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
         }
       } catch (err) {
+        const msg = err?.response?.data?.message || "Merge failed. Try again.";
+        setErrorMessage(msg);
+
+        if (
+          err.response &&
+          err.response.status === 403 &&
+          msg.toLowerCase().includes("monthly limit")
+        ) {
+          setHasPaid(false);
+        }
+
         console.error("Error using free plan:", err);
-        setErrorMessage(
-          err.response?.data?.message || "Merge failed. Try again."
-        );
       }
       return;
     }
