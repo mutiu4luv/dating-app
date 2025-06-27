@@ -68,6 +68,14 @@ const MergeScreen = () => {
         setHasPaid(res.data.hasPaid);
         setIsMerged(res.data.isMerged);
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
+
+        if (res.data.hasPaid) {
+          // localStorage.setItem("hasPaid", "true");
+          localStorage.setItem(
+            "hasPaid",
+            JSON.stringify({ status: true, paidAt: Date.now() })
+          );
+        }
       } catch (err) {
         console.error("Error fetching merge status:", err);
         alert("Could not verify merge/payment status.");
@@ -97,6 +105,7 @@ const MergeScreen = () => {
         );
 
         if (res.data.match) {
+          localStorage.setItem("hasPaid", "true");
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -136,6 +145,7 @@ const MergeScreen = () => {
         );
 
         if (res.data.match) {
+          localStorage.setItem("hasPaid", "true");
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -159,6 +169,7 @@ const MergeScreen = () => {
           }
         );
         if (res.data.match) {
+          localStorage.setItem("hasPaid", "true");
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
