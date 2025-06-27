@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -11,6 +11,10 @@ import {
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
+import ebook from "../../assets/images/ebook.jpeg";
+import ebook1 from "../../assets/images/ebook1.jpeg";
+import ebook2 from "../../assets/images/ebook2.jpeg";
+import ebook3 from "../../assets/images/ebook3.jpeg";
 
 // Blinking animation
 const blink = keyframes`
@@ -18,8 +22,20 @@ const blink = keyframes`
   50% { opacity: 0.7; }
 `;
 
+const images = [ebook, ebook1, ebook2, ebook3];
+
 const EbookAdvert = () => {
   const isMobile = useMediaQuery("(max-width:600px)");
+  const [imageIndex, setImageIndex] = useState(0);
+
+  // Change image every 6 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setImageIndex((prev) => (prev + 1) % images.length);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Box
@@ -46,13 +62,14 @@ const EbookAdvert = () => {
       >
         <CardMedia
           component="img"
-          image="https://cdn.pixabay.com/photo/2016/11/29/05/08/adult-1867093_1280.jpg"
+          image={images[imageIndex]}
           alt="Relationship eBook"
           sx={{
             width: isMobile ? "100%" : 400,
             height: isMobile ? 250 : "100%",
             objectFit: "cover",
             borderRight: isMobile ? "none" : "2px solid #ec4899",
+            transition: "opacity 1s ease-in-out",
           }}
         />
         <CardContent
