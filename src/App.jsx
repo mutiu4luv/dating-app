@@ -13,6 +13,8 @@ import MessagesScreen from "./screens/messages/MessagesScreen";
 import { io } from "socket.io-client";
 import UpdateProfileScreen from "./screens/UpdateProfileScreen";
 import OtpScreen from "./screens/OtpScreen";
+import ForgotPassword from "./screens/forgotPasswordScreen/ForgotPassword";
+import ResetPassword from "./screens/forgotPasswordScreen/ResetPasswordScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -99,6 +101,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Signup />} />
         <Route path="/verify-registration" element={<OtpScreen />} />

@@ -165,6 +165,16 @@ const Login = () => {
             {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
           </Button>
         </form>
+        <Divider sx={{ my: 3 }}></Divider>
+
+        <Typography variant="body2" align="center" mt={1}>
+          <Link
+            to="/forgot-password"
+            style={{ color: "#ec4899", fontWeight: 500 }}
+          >
+            Forgot Password?
+          </Link>
+        </Typography>
         <Divider sx={{ my: 3 }}>or</Divider>
         <Typography variant="body2" align="center">
           Don't have an account?{" "}
