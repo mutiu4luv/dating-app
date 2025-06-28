@@ -13,7 +13,7 @@ import {
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
@@ -34,6 +34,29 @@ const MergeScreen = () => {
     premium: { label: "Premium - ₦10,000 (unlimited)", amount: 10000 },
   };
 
+  // ✅ SAFELY validate token once on mount
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+
+      if (!token || !userId) throw new Error("Missing token or userId");
+
+      const decoded = jwtDecode(token);
+      const now = Date.now() / 1000;
+
+      if (!decoded.exp || decoded.exp < now) {
+        console.warn("Token expired");
+        throw new Error("Expired token");
+      }
+    } catch (err) {
+      console.warn("Invalid or expired token:", err.message);
+      localStorage.clear();
+      navigate("/login");
+    }
+  }, [navigate]);
+
+  // ✅ Fetch merge status
   useEffect(() => {
     const fetchStatus = async () => {
       if (!member1 || !member2) return;
@@ -41,8 +64,8 @@ const MergeScreen = () => {
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
-        setHasPaid(res.data.hasPaid);
-        setUserEmail(res.data.email || localStorage.getItem("email") || "");
+        setHasPaid(res.data?.hasPaid || false);
+        setUserEmail(res.data?.email || localStorage.getItem("email") || "");
       } catch (err) {
         console.error("❌ Error fetching merge status:", err);
         alert("Could not verify merge/payment status.");
@@ -53,31 +76,7 @@ const MergeScreen = () => {
     fetchStatus();
   }, [member1, member2]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-
-    if (!token || !userId) {
-      localStorage.clear();
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-      const now = Date.now() / 1000; // in seconds
-      if (decoded.exp < now) {
-        console.warn("🔐 Token expired. Logging out...");
-        localStorage.clear();
-        navigate("/login");
-      }
-    } catch (err) {
-      console.warn("🔐 Invalid token format. Logging out...");
-      localStorage.clear();
-      navigate("/login");
-    }
-  }, []);
-
+  // ✅ After redirect from Paystack
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const reference = urlParams.get("reference");
@@ -96,10 +95,10 @@ const MergeScreen = () => {
           }
         );
 
-        if (res.data.match) {
+        if (res.data?.match) {
           navigate(`/merge/success/${member2}`);
         } else {
-          alert("Merge failed: " + res.data.message);
+          alert("Merge failed: " + (res.data?.message || "Unknown error"));
         }
       } catch (err) {
         console.error("❌ Error during merge after payment:", err);
@@ -110,6 +109,7 @@ const MergeScreen = () => {
     mergeAfterPayment();
   }, [location.search, member1, member2, navigate]);
 
+  // ✅ Handle subscription and payment
   const handleMerge = async () => {
     if (!userEmail) {
       alert("Email missing. Please log in again.");
@@ -129,6 +129,7 @@ const MergeScreen = () => {
           member1,
           member2,
           plan: selectedPlan,
+          redirect_url: `${window.location.origin}/merge/${member1}/${member2}`,
         },
         {
           headers: {
