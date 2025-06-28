@@ -10,7 +10,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     try {
       await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/api/user/forgot-password`,
+        `${import.meta.env.VITE_BASE_URL}/api/auth/forgot-password`,
         { email }
       );
       setMessage("Check your email for the password reset link.");
