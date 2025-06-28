@@ -1,16 +1,25 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Box, TextField, Button, Typography, Paper } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import axios from "axios";
 
 const ResetPassword = () => {
   const { token } = useParams();
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/user/reset-password`,
@@ -20,13 +29,22 @@ const ResetPassword = () => {
         }
       );
 
-      // ✅ Save token & redirect
-      localStorage.setItem("token", res.data.token);
-      setMsg("Password reset successful. Logging in...");
+      // ✅ Save token and user details before navigating
+      const { token: newToken, user } = res.data;
+      if (newToken && user) {
+        localStorage.setItem("token", newToken);
+        localStorage.setItem("userId", user.id);
+        localStorage.setItem("username", user.username || "");
+        localStorage.setItem("email", user.email || "");
+      }
 
-      setTimeout(() => navigate(`/members/${res.data.user.id}`), 2000);
+      setMsg("Password reset successful. Redirecting...");
+      setTimeout(() => navigate("/login", { replace: true }), 2000);
     } catch (err) {
+      console.error("Reset error:", err);
       setMsg(err.response?.data?.message || "Reset failed.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -50,8 +68,18 @@ const ResetPassword = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }}>
-            Reset Password
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 2 }}
+            disabled={loading}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Reset Password"
+            )}
           </Button>
         </form>
         {msg && (
