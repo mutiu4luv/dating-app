@@ -12,15 +12,19 @@ const ResetPassword = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(
+      const res = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/user/reset-password`,
         {
           token,
           newPassword: password,
         }
       );
-      setMsg("Password reset successful. You can now log in.");
-      setTimeout(() => navigate("/login"), 2000);
+
+      // ✅ Save token & redirect
+      localStorage.setItem("token", res.data.token);
+      setMsg("Password reset successful. Logging in...");
+
+      setTimeout(() => navigate(`/members/${res.data.user.id}`), 2000);
     } catch (err) {
       setMsg(err.response?.data?.message || "Reset failed.");
     }
