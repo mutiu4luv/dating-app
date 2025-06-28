@@ -39,7 +39,7 @@ const ResetPassword = () => {
       }
 
       setMsg("Password reset successful. Redirecting...");
-      setTimeout(() => navigate("/login", { replace: true }), 2000);
+      setTimeout(() => navigate(`/members/${user.id}`), 2000);
     } catch (err) {
       console.error("Reset error:", err);
       setMsg(err.response?.data?.message || "Reset failed.");
