@@ -32,25 +32,25 @@ const MergeScreen = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const subscriptionPlans = {
-    free: {
+    Free: {
       label: "Free Plan",
       amount: 0,
       description: "Access 3 merges per month. Great for exploring!",
       icon: <FavoriteBorderIcon sx={{ fontSize: 32, color: "#22c55e" }} />,
     },
-    basic: {
+    Basic: {
       label: "Basic Plan",
       amount: 2000,
       description: "Access 10 merges per month for casual users.",
       icon: <StarIcon sx={{ fontSize: 32, color: "#3b82f6" }} />,
     },
-    standard: {
+    Standard: {
       label: "Standard Plan",
       amount: 3000,
       description: "20 merges/month. Best for serious users.",
       icon: <WorkspacePremiumIcon sx={{ fontSize: 32, color: "#f59e0b" }} />,
     },
-    premium: {
+    Premium: {
       label: "Premium Plan",
       amount: 5000,
       description: "Unlimited merges. Full experience unlocked.",
@@ -68,7 +68,6 @@ const MergeScreen = () => {
         setHasPaid(res.data.hasPaid);
         setIsMerged(res.data.isMerged);
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
-
         if (res.data.hasPaid) {
           localStorage.setItem(
             `hasPaid_${member2}`,
@@ -88,19 +87,16 @@ const MergeScreen = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const reference = urlParams.get("reference");
-
     const mergeAfterPayment = async () => {
       if (!reference || !member1 || !member2) return;
-
-      const selectedPlan = sessionStorage.getItem("selectedPlan");
-
+      const selectedPlan = sessionStorage.getItem("selectedPlan") || "Free";
       try {
         const res = await api.post(
           "/merge",
           {
             memberId1: member1,
             memberId2: member2,
-            plan: selectedPlan || "free",
+            plan: selectedPlan,
           },
           {
             headers: {
@@ -108,7 +104,6 @@ const MergeScreen = () => {
             },
           }
         );
-
         if (res.data.match) {
           localStorage.setItem(
             `hasPaid_${member2}`,
@@ -121,27 +116,32 @@ const MergeScreen = () => {
       } catch (err) {
         const msg =
           err?.response?.data?.message || "Merge failed after payment.";
-
-        // If plan is free and limit exceeded, advise upgrade
         if (
-          err.response &&
-          err.response.status === 403 &&
+          err.response?.status === 403 &&
           msg.toLowerCase().includes("monthly limit")
         ) {
-          setHasPaid(false); // Unlock other plans
+          setHasPaid(false);
           setErrorMessage(
             "Free plan limit exceeded. Please choose a higher plan to continue."
           );
           return;
         }
-
         setErrorMessage(msg);
         console.error("Error during merge after payment:", err);
       }
     };
-
     mergeAfterPayment();
   }, [location.search, member1, member2, navigate]);
+
+  useEffect(() => {
+    const hasPaidData = localStorage.getItem(`hasPaid_${member2}`);
+    if (hasPaidData) {
+      const parsed = JSON.parse(hasPaidData);
+      if (parsed.status) {
+        setHasPaid(true);
+      }
+    }
+  }, [member2]);
 
   const handlePlanClick = async (planKey) => {
     const plan = subscriptionPlans[planKey];
@@ -167,7 +167,6 @@ const MergeScreen = () => {
             },
           }
         );
-
         if (res.data.match) {
           localStorage.setItem(
             `hasPaid_${member2}`,
@@ -176,11 +175,7 @@ const MergeScreen = () => {
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
-
-          if (
-            res.data.message &&
-            res.data.message.toLowerCase().includes("monthly limit")
-          ) {
+          if (res.data.message?.toLowerCase().includes("monthly limit")) {
             setHasPaid(false);
           }
         }
@@ -189,15 +184,12 @@ const MergeScreen = () => {
           err?.response?.data?.message ||
           "Something went wrong. Try again or choose another plan.";
         setErrorMessage(msg);
-
         if (
-          err.response &&
-          err.response.status === 403 &&
+          err.response?.status === 403 &&
           msg.toLowerCase().includes("monthly limit")
         ) {
           setHasPaid(false);
         }
-
         console.error("Error finalizing merge:", err);
       }
       return;
@@ -207,7 +199,7 @@ const MergeScreen = () => {
       try {
         const res = await api.post(
           "/merge",
-          { memberId1: member1, memberId2: member2 },
+          { memberId1: member1, memberId2: member2, plan: planKey },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -226,16 +218,13 @@ const MergeScreen = () => {
       } catch (err) {
         const msg = err?.response?.data?.message || "Merge failed. Try again.";
         setErrorMessage(msg);
-
         if (
-          err.response &&
-          err.response.status === 403 &&
+          err.response?.status === 403 &&
           msg.toLowerCase().includes("monthly limit")
         ) {
           setHasPaid(false);
         }
-
-        console.error("Error using free plan:", err);
+        console.error("Error using Free plan:", err);
       }
       return;
     }
@@ -257,9 +246,9 @@ const MergeScreen = () => {
           },
         }
       );
-
       const { authorization_url } = paymentRes.data;
       if (authorization_url) {
+        sessionStorage.setItem("selectedPlan", planKey);
         window.location.href = authorization_url;
       } else {
         setErrorMessage("Failed to generate payment link.");
@@ -303,7 +292,19 @@ const MergeScreen = () => {
             ? "Payment received. Click to finalize your merge."
             : "Choose a subscription plan to unlock chat access."}
         </Typography>
-
+        {hasPaid && (
+          <Box mb={3}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              href="/ebook/relationship-guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              📘 Open Relationship eBook
+            </Button>
+          </Box>
+        )}
         {errorMessage && (
           <Typography
             variant="body1"
@@ -315,7 +316,6 @@ const MergeScreen = () => {
             {errorMessage}
           </Typography>
         )}
-
         <Grid
           container
           spacing={3}
