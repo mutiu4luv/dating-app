@@ -8,13 +8,14 @@ import Chat from "./screens/chat/Chat";
 import MergeScreen from "./screens/mergeScreen/MergeScreen";
 import { useEffect } from "react";
 import PaymentSuccess from "./components/payment/PaymentScreen";
-import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
+// import MergeSuccess from "./screens/mergeSuceessScreen/MergeSucess";
 import MessagesScreen from "./screens/messages/MessagesScreen";
 import { io } from "socket.io-client";
 import UpdateProfileScreen from "./screens/UpdateProfileScreen";
 import OtpScreen from "./screens/OtpScreen";
 import ForgotPassword from "./screens/forgotPasswordScreen/ForgotPassword";
 import ResetPassword from "./screens/forgotPasswordScreen/ResetPasswordScreen";
+import CompleteRegistration from "./screens/completeRegistration/CompleteRegistration";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -104,8 +105,15 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Signup />} />
-        <Route path="/verify-registration" element={<OtpScreen />} />
+        {/* <Route path="/register" element={<Signup />} /> */}
+        <Route path="/register" element={<OtpScreen />} />
+
+        {/* <Route path="/verify-registration" element={<OtpScreen />} /> */}
+        <Route
+          path="/complete-registration"
+          element={<CompleteRegistration />}
+        />
+
         <Route
           path="/messages"
           element={
