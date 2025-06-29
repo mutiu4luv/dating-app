@@ -1,13 +1,23 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Paper } from "@mui/material";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Paper,
+  CircularProgress,
+} from "@mui/material";
 import axios from "axios";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
     try {
       await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/user/forgot-password`,
@@ -16,6 +26,8 @@ const ForgotPassword = () => {
       setMessage("Check your email for the password reset link.");
     } catch (err) {
       setMessage(err.response?.data?.message || "Something went wrong.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -38,8 +50,18 @@ const ForgotPassword = () => {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <Button type="submit" fullWidth variant="contained" sx={{ mt: 2 }}>
-            Send Reset Link
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 2 }}
+            disabled={loading}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Send Reset Link"
+            )}
           </Button>
         </form>
         {message && (
