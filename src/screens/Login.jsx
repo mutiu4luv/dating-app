@@ -63,7 +63,8 @@ const Login = () => {
       localStorage.setItem("userId", userId);
       localStorage.setItem("username", user.name); // name, not username
       localStorage.setItem("email", user.email);
-      localStorage.setItem("hasPaid", user.hasPaid);
+      const hasPaid = localStorage.getItem(`hasPaid_${userId}`) === "true";
+      console.log(`User ${userId} hasPaid:`, hasPaid);
 
       navigate(`/members/${userId}`, { replace: true });
     } catch (err) {
