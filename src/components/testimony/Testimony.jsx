@@ -150,12 +150,16 @@ const Testimony = () => {
   };
 
   return (
-    <Container>
+    <Container sx={{ py: 4, backgroundColor: "#D9A4F0" }}>
       <Typography
         variant="h4"
         component="h2"
         gutterBottom
-        sx={{ color: "#ec4899", textAlign: "center", paddingTop: "70px" }}
+        sx={{
+          backgroundColor: "#ec4899",
+          textAlign: "center",
+          paddingTop: "70px",
+        }}
       >
         TESTIMONIES ❤️
       </Typography>
@@ -168,7 +172,7 @@ const Testimony = () => {
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                backgroundColor: "#fdfdfd",
+                // backgroundColor: "#D9A4F0",
                 boxShadow: 3,
                 borderRadius: 2,
               }}

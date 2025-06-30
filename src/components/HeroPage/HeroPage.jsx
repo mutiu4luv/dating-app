@@ -91,14 +91,14 @@ const HeroPage = () => {
               py: 1.5,
               fontSize: "1rem",
               borderRadius: "50px",
-              backgroundColor: "#ec4899",
+              backgroundColor: "#D9A4F0",
               ":hover": { backgroundColor: "#db2777" },
               boxShadow: 3,
             }}
           >
             <Link
               to="/login"
-              style={{ textDecoration: "none", color: "inherit" }}
+              style={{ textDecoration: "none", color: "#2d0052" }}
             >
               Get Started
             </Link>

@@ -68,7 +68,7 @@ const CardBox = ({ image, label }) => (
 );
 
 const CategoryGrid = () => (
-  <Box sx={{ backgroundColor: "#18181b", minHeight: "100vh", py: 4 }}>
+  <Box sx={{ backgroundColor: "#D9A4F0", minHeight: "100vh", py: 4 }}>
     <Grid
       container
       spacing={{ xs: 2, sm: 3 }}

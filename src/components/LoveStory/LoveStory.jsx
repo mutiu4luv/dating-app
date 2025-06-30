@@ -125,10 +125,12 @@ const LoveStory = () => {
             sx={{
               px: 5,
               py: 1.5,
-              backgroundColor: "#ec4899",
+              backgroundColor: "#D9A4F0",
+              color: "#2d0052",
+              fontWeight: "bold",
               borderRadius: "30px",
               fontSize: "1rem",
-              ":hover": { backgroundColor: "#db2777" },
+              ":hover": { backgroundColor: "#D9A4F0" },
               boxShadow: 3,
             }}
           >

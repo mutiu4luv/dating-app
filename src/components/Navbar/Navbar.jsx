@@ -20,7 +20,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
 
@@ -130,13 +130,19 @@ const Navbar = () => {
   };
 
   return (
-    <AppBar position="sticky" sx={{ backgroundColor: "#ec4899" }}>
+    <AppBar position="sticky" sx={{ backgroundColor: "#D9A4F0" }}>
       <Toolbar sx={{ justifyContent: "space-between" }}>
         <Box display="flex" alignItems="center">
-          <FavoriteIcon sx={{ mr: 1 }} />
-          <Typography variant="h6" component="div" sx={{ fontWeight: "bold" }}>
-            LoveLink
-          </Typography>
+          <FavoriteIcon sx={{ mr: 1, color: "#2d0052" }} />
+          <Link to="/" style={{ textDecoration: "none" }}>
+            <Typography
+              variant="h6"
+              component="div"
+              sx={{ fontWeight: "bold", color: "#2d0052" }}
+            >
+              FindYourMatch{" "}
+            </Typography>
+          </Link>
         </Box>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           {isLoggedIn && username ? (
@@ -162,7 +168,7 @@ const Navbar = () => {
                       width: 28,
                       height: 28,
                       bgcolor: "#b993d6",
-                      color: "#fff",
+                      color: "#2d0052",
                       fontWeight: "bold",
                     }}
                   >
@@ -175,7 +181,7 @@ const Navbar = () => {
                   textTransform: "none",
                   fontWeight: 600,
                   fontSize: 16,
-                  color: "#fff",
+                  color: "#2d0052",
                   ml: 1,
                 }}
               >
@@ -198,7 +204,7 @@ const Navbar = () => {
                       fontWeight: 500,
                       fontSize: 15,
                       "&:hover": {
-                        backgroundColor: "#f3e8ff",
+                        backgroundColor: "#2d0052",
                         color: "#a21caf",
                       },
                     },
@@ -207,30 +213,30 @@ const Navbar = () => {
               >
                 <MenuItem onClick={() => handleMenuClick("Home")}>
                   {" "}
-                  <HomeIcon sx={{ mr: 1, color: "#ec4899" }} /> Home{" "}
+                  <HomeIcon sx={{ mr: 1, color: "#2d0052" }} /> Home{" "}
                 </MenuItem>
                 <MenuItem onClick={() => handleMenuClick("Matches")}>
                   {" "}
-                  <PeopleIcon sx={{ mr: 1, color: "#ec4899" }} /> Matches{" "}
+                  <PeopleIcon sx={{ mr: 1, color: "#2d0052" }} /> Matches{" "}
                 </MenuItem>
                 <MenuItem onClick={() => handleMenuClick("Messages")}>
                   {" "}
-                  <ChatIcon sx={{ mr: 1, color: "#ec4899" }} /> Messages{" "}
+                  <ChatIcon sx={{ mr: 1, color: "#2d0052" }} /> Messages{" "}
                 </MenuItem>
                 <MenuItem onClick={() => handleMenuClick("Profile")}>
                   {" "}
-                  <PersonIcon sx={{ mr: 1, color: "#ec4899" }} /> Profile{" "}
+                  <PersonIcon sx={{ mr: 1, color: "#2d0052" }} /> Profile{" "}
                 </MenuItem>
                 <Divider sx={{ my: 1 }} />
                 <MenuItem onClick={() => handleMenuClick("Logout")}>
                   {" "}
-                  <LogoutIcon sx={{ mr: 1, color: "#ef4444" }} /> Logout{" "}
+                  <LogoutIcon sx={{ mr: 1, color: "#2d0052" }} /> Logout{" "}
                 </MenuItem>
               </Menu>
             </>
           ) : (
             <Button
-              sx={{ color: "#fff", fontWeight: "600" }}
+              sx={{ color: "#2d0052", fontWeight: "600" }}
               startIcon={<LoginIcon />}
               onClick={() => handleMenuClick("Login/SignIn")}
             >
