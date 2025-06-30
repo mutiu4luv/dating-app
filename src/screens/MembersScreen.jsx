@@ -141,8 +141,8 @@ const Members = () => {
       }
       setLoading(false);
     };
-    const paid = localStorage.getItem("hasPaid");
-    setHasPaid(paid === "true");
+    const hasPaid = localStorage.getItem("hasPaid");
+    setHasPaid(hasPaid === "true");
     if (userId) fetchMembers();
   }, [userId]);
 

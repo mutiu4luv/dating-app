@@ -42,6 +42,7 @@ const Login = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/user/login`,
@@ -54,32 +55,34 @@ const Login = () => {
       );
 
       const data = res.data;
-      console.log("Login response:", data); // ✅ Check what’s returned
-
       const user = data.user;
       const userId = user?._id;
 
+      // Store auth + user info
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", userId);
-      localStorage.setItem("username", user.name); // name, not username
+      localStorage.setItem("username", user.username);
       localStorage.setItem("email", user.email);
-      const hasPaid = localStorage.getItem(`hasPaid_${userId}`) === "true";
-      console.log(`User ${userId} hasPaid:`, hasPaid);
+      localStorage.setItem("hasPaid", user.hasPaid);
 
-      // const hasPaid = localStorage.getItem(`hasPaid_${userId}`);
-      // if (hasPaid) {
-      //   const parsed = JSON.parse(hasPaid);
-      //   const now = Date.now();
-      //   const hasPaid = now - parsed.paidAt < EXPIRY_DURATION;
-      //   console.log("HasPaid after login:", hasPaid);
-      // }
+      // Store hasPaid with timestamp (per-user)
+      localStorage.setItem(
+        `hasPaid_${userId}`,
+        JSON.stringify({
+          status: user.hasPaid,
+          paidAt: Date.now(),
+        })
+      );
+
       navigate(`/members/${userId}`, { replace: true });
+      console.log(res);
     } catch (err) {
       setError(
         err.response?.data?.message ||
           "Login failed. Please check your credentials."
       );
     }
+
     setLoading(false);
   };
 

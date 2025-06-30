@@ -106,6 +106,7 @@ const MergeScreen = () => {
           setHasPaid(true);
           setUserEmail(res.data.email || localStorage.getItem("email") || "");
           const userId = localStorage.getItem("userId");
+          localStorage.setItem("hasPaid", "true");
           if (userId) {
             localStorage.setItem(`hasPaid_${userId}`, "true");
           }
