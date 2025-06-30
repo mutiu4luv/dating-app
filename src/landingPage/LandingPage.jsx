@@ -16,7 +16,7 @@ const LandingPage = () => {
       <LoveStory />
       <CategoryGrid />
       <HowItWorks />
-      {/* <TestimonyScreen /> */}
+      <TestimonyScreen />
       <EbookAdvert />
       <Footer />
     </div>
