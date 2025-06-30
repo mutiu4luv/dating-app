@@ -24,11 +24,12 @@ const OtpScreen = () => {
     try {
       const res = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/user/register/send-otp`,
+
         { email }
       );
       setMessage("OTP sent. Proceed to complete registration.");
       localStorage.setItem("registerEmail", email); // save for step 2
-      navigate("/register");
+      navigate("/complete-registration");
     } catch (err) {
       setMessage(
         err.response?.data?.message || "Failed to send OTP. Try again."

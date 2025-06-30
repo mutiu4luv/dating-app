@@ -6,8 +6,26 @@ import {
   Typography,
   MenuItem,
   CircularProgress,
+  Avatar,
+  Stack,
 } from "@mui/material";
 import axios from "axios";
+
+const genders = ["Male", "Female"];
+const maritalStatuses = ["Single", "Married", "Divorced", "Widowed"];
+const relationshipTypes = [
+  "friendship",
+  "dating",
+  "marriage",
+  "Online Dating ",
+  "Males Friends ",
+  "Female friends ",
+  "Chat mate ",
+  "Friends with Benefits  ",
+  "Sex chat  ",
+  "Gay",
+  "Lasbian",
+];
 
 const CompleteRegistration = () => {
   const [form, setForm] = useState({
@@ -27,7 +45,8 @@ const CompleteRegistration = () => {
   const [photo, setPhoto] = useState(null);
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
-  const email = sessionStorage.getItem("pendingEmail");
+
+  const email = localStorage.getItem("registerEmail");
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -63,88 +82,149 @@ const CompleteRegistration = () => {
     <Box p={3}>
       <Typography variant="h6">Complete Registration</Typography>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
-        {[
-          "name",
-          "username",
-          "age",
-          "location",
-          "occupation",
-          "phoneNumber",
-          "password",
-          "description",
-          "otp",
-        ].map((f) => (
+        <Stack spacing={2}>
+          <Button variant="outlined" component="label" fullWidth>
+            Upload Photo
+            <input
+              type="file"
+              hidden
+              onChange={(e) => setPhoto(e.target.files[0])}
+            />
+          </Button>
           <TextField
-            key={f}
-            label={f.charAt(0).toUpperCase() + f.slice(1)}
-            name={f}
-            type={f === "password" ? "password" : "text"}
-            fullWidth
-            value={form[f]}
+            label="Name"
+            name="name"
+            value={form.name}
             onChange={handleChange}
-            margin="normal"
+            fullWidth
+            required
           />
-        ))}
-        <TextField
-          select
-          name="gender"
-          label="Gender"
-          fullWidth
-          value={form.gender}
-          onChange={handleChange}
-          margin="normal"
-        >
-          <MenuItem value="male">Male</MenuItem>
-          <MenuItem value="female">Female</MenuItem>
-        </TextField>
-        <TextField
-          select
-          name="maritalStatus"
-          label="Marital Status"
-          fullWidth
-          value={form.maritalStatus}
-          onChange={handleChange}
-          margin="normal"
-        >
-          <MenuItem value="single">Single</MenuItem>
-          <MenuItem value="married">Married</MenuItem>
-        </TextField>
-        <TextField
-          select
-          name="relationshipType"
-          label="Relationship Type"
-          fullWidth
-          value={form.relationshipType}
-          onChange={handleChange}
-          margin="normal"
-        >
-          <MenuItem value="friendship">Friendship</MenuItem>
-          <MenuItem value="dating">Dating</MenuItem>
-          <MenuItem value="marriage">Marriage</MenuItem>
-        </TextField>
-
-        <Button variant="outlined" component="label" fullWidth sx={{ mt: 2 }}>
-          Upload Photo
-          <input
-            type="file"
-            hidden
-            onChange={(e) => setPhoto(e.target.files[0])}
+          <TextField
+            label="Age"
+            name="age"
+            type="number"
+            value={form.age}
+            onChange={handleChange}
+            fullWidth
+            required
+            inputProps={{ min: 18, max: 100 }}
           />
-        </Button>
-
-        <Button
-          type="submit"
-          variant="contained"
-          fullWidth
-          disabled={loading}
-          sx={{ mt: 2 }}
-        >
-          {loading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            "Register"
-          )}
-        </Button>
+          <TextField
+            select
+            label="Gender"
+            name="gender"
+            value={form.gender}
+            onChange={handleChange}
+            fullWidth
+            required
+          >
+            {genders.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Location"
+            name="location"
+            value={form.location}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Occupation"
+            name="occupation"
+            value={form.occupation}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Describe your kind of Man/Woman?"
+            name="description"
+            value={form.description}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            select
+            label="Marital Status"
+            name="maritalStatus"
+            value={form.maritalStatus}
+            onChange={handleChange}
+            fullWidth
+            required
+          >
+            {maritalStatuses.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            select
+            label="Relationship Type"
+            name="relationshipType"
+            value={form.relationshipType}
+            onChange={handleChange}
+            fullWidth
+            required
+          >
+            {relationshipTypes.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            label="Username"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Phone Number"
+            name="phoneNumber"
+            value={form.phoneNumber}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="Password"
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <TextField
+            label="OTP"
+            name="otp"
+            value={form.otp}
+            onChange={handleChange}
+            fullWidth
+            required
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            disabled={loading}
+            sx={{ mt: 2 }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Register"
+            )}
+          </Button>
+        </Stack>
       </form>
       {msg && (
         <Typography mt={2} color="primary">
