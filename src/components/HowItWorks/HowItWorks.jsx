@@ -62,7 +62,7 @@ const HowItWorks = () => {
           color="textSecondary"
           sx={{ mb: 6 }}
         >
-          Get started on lovedating.com today in 3 simple steps:
+          Get started on FindYourMatch today in 5 simple steps:
         </Typography>
 
         <Grid container spacing={4} justifyContent="center">
