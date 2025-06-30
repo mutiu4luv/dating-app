@@ -56,7 +56,7 @@ function App() {
           path="/members/:matchId"
           element={
             <ProtectedRoute>
-              <Members userId={currentUserId} />
+              <Members />
             </ProtectedRoute>
           }
         />

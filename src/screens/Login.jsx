@@ -52,14 +52,18 @@ const Login = () => {
           },
         }
       );
+
       const data = res.data;
-      const userId = data.member?._id;
+      console.log("Login response:", data); // ✅ Check what’s returned
+
+      const user = data.user;
+      const userId = user?._id;
 
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", userId);
-      localStorage.setItem("username", data.member?.username);
-      localStorage.setItem("email", data.member?.email);
-      localStorage.setItem("hasPaid", data.member?.hasPaid);
+      localStorage.setItem("username", user.name); // name, not username
+      localStorage.setItem("email", user.email);
+      localStorage.setItem("hasPaid", user.hasPaid);
 
       navigate(`/members/${userId}`, { replace: true });
     } catch (err) {

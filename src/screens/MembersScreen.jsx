@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import axiosInstance from "..//utility/axiosInstance";
 import {
   Box,
@@ -40,9 +40,20 @@ const Members = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasPaid, setHasPaid] = useState(false);
 
-  const userId = getCurrentUserId();
+  // const userId = localStorage.getItem("userId") || getCurrentUserId();
+  const userId = useMemo(() => {
+    const id = localStorage.getItem("userId");
+    if (!id) {
+      console.error("No userId found. Redirecting to login.");
+    }
+    return id;
+  }, []);
 
   useEffect(() => {
+    if (!userId) {
+      navigate("/login", { replace: true });
+      return;
+    }
     const fetchMembers = async () => {
       setLoading(true);
       try {
