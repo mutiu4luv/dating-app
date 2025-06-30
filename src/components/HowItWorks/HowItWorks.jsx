@@ -10,8 +10,10 @@ import {
   Button,
 } from "@mui/material";
 import single from "../../assets/images/single.webp";
-import girl from "../../assets/images/girl.webp";
-import ver from "../../assets/images/ver.webp";
+import girls from "../../assets/images/girls.avif";
+import vers from "../../assets/images/vers.jpg";
+import member from "../../assets/images/member.webp";
+import start from "../../assets/images/start.avif";
 
 const steps = [
   {
@@ -20,14 +22,24 @@ const steps = [
     image: single,
   },
   {
-    title: "2. Browse Photos",
-    text: "Search our large member base with ease, with a range of preferences and settings.",
-    image: girl,
+    title: "2.  Subscribe and have access to free relationship ebooks",
+    text: "Get instant access to carefully selected relationship ebooks to guide you on love, dating, and lasting companionship.",
+    image: girls,
   },
   {
     title: "3. Start Communicating",
-    text: "Send a message or interest to start communicating with members. It's your time to shine.",
-    image: ver,
+    text: "Connect with white men/white women.",
+    image: vers,
+  },
+  {
+    title: " 4. Browse members and find your match",
+    text: "Discover a wide range of members based on your preferences and connect with someone who truly matches your vibe.",
+    image: member,
+  },
+  {
+    title: "3. Start chatting",
+    text: "Send messages instantly and build genuine connections through real-time chat.",
+    image: start,
   },
 ];
 
@@ -107,7 +119,9 @@ const HowItWorks = () => {
               px: 6,
               py: 1.8,
               fontSize: "1rem",
-              backgroundColor: "#ec4899",
+              backgroundColor: "#D9A4F0",
+              color: "#2d0052",
+              fontWeight: "bold",
               borderRadius: "30px",
               ":hover": { backgroundColor: "#db2777" },
               boxShadow: 3,
