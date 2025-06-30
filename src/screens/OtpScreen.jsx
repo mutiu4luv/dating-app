@@ -23,7 +23,7 @@ const OtpScreen = () => {
     setLoading(true);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_BACKEND_URL}/api/user/register/send-otp`,
+        `${import.meta.env.VITE_BASE_URL}/api/user/register/send-otp`,
         { email }
       );
       setMessage("OTP sent. Proceed to complete registration.");
