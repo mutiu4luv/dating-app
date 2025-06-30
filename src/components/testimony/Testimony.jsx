@@ -5,18 +5,16 @@ import {
   Grid,
   Card,
   CardContent,
-  Avatar,
-  useMediaQuery,
-  Fade,
-  Collapse,
-  Button,
   CardMedia,
+  Button,
+  Fade,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const testimonies = [
-  // [Same array of 20 testimonies as before]
   {
     name: "Ada & Emeka",
     message:
@@ -124,9 +122,6 @@ const testimonies = [
   },
 ];
 
-const CARDS_TO_SHOW = 8;
-const AUTO_SCROLL_INTERVAL = 7000;
-
 const shuffleArray = (array) => {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -137,13 +132,18 @@ const shuffleArray = (array) => {
 };
 
 const Testimony = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // true if screen < 600px
+  const CARDS_TO_SHOW = isMobile ? 4 : 8;
+
   const [shuffledTestimonies, setShuffledTestimonies] = useState([]);
   const [visibleIndex, setVisibleIndex] = useState(0);
   const [expanded, setExpanded] = useState({});
-  const isMobile = useMediaQuery("(max-width:600px)");
 
   useEffect(() => {
-    setShuffledTestimonies(shuffleArray(testimonies));
+    const shuffled = shuffleArray(testimonies);
+    setShuffledTestimonies(shuffled);
+    setVisibleIndex(0); // Reset on load
   }, []);
 
   useEffect(() => {
@@ -151,9 +151,9 @@ const Testimony = () => {
       setVisibleIndex((prev) =>
         prev + CARDS_TO_SHOW >= testimonies.length ? 0 : prev + CARDS_TO_SHOW
       );
-    }, AUTO_SCROLL_INTERVAL);
+    }, 7000); // 7 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [shuffledTestimonies, CARDS_TO_SHOW]);
 
   const handleExpandClick = (index) => {
     setExpanded((prev) => ({ ...prev, [index]: !prev[index] }));
@@ -163,16 +163,18 @@ const Testimony = () => {
     <Box
       sx={{
         background:
-          "linear-gradient(135deg, #fdf2f8 0%, #ffe4e6 50%, #fbcfe8 100%)",
-        minHeight: "100vh",
+          "linear-gradient(135deg, #181c2b 0%, #232526 40%, #414345 80%, #b993d6 100%)",
+        height: "100vh",
+        width: "100vw",
+        overflow: "auto",
         px: { xs: 2, sm: 4 },
         py: 6,
       }}
     >
       <Box display="flex" alignItems="center" justifyContent="center" mb={4}>
         <FavoriteIcon sx={{ color: "#ec4899", fontSize: 32, mr: 1 }} />
-        <Typography variant="h4" fontWeight="bold" color="#db2777">
-          Real Love Stories ❤️
+        <Typography variant="h4" fontWeight="bold" color="#fff">
+          TESTIMONIES ❤️
         </Typography>
       </Box>
 
@@ -184,15 +186,15 @@ const Testimony = () => {
               <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
                 <Card
                   sx={{
-                    width: "100%",
-                    height: 380,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    borderRadius: 4,
-                    boxShadow: "0 8px 24px rgba(236, 72, 153, 0.2)",
-                    border: "1.5px solid #f472b6",
-                    overflow: "hidden",
+                    borderRadius: 5,
+                    boxShadow: "0 8px 32px rgba(31, 38, 135, 0.25)",
+                    background: "rgba(255,255,255,0.08)",
+                    backdropFilter: "blur(8px)",
+                    border: "1.5px solid rgba(236,72,153,0.18)",
+                    maxWidth: 240,
+                    height: "auto",
+                    p: 0,
+                    mx: "auto",
                   }}
                 >
                   <CardMedia
@@ -200,52 +202,56 @@ const Testimony = () => {
                     image={t.photo}
                     alt={t.name}
                     sx={{
-                      width: "100%",
-                      height: 180,
+                      height: 210,
                       objectFit: "cover",
+                      borderRadius: "18px 18px 0 0",
+                      borderBottom: "2px solid #ec4899",
                     }}
                   />
                   <CardContent
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      justifyContent: "space-between",
                       alignItems: "center",
-                      textAlign: "center",
-                      px: 2,
-                      py: 1,
-                      flex: 1,
-                      width: "100%",
+                      p: 2,
                     }}
                   >
                     <Typography
                       variant="h6"
-                      fontWeight="bold"
                       color="#ec4899"
+                      fontWeight="bold"
                       gutterBottom
+                      align="center"
                     >
                       {t.name}
                     </Typography>
+
                     <Typography
                       variant="body2"
-                      sx={{ fontStyle: "italic", color: "#4b5563" }}
-                      noWrap={!expanded[index]}
+                      sx={{
+                        fontStyle: "italic",
+                        color: "#e5e7eb",
+                        textAlign: "center",
+                        display: "-webkit-box",
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        WebkitLineClamp: expanded[index] ? "unset" : 2,
+                        textOverflow: "ellipsis",
+                        maxHeight: expanded[index] ? "none" : "4.6em",
+                      }}
                     >
-                      "{t.message}"
+                      {t.message}
                     </Typography>
-                    <Collapse in={expanded[index]} timeout="auto" unmountOnExit>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#4b5563", mt: 1 }}
-                      >
-                        {t.message}
-                      </Typography>
-                    </Collapse>
+
                     <Button
                       size="small"
+                      sx={{
+                        color: "#ec4899",
+                        textTransform: "none",
+                        mt: 1,
+                      }}
                       onClick={() => handleExpandClick(index)}
                       endIcon={<ExpandMoreIcon />}
-                      sx={{ mt: 1, color: "#ec4899" }}
                     >
                       {expanded[index] ? "Read Less" : "Read More"}
                     </Button>

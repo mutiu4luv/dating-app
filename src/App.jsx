@@ -1,7 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import LandingPage from "./landingPage/LandingPage";
 import Login from "./screens/Login";
-import Signup from "./screens/Signup";
+// import Signup from "./screens/Signup";
 import Members from "./screens/MembersScreen";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
 import Chat from "./screens/chat/Chat";
@@ -51,11 +51,7 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        {/* <Route path="/chat/:matchId" element={<Chat />} /> */}
-        {/* <Route path="/matches" element={<Matches />} />
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/profile" element={<Profile />} /> */}
-        {/* <Route path="/members/:userId" element={<Members />} /> */}
+
         <Route
           path="/members/:matchId"
           element={
@@ -64,15 +60,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        {/* <Route
-          path="/chat/:member2"
-          element={
-            <ProtectedRoute>
-              <Chat />
-            </ProtectedRoute>
-          }
-        /> */}
-        {/* <Route path="/payment-success" element={<PaymentSuccess />} /> */}
+
         <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
         {/* <Route path="/merge/success/:member2" element={<MergeSuccess />} /> */}
 
@@ -108,7 +96,6 @@ function App() {
         {/* <Route path="/register" element={<Signup />} /> */}
         <Route path="/register" element={<OtpScreen />} />
 
-        {/* <Route path="/verify-registration" element={<OtpScreen />} /> */}
         <Route
           path="/complete-registration"
           element={<CompleteRegistration />}

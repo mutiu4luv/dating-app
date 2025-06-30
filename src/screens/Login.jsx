@@ -23,7 +23,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // If already logged in, redirect to members page
+  // Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
@@ -54,14 +54,14 @@ const Login = () => {
       );
       const data = res.data;
       const userId = data.member?._id;
+
       localStorage.setItem("token", data.token);
       localStorage.setItem("userId", userId);
-      localStorage.setItem("username", data.member?.username); // <-- Save username
-      localStorage.setItem("email", data.member?.email); // <-- Save username
-      console.log("✅ Token stored:", localStorage.getItem("token"));
-      console.log("✅ User ID stored:", localStorage.getItem("userId"));
+      localStorage.setItem("username", data.member?.username);
+      localStorage.setItem("email", data.member?.email);
+      localStorage.setItem("hasPaid", data.member?.hasPaid);
+
       navigate(`/members/${userId}`, { replace: true });
-      console.log(data);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -70,13 +70,7 @@ const Login = () => {
     }
     setLoading(false);
   };
-  if (localStorage.getItem("username")) {
-    // Username exists in localStorage
-    console.log("Username is:", localStorage.getItem("username"));
-  } else {
-    // Username not found
-    console.log("No username found in localStorage");
-  }
+
   return (
     <Box
       minHeight="100vh"
@@ -86,7 +80,7 @@ const Login = () => {
       sx={{
         background:
           "linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)",
-        zIndex: 9999,
+        p: 2,
       }}
     >
       <Paper
@@ -101,13 +95,14 @@ const Login = () => {
       >
         <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
           <FavoriteIcon sx={{ color: "#ec4899", fontSize: 40, mb: 1 }} />
-          <Typography variant="h4" fontWeight="bold" color="#ec4899" mb={0.5}>
+          <Typography variant="h4" fontWeight="bold" color="#ec4899">
             Welcome Back!
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" mb={2}>
             Sign in to your LoveLink account
           </Typography>
         </Box>
+
         <form onSubmit={handleSubmit}>
           <TextField
             label="Email"
@@ -119,6 +114,7 @@ const Login = () => {
             margin="normal"
             required
             autoComplete="email"
+            sx={{ backgroundColor: "#fff", zIndex: 1 }}
           />
           <TextField
             label="Password"
@@ -130,6 +126,7 @@ const Login = () => {
             margin="normal"
             required
             autoComplete="current-password"
+            sx={{ backgroundColor: "#fff", zIndex: 1 }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -140,11 +137,13 @@ const Login = () => {
               ),
             }}
           />
+
           {error && (
             <Typography color="error" align="center" mt={1}>
               {error}
             </Typography>
           )}
+
           <Button
             type="submit"
             variant="contained"
@@ -165,7 +164,8 @@ const Login = () => {
             {loading ? <CircularProgress size={24} color="inherit" /> : "Login"}
           </Button>
         </form>
-        <Divider sx={{ my: 3 }}></Divider>
+
+        <Divider sx={{ my: 3 }} />
 
         <Typography variant="body2" align="center" mt={1}>
           <Link
@@ -175,7 +175,9 @@ const Login = () => {
             Forgot Password?
           </Link>
         </Typography>
+
         <Divider sx={{ my: 3 }}>or</Divider>
+
         <Typography variant="body2" align="center">
           Don't have an account?{" "}
           <Link to="/register" style={{ color: "#ec4899", fontWeight: 600 }}>
