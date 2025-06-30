@@ -6,6 +6,7 @@ import {
   Typography,
   Link,
   IconButton,
+  Divider,
 } from "@mui/material";
 import { Facebook, Instagram, Email, Favorite } from "@mui/icons-material";
 
@@ -14,9 +15,10 @@ const Footer = () => {
     <Box
       component="footer"
       sx={{
-        background: "linear-gradient(90deg, #db2777 0%, #ec4899 100%)",
-        color: "#fff",
+        background: "linear-gradient(90deg, #fdf6f9 0%, #ec4899 100%)",
+        color: "#111",
         py: 6,
+        px: 2,
       }}
     >
       <Container maxWidth="lg">
@@ -24,7 +26,7 @@ const Footer = () => {
           {/* Logo and Tagline */}
           <Grid item xs={12} sm={4}>
             <Typography variant="h5" fontWeight="bold" gutterBottom>
-              LoveDating ❤️
+              FindYourMatch ❤️
             </Typography>
             <Typography variant="body2">
               Find love, make memories, and share your story with someone
@@ -38,16 +40,16 @@ const Footer = () => {
               Quick Links
             </Typography>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <Link href="#" underline="hover" color="inherit">
+              <Link href="/" underline="hover" color="inherit">
                 Home
               </Link>
-              <Link href="#" underline="hover" color="inherit">
+              <Link href="/about" underline="hover" color="inherit">
                 About Us
               </Link>
-              <Link href="#" underline="hover" color="inherit">
+              <Link href="/stories" underline="hover" color="inherit">
                 Stories
               </Link>
-              <Link href="#" underline="hover" color="inherit">
+              <Link href="/contact" underline="hover" color="inherit">
                 Contact
               </Link>
             </Box>
@@ -62,43 +64,70 @@ const Footer = () => {
               <IconButton
                 href="https://facebook.com"
                 target="_blank"
-                sx={{ color: "#fff" }}
+                sx={{ color: "#ec4899" }}
               >
                 <Facebook />
               </IconButton>
               <IconButton
                 href="https://instagram.com"
                 target="_blank"
-                sx={{ color: "#fff" }}
+                sx={{ color: "#ec4899" }}
               >
                 <Instagram />
               </IconButton>
               <IconButton
                 href="mailto:support@lovedating.com"
-                sx={{ color: "#fff" }}
+                sx={{ color: "#ec4899" }}
               >
                 <Email />
               </IconButton>
             </Box>
             <Typography variant="body2" sx={{ mt: 2 }}>
-              support@lovedating.com
+              <Link
+                href="mailto:support@lovedating.com"
+                underline="hover"
+                color="inherit"
+              >
+                support@lovedating.com
+              </Link>
             </Typography>
           </Grid>
         </Grid>
+
+        <Divider sx={{ my: 4, borderColor: "#ec489966" }} />
+
+        {/* Designer Info */}
+        <Box textAlign="center" sx={{ mb: 2 }}>
+          <Typography variant="body2" fontWeight="medium">
+            Designed by <strong>Madu Chibueze Emmanuel</strong>
+          </Typography>
+          <Typography variant="body2">
+            <Link
+              href="mailto:chidiemmamadu@gmail.com"
+              underline="hover"
+              color="inherit"
+            >
+              chidiemmamadu@gmail.com
+            </Link>{" "}
+            |{" "}
+            <Link href="tel:+2347031911306" underline="hover" color="inherit">
+              +2347031911306
+            </Link>
+          </Typography>
+        </Box>
 
         {/* Bottom Line */}
         <Box
           sx={{
             textAlign: "center",
-            mt: 6,
-            borderTop: "1px solid #ffffff44",
+            borderTop: "1px solid #ec489933",
             pt: 3,
           }}
         >
           <Typography variant="body2">
-            © {new Date().getFullYear()} LoveDating. Made with{" "}
+            © {new Date().getFullYear()} FindYourMatch. Made with{" "}
             <Favorite
-              sx={{ color: "#fff", fontSize: 16, verticalAlign: "middle" }}
+              sx={{ color: "#ec4899", fontSize: 16, verticalAlign: "middle" }}
             />{" "}
             for true love.
           </Typography>

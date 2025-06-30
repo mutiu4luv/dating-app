@@ -1,18 +1,21 @@
 import React from "react";
 import { Box, Typography, Grid, Paper } from "@mui/material";
-
+import seriousImg from "../../assets/images/serious.webp";
+import funImg from "../../assets/images/funImg.avif";
+import maleImg from "../../assets/images/maleImg.webp";
+import femaleImg from "../../assets/images/femaleImg.jpg";
 const data = [
-  { label: "Serious Relationship", image: "/images/serious.jpg" },
+  { label: "Serious Relationship", image: seriousImg },
   {
     label: (
       <>
         F<span style={{ color: "red" }}>u</span>n & Friendship
       </>
     ),
-    image: "/images/fun.jpg",
+    image: funImg,
   },
-  { label: "Male Friends", image: "/images/male.jpg" },
-  { label: "Female Friends", image: "/images/female.jpg" },
+  { label: "Male Friends", image: maleImg },
+  { label: "Female Friends", image: femaleImg },
 ];
 
 const CardBox = ({ image, label }) => (
