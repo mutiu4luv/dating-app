@@ -66,6 +66,13 @@ const Login = () => {
       const hasPaid = localStorage.getItem(`hasPaid_${userId}`) === "true";
       console.log(`User ${userId} hasPaid:`, hasPaid);
 
+      // const hasPaid = localStorage.getItem(`hasPaid_${userId}`);
+      // if (hasPaid) {
+      //   const parsed = JSON.parse(hasPaid);
+      //   const now = Date.now();
+      //   const hasPaid = now - parsed.paidAt < EXPIRY_DURATION;
+      //   console.log("HasPaid after login:", hasPaid);
+      // }
       navigate(`/members/${userId}`, { replace: true });
     } catch (err) {
       setError(
