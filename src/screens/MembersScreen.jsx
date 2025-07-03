@@ -211,7 +211,7 @@ const Members = () => {
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <FavoriteIcon sx={{ color: "#ec4899", mr: 1, fontSize: 40 }} />
+          <FavoriteIcon sx={{ color: "#D9A4F0", mr: 1, fontSize: 40 }} />
           <Typography variant="h4" fontWeight="bold" color="#fff">
             Members With Your Relationship Type
           </Typography>
@@ -264,7 +264,7 @@ const Members = () => {
                       height: 210,
                       objectFit: "cover",
                       borderRadius: "18px 18px 0 0",
-                      borderBottom: "2px solid #ec4899",
+                      borderBottom: "2px solid #D9A4F0",
                     }}
                   />
                   <CardContent
@@ -278,7 +278,7 @@ const Members = () => {
                   >
                     <Typography
                       variant="h6"
-                      color="#ec4899"
+                      color="#D9A4F0"
                       fontWeight="bold"
                       gutterBottom
                       align="center"
@@ -291,7 +291,7 @@ const Members = () => {
                       spacing={1}
                       mb={1}
                     >
-                      <LocationOnIcon sx={{ color: "#db2777", fontSize: 20 }} />
+                      <LocationOnIcon sx={{ color: "#D9A4F0", fontSize: 20 }} />
                       <Typography variant="body2" color="#b993d6">
                         {member.location}
                       </Typography>
@@ -327,7 +327,7 @@ const Members = () => {
                     <Box sx={{ width: "100%", mb: 2 }}>
                       <Typography
                         variant="body2"
-                        color="#fff"
+                        color="#D9A4F0"
                         align="center"
                         sx={{
                           fontStyle: "italic",
@@ -349,7 +349,7 @@ const Members = () => {
                         <Button
                           size="small"
                           sx={{
-                            color: "#ec4899",
+                            color: "#D9A4F0",
                             textTransform: "none",
                             mt: 1,
                           }}
@@ -363,7 +363,7 @@ const Members = () => {
                       variant="contained"
                       sx={{
                         background:
-                          "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
+                          "linear-gradient(90deg, #D9A4F0 60%, #b993d6 100%)",
                         color: "#fff",
                         fontWeight: "bold",
                         borderRadius: 3,

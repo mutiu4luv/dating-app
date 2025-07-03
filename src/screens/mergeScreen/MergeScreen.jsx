@@ -368,7 +368,7 @@ const MergeScreen = () => {
                   fullWidth
                   onClick={() => handlePlanClick(key)}
                   sx={{
-                    mt: "auto",
+                    background: "#D9A4F0",
                     borderRadius: 6,
                     fontWeight: 600,
                     px: 2,

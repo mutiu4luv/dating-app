@@ -15,6 +15,10 @@ import sunday from "../../assets/images/sunday.jpeg";
 import ifeanyi from "../../assets/images/ifeanyi.jpeg";
 import ruth from "../../assets/images/ruth.jpeg";
 import happy from "../../assets/images/happy.jpeg";
+import uche from "../../assets/images/uche.jpeg";
+import ikechukwu from "../../assets/images/ikechukwu.jpeg";
+import felista from "../../assets/images/felista.jpeg";
+import chiamaka from "../../assets/images/chiamaka.jpeg";
 const testimonies = [
   {
     name: "Bonny Christian",
@@ -41,30 +45,32 @@ const testimonies = [
     photo: happy,
   },
   {
-    name: "Grace & David",
+    name: "Uche Emmanuella.",
     message:
-      "We clicked instantly and never looked back. This app is a blessing!",
-    photo: "https://randomuser.me/api/portraits/men/77.jpg",
+      "I was skeptical at first, but the dating servicesexceeded my expectations.They understood what I was looking for in a partner and introduced me to someone amazing. The platform was incredibly supportive and professional.",
+    photo: uche,
   },
   {
-    name: "Ijeoma & Nnamdi",
+    name: "Ikechukwu Martins",
     message:
-      "After heartbreaks, we finally found our peace and love. God bless this platform!",
-    photo: "https://randomuser.me/api/portraits/women/60.jpg",
+      "True Love found me on this app. The app is so easy to use, genuine connections, and a wonderful community.I'm thrilled to have met my partner here.",
+    photo: ikechukwu,
   },
   {
-    name: "Omolara & Femi",
-    message: "He slid into my inbox, now he’s my husband!",
-    photo: "https://randomuser.me/api/portraits/women/67.jpg",
+    name: "Felista Ohazuruike",
+    message:
+      "This app truly brought magic to my life! I met someone special, and we instantly connected.The app's algorithm is impressive, and the community is supportive and friendly. I'm so grateful to have found my match! ❤️😊",
+    photo: felista,
   },
   {
-    name: "Nancy & Uche",
-    message: "I was skeptical at first, but look at us now—2 years strong!",
-    photo: "https://randomuser.me/api/portraits/women/58.jpg",
+    name: "Chiamaka Nwafor",
+    message:
+      "It’s more than a dating site, it’s a life-changing space. One thing I’ve come to appreciate deeply is the power of connection, and this platform has been proof that genuine connections can happen even from a simple chat app.People from different countries, different backgrounds, and different stories came together in this one space. And somehow, meaningful relationships started to form friendships, deep conversations, even people finding the right one to build a future with.But beyond the connections, what makes this platform special is the host.Always reminding us that before stepping into marriage, you need to have something doing a purpose, a vision, a foundation.And it doesn’t stop there.This platform isn’t just a place to find love.It’s a place to become whole, to grow, and to walk into relationships with wisdom and clarity.I’m truly grateful to be part of a space where love meets purpose, and connection meets growth.If you're in this platform, you’ll know what I mean. And if you’re not",
+    photo: chiamaka,
   },
 ];
 
-const CARD_HEIGHT = 480;
+const CARD_HEIGHT = 580;
 const CARD_CONTENT_HEIGHT = 190;
 const MAX_DESCRIPTION_LINES = 2;
 
@@ -123,7 +129,7 @@ const Testimony = () => {
                   image={item.photo}
                   alt={item.name}
                   sx={{
-                    height: 210,
+                    height: 390,
                     objectFit: "cover",
                     borderRadius: "18px 18px 0 0",
                     borderBottom: "2px solid #D9A4F0",
