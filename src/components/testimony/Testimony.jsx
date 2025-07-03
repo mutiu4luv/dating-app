@@ -126,7 +126,7 @@ const Testimony = () => {
                     height: 210,
                     objectFit: "cover",
                     borderRadius: "18px 18px 0 0",
-                    borderBottom: "2px solid #ec4899",
+                    borderBottom: "2px solid #D9A4F0",
                   }}
                 />
                 <CardContent
@@ -140,7 +140,7 @@ const Testimony = () => {
                 >
                   <Typography
                     variant="h6"
-                    color="#ec4899"
+                    color="#D9A4F0"
                     fontWeight="bold"
                     gutterBottom
                     align="center"
@@ -173,7 +173,7 @@ const Testimony = () => {
                     <Button
                       size="small"
                       sx={{
-                        color: "#ec4899",
+                        color: "#D9A4F0",
                         textTransform: "none",
                         mt: 1,
                       }}

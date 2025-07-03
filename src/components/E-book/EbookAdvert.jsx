@@ -56,7 +56,7 @@ const EbookAdvert = () => {
           borderRadius: 5,
           boxShadow: "0 12px 32px rgba(236, 72, 153, 0.3)",
           overflow: "hidden",
-          border: "2px solid #ec4899",
+          border: "2px solid #D9A4F0",
           background: "#fff",
         }}
       >
@@ -68,7 +68,7 @@ const EbookAdvert = () => {
             width: isMobile ? "100%" : 400,
             height: isMobile ? 250 : "100%",
             objectFit: "cover",
-            borderRight: isMobile ? "none" : "2px solid #ec4899",
+            borderRight: isMobile ? "none" : "2px solid #D9A4F0",
             transition: "opacity 1s ease-in-out",
           }}
         />
@@ -83,27 +83,27 @@ const EbookAdvert = () => {
           }}
         >
           <Box display="flex" alignItems="center" mb={2}>
-            <FavoriteIcon sx={{ color: "#ec4899", mr: 1 }} />
-            <Typography variant="h5" fontWeight="bold" color="#db2777">
-              Find Love & Learn Together
+            <FavoriteIcon sx={{ color: "#D9A4F0", mr: 1 }} />
+            <Typography variant="h5" fontWeight="bold" color="#D9A4F0">
+              Find Love here & say goodbye bye to Singlehood .
             </Typography>
           </Box>
 
           <Typography variant="body1" color="#4b5563" mb={2}>
-            Subscribe now and stand a chance to meet your perfect match. As a
-            special gift, get our exclusive e-book:
-            <strong>
+            Subscribe now and grab our exclusive relationship e-books above for
+            FREE as a gift. Absolutely all free!
+            {/* <strong>
               {" "}
               “Love That Lasts – Secrets to a Strong Relationship”
             </strong>{" "}
-            absolutely free!
+            absolutely free! */}
           </Typography>
 
           <Button
             variant="contained"
             size="large"
             sx={{
-              background: "linear-gradient(90deg, #ec4899 0%, #b993d6 100%)",
+              background: "linear-gradient(90deg, #D9A4F0 0%, #b993d6 100%)",
               fontWeight: "bold",
               borderRadius: 3,
               mt: 2,
@@ -111,7 +111,7 @@ const EbookAdvert = () => {
               px: 4,
               py: 1.5,
               animation: `${blink} 1.8s infinite ease-in-out`,
-              boxShadow: "0 0 10px #ec4899",
+              boxShadow: "0 0 10px #D9A4F0",
               "&:hover": {
                 background: "linear-gradient(90deg, #db2777 0%, #a78bfa 100%)",
               },

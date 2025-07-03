@@ -52,7 +52,7 @@ const HowItWorks = () => {
           align="center"
           fontWeight="bold"
           gutterBottom
-          sx={{ color: "#ec4899" }}
+          sx={{ color: "#D9A4F0" }}
         >
           How It Works
         </Typography>
@@ -98,7 +98,7 @@ const HowItWorks = () => {
                     variant="h6"
                     fontWeight="bold"
                     gutterBottom
-                    sx={{ color: "#db2777" }}
+                    sx={{ color: "#D9A4F0" }}
                   >
                     {step.title}
                   </Typography>
