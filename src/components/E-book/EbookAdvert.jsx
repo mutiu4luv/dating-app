@@ -119,7 +119,7 @@ const EbookAdvert = () => {
             startIcon={<LibraryBooksIcon />}
             onClick={() => (window.location.href = "/register")}
           >
-            Register, Subscribe & Get Book
+            Register, Subscribe & Get Free Ebook
           </Button>
         </CardContent>
       </Card>

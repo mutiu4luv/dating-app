@@ -118,7 +118,7 @@ const LoveStory = () => {
           ))}
         </Grid>
 
-        <Box sx={{ textAlign: "center", mt: 6 }}>
+        {/* <Box sx={{ textAlign: "center", mt: 6 }}>
           <Button
             variant="contained"
             size="large"
@@ -136,7 +136,7 @@ const LoveStory = () => {
           >
             Read More Testimonies
           </Button>
-        </Box>
+        </Box> */}
       </Container>
     </Box>
   );

@@ -14,6 +14,7 @@ import girls from "../../assets/images/girls.avif";
 import vers from "../../assets/images/vers.jpg";
 import member from "../../assets/images/member.webp";
 import start from "../../assets/images/start.avif";
+import { Link } from "react-router-dom";
 
 const steps = [
   {
@@ -37,11 +38,12 @@ const steps = [
     image: member,
   },
   {
-    title: "3. Start chatting",
+    title: "5. Start chatting",
     text: "Send messages instantly and build genuine connections through real-time chat.",
     image: start,
   },
 ];
+const userId = localStorage.getItem("userId");
 
 const HowItWorks = () => {
   return (
@@ -112,23 +114,25 @@ const HowItWorks = () => {
         </Grid>
 
         <Box sx={{ textAlign: "center", mt: 6 }}>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              px: 6,
-              py: 1.8,
-              fontSize: "1rem",
-              backgroundColor: "#D9A4F0",
-              color: "#2d0052",
-              fontWeight: "bold",
-              borderRadius: "30px",
-              ":hover": { backgroundColor: "#db2777" },
-              boxShadow: 3,
-            }}
-          >
-            Find Your Match
-          </Button>
+          <Link to={`/members/${userId}`} style={{ textDecoration: "none" }}>
+            <Button
+              variant="contained"
+              size="large"
+              sx={{
+                px: 6,
+                py: 1.8,
+                fontSize: "1rem",
+                backgroundColor: "#D9A4F0",
+                color: "#2d0052",
+                fontWeight: "bold",
+                borderRadius: "30px",
+                ":hover": { backgroundColor: "#db2777" },
+                boxShadow: 3,
+              }}
+            >
+              Find Your Match
+            </Button>
+          </Link>
         </Box>
       </Container>
     </Box>
