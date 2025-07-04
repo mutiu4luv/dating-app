@@ -19,6 +19,7 @@ import uche from "../../assets/images/uche.jpeg";
 import ikechukwu from "../../assets/images/ikechukwu.jpeg";
 import felista from "../../assets/images/felista.jpeg";
 import chiamaka from "../../assets/images/chiamaka.jpeg";
+import praise from "../../assets/images/praise.jpeg";
 const testimonies = [
   {
     name: "Bonny Christian",
@@ -67,6 +68,13 @@ const testimonies = [
     message:
       "It’s more than a dating site, it’s a life-changing space. One thing I’ve come to appreciate deeply is the power of connection, and this platform has been proof that genuine connections can happen even from a simple chat app.People from different countries, different backgrounds, and different stories came together in this one space. And somehow, meaningful relationships started to form friendships, deep conversations, even people finding the right one to build a future with.But beyond the connections, what makes this platform special is the host.Always reminding us that before stepping into marriage, you need to have something doing a purpose, a vision, a foundation.And it doesn’t stop there.This platform isn’t just a place to find love.It’s a place to become whole, to grow, and to walk into relationships with wisdom and clarity.I’m truly grateful to be part of a space where love meets purpose, and connection meets growth.If you're in this platform, you’ll know what I mean. And if you’re not",
     photo: chiamaka,
+  },
+
+  {
+    name: "Engineer Praise",
+    message:
+      "This app is truly help me, i met someone special from this app we connected and our relationship is so sweet and lovely all thanks to this app is impressive and the community is supportive and friendly. I'm so happy that I found my soulmate here! ❤️😊",
+    photo: praise,
   },
 ];
 
