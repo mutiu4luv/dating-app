@@ -16,6 +16,7 @@ import OtpScreen from "./screens/OtpScreen";
 import ForgotPassword from "./screens/forgotPasswordScreen/ForgotPassword";
 import ResetPassword from "./screens/forgotPasswordScreen/ResetPasswordScreen";
 import CompleteRegistration from "./screens/completeRegistration/CompleteRegistration";
+import AdminScreen from "./screens/adminScreen/AdminScreen";
 function App() {
   const currentUserId = localStorage.getItem("userId");
 
@@ -51,6 +52,7 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/admin" element={<AdminScreen />} />
 
         <Route
           path="/members/:matchId"
