@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import LandingPage from "./landingPage/LandingPage";
 import Login from "./screens/Login";
 // import Signup from "./screens/Signup";
@@ -17,8 +17,14 @@ import ForgotPassword from "./screens/forgotPasswordScreen/ForgotPassword";
 import ResetPassword from "./screens/forgotPasswordScreen/ResetPasswordScreen";
 import CompleteRegistration from "./screens/completeRegistration/CompleteRegistration";
 import AdminScreen from "./screens/adminScreen/AdminScreen";
+import Unauthorized from "./components/Unauthorized";
 function App() {
   const currentUserId = localStorage.getItem("userId");
+  const user = JSON.parse(localStorage.getItem("user"));
+
+  const isAdmin =
+    localStorage.getItem("isAdmin") === "true" ||
+    localStorage.getItem("isAdmin") === true;
 
   console.log("Current User ID:", currentUserId);
   useEffect(() => {
@@ -52,7 +58,7 @@ function App() {
     <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/admin" element={<AdminScreen />} />
+        {/* <Route path="/admin" element={<AdminScreen />} /> */}
 
         <Route
           path="/members/:matchId"
@@ -62,7 +68,11 @@ function App() {
             </ProtectedRoute>
           }
         />
-
+        <Route
+          path="/admin"
+          element={isAdmin ? <AdminScreen /> : <Navigate to="/unauthorized" />}
+        />
+        <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
         {/* <Route path="/merge/success/:member2" element={<MergeSuccess />} /> */}
 

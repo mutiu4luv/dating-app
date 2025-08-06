@@ -4,6 +4,7 @@ import seriousImg from "../../assets/images/serious.webp";
 import funImg from "../../assets/images/funImg.avif";
 import maleImg from "../../assets/images/maleImg.webp";
 import femaleImg from "../../assets/images/femaleImg.jpg";
+import marraigeandchat from "../../assets/images/marraigeandchat.png";
 const data = [
   { label: "Serious Relationship", image: seriousImg },
   {
@@ -16,6 +17,7 @@ const data = [
   },
   { label: "Male Friends", image: maleImg },
   { label: "Female Friends", image: femaleImg },
+  { label: "Marriage & Chat", image: marraigeandchat },
 ];
 
 const CardBox = ({ image, label }) => (

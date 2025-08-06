@@ -8,7 +8,15 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import { Facebook, Instagram, Email, Favorite } from "@mui/icons-material";
+import {
+  Facebook,
+  Instagram,
+  Email,
+  Favorite,
+  LinkedIn,
+  WhatsApp,
+} from "@mui/icons-material";
+import { FaTiktok } from "react-icons/fa";
 
 const Footer = () => {
   return (
@@ -46,7 +54,6 @@ const Footer = () => {
               <Link href="/about" underline="hover" color="inherit">
                 About Us
               </Link>
-
               <Link href="/contact" underline="hover" color="inherit">
                 Contact
               </Link>
@@ -60,26 +67,48 @@ const Footer = () => {
             </Typography>
             <Box>
               <IconButton
-                href="https://facebook.com"
+                href="https://www.facebook.com/share/19ZNVaxr8S/"
                 target="_blank"
-                sx={{ color: "#ec4899" }}
+                sx={{ color: " #a78bfa" }}
               >
                 <Facebook />
               </IconButton>
-              <IconButton
+              {/* <IconButton
                 href="https://instagram.com"
                 target="_blank"
-                sx={{ color: "#ec4899" }}
+                sx={{ color: "#a78bfa" }}
               >
                 <Instagram />
-              </IconButton>
+              </IconButton> */}
               <IconButton
                 href="mailto:support@lovedating.com"
-                sx={{ color: "#ec4899" }}
+                sx={{ color: "#a78bfa" }}
               >
                 <Email />
               </IconButton>
+              <IconButton
+                href="https://www.linkedin.com/company/find-yourr-match/"
+                target="_blank"
+                sx={{ color: "#a78bfa" }}
+              >
+                <LinkedIn />
+              </IconButton>
+              <IconButton
+                href="https://wa.me/2347050605491"
+                target="_blank"
+                sx={{ color: "#a78bfa" }}
+              >
+                <WhatsApp />
+              </IconButton>
+              <IconButton
+                href="https://tiktok.com/@findyourmatch01"
+                target="_blank"
+                sx={{ color: "#a78bfa" }}
+              >
+                <FaTiktok />
+              </IconButton>
             </Box>
+
             <Typography variant="body2" sx={{ mt: 2 }}>
               <Link
                 href="mailto:support@lovedating.com"

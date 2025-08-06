@@ -20,6 +20,10 @@ import ikechukwu from "../../assets/images/ikechukwu.jpeg";
 import felista from "../../assets/images/felista.jpeg";
 import chiamaka from "../../assets/images/chiamaka.jpeg";
 import praise from "../../assets/images/praise.jpeg";
+import dan from "../../assets/images/dan.jpeg";
+import nnah from "../../assets/images/nnah.jpeg";
+import anthony from "../../assets/images/anthony.jpeg";
+import ndiukwu from "../../assets/images/ndiukwu.jpeg";
 const testimonies = [
   {
     name: "Bonny Christian",
@@ -73,8 +77,32 @@ const testimonies = [
   {
     name: "Engineer Praise",
     message:
-      "This app is truly help me, i met someone special from this app we connected and our relationship is so sweet and lovely all thanks to this app is impressive and the community is supportive and friendly. I'm so happy that I found my soulmate here! ❤️😊",
+      "The app  truly helped me, i met someone special from this app we connected and our relationship is so sweet and lovely all thanks to this app is impressive and the community is supportive and friendly. I'm so happy that I found my soulmate here! ❤️😊",
     photo: praise,
+  },
+  {
+    name: "Daniel John",
+    message:
+      "I am a widower, since my wife died I have been lonely and searching. Have been rejected severely but your app helped me step out of my comfort zone and meet new people. The interface is sleek, and the support team is responsive. I've gone on several great dates, and I have found a perfect match 😉 about to walk down the altar.",
+    photo: dan,
+  },
+  {
+    name: "Nnah Mercy",
+    message:
+      "I was hesitant to try online dating again because of a bad experience in the past, but your app's focus on meaningful connections won me over. I met someone who genuinely understands and supports me. We're building a strong connection, and I'm grateful for your platform. Thank you for helping me find 😘 ",
+    photo: nnah,
+  },
+  {
+    name: "Anthony Obidigbo",
+    message:
+      "I was skeptical about online dating, but your app surprised me 😊 I met my partner through your platform, and we're happily together. Your app is user-friendly, and the matches were spot on👌 ",
+    photo: anthony,
+  },
+  {
+    name: "Ndiukwu Doris",
+    message:
+      "In all honesty, I've tried several dating apps, but Find your match stands out👌 The compatibility algorithm is genius. I connected with someone who shares my passions and values. We're having a blast getting to know each other. Thanks for making dating easier",
+    photo: ndiukwu,
   },
 ];
 
