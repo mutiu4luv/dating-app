@@ -66,8 +66,8 @@ const OtpScreen = () => {
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <FavoriteIcon sx={{ color: "#ec4899", mr: 1, fontSize: 32 }} />
-          <Typography variant="h5" fontWeight="bold" color="#ec4899">
+          <FavoriteIcon sx={{ color: "#2d0052", mr: 1, fontSize: 32 }} />
+          <Typography variant="h5" fontWeight="bold" color="#2d0052">
             Verify Your Email
           </Typography>
         </Box>
@@ -86,12 +86,12 @@ const OtpScreen = () => {
             disabled={loading}
             onClick={handleSendOtp}
             sx={{
-              background: "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
+              background: "linear-gradient(90deg, #2d0052 60%, #b993d6 100%)",
               fontWeight: "bold",
               letterSpacing: 1,
               fontSize: 18,
               "&:hover": {
-                background: "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",
+                background: "linear-gradient(90deg, #2d0052 60%, #a78bfa 100%)",
               },
             }}
           >

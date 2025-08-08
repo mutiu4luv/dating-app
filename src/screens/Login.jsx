@@ -322,7 +322,7 @@ const Login = () => {
       >
         <Box display="flex" flexDirection="column" alignItems="center" mb={2}>
           <FavoriteIcon sx={{ color: "#ec4899", fontSize: 40, mb: 1 }} />
-          <Typography variant="h4" fontWeight="bold" color="#ec4899">
+          <Typography variant="h4" fontWeight="bold" color="#b993d6">
             Welcome Back!
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" mb={2}>
@@ -374,13 +374,13 @@ const Login = () => {
             disabled={loading}
             sx={{
               mt: 3,
-              background: "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
+              background: "linear-gradient(90deg, #2d0052 60%, #b993d6 100%)",
               fontWeight: "bold",
               fontSize: 17,
               borderRadius: 3,
               boxShadow: "0 2px 8px rgba(236,72,153,0.15)",
               "&:hover": {
-                background: "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",
+                background: "linear-gradient(90deg, #2d0052 60%, #a78bfa 100%)",
               },
             }}
           >
@@ -393,7 +393,7 @@ const Login = () => {
         <Typography variant="body2" align="center" mt={1}>
           <Link
             to="/forgot-password"
-            style={{ color: "#ec4899", fontWeight: 500 }}
+            style={{ color: "#b993d6", fontWeight: 500 }}
           >
             Forgot Password?
           </Link>
@@ -403,7 +403,7 @@ const Login = () => {
 
         <Typography variant="body2" align="center">
           Don't have an account?{" "}
-          <Link to="/register" style={{ color: "#ec4899", fontWeight: 600 }}>
+          <Link to="/register" style={{ color: "#b993d6", fontWeight: 600 }}>
             Sign Up
           </Link>
         </Typography>
