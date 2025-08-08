@@ -11,38 +11,38 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import account from "../../assets/images/account.jpg";
-import ceo from "../../assets/images/ceo.jpg";
-import img from "../../assets/images/img.jpg";
+import ezinne from "../../assets/images/ezinne.jpeg";
+import david from "../../assets/images/david.jpeg";
+import mutiu from "../../assets/images/mutiu.jpeg";
 
 const testimonies = [
   {
-    image: account,
-    name: "Sarah & Daniel",
+    image: david,
+    name: "David & Favour",
     text: "We met in the most unexpected way — and now we're inseparable.",
   },
   {
-    image: ceo,
-    name: "Jade & Michael",
-    text: "Love found us when we least expected it!",
+    image: ezinne,
+    name: "Ugochukwu & Ezinne",
+    text: "From strangers to soulmates, our journey is a testament to love.",
   },
   {
-    image: img,
-    name: "Lily & James",
-    text: "A perfect match! We've never been happier.",
+    image: mutiu,
+    name: "Mutiu & Sophia",
+    text: "Our love story started with a simple chat, now it's a lifetime.",
   },
   {
-    image: ceo,
+    image: david,
     name: "Ava & Noah",
     text: "This app brought us together, forever grateful.",
   },
   {
-    image: account,
+    image: ezinne,
     name: "Sophia & Ethan",
     text: "What started as a chat turned into a forever.",
   },
   {
-    image: img,
+    image: mutiu,
     name: "Emily & Liam",
     text: "We built something beautiful, together.",
   },
