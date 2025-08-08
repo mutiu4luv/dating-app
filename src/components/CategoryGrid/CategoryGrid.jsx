@@ -17,7 +17,8 @@ const data = [
   },
   { label: "Male Friends", image: maleImg },
   { label: "Female Friends", image: femaleImg },
-  { label: "Marriage & Chat", image: marraigeandchat },
+  { label: "Marriage ", image: marraigeandchat },
+  { label: "Online Chat Mate", image: marraigeandchat },
 ];
 
 const CardBox = ({ image, label }) => (
