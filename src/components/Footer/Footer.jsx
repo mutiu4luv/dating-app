@@ -17,6 +17,7 @@ import {
   WhatsApp,
 } from "@mui/icons-material";
 import { FaTiktok } from "react-icons/fa";
+import { Link as RouterLink } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -56,6 +57,30 @@ const Footer = () => {
               </Link>
               <Link href="/contact" underline="hover" color="inherit">
                 Contact
+              </Link>
+              <Link
+                component={RouterLink}
+                to="/disclaimer"
+                underline="hover"
+                color="inherit"
+              >
+                Disclaimer
+              </Link>
+              <Link
+                component={RouterLink}
+                to="/privacy  "
+                underline="hover"
+                color="inherit"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                component={RouterLink}
+                to="/terms"
+                underline="hover"
+                color="inherit"
+              >
+                Terms and Conditions
               </Link>
             </Box>
           </Grid>

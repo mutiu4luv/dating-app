@@ -18,6 +18,9 @@ import ResetPassword from "./screens/forgotPasswordScreen/ResetPasswordScreen";
 import CompleteRegistration from "./screens/completeRegistration/CompleteRegistration";
 import AdminScreen from "./screens/adminScreen/AdminScreen";
 import Unauthorized from "./components/Unauthorized";
+import DisclaimerScreen from "./screens/DisclaimerScreen/Disclaimer";
+import PrivacyPolicy from "./screens/PrivacyPolicyScreen/PrivacyPolicy";
+import TermsAndConditions from "./screens/Terms&condition/Terms&condition";
 function App() {
   const currentUserId = localStorage.getItem("userId");
   const user = JSON.parse(localStorage.getItem("user"));
@@ -73,6 +76,9 @@ function App() {
           element={isAdmin ? <AdminScreen /> : <Navigate to="/unauthorized" />}
         />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/disclaimer" element={<DisclaimerScreen />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
         <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
         {/* <Route path="/merge/success/:member2" element={<MergeSuccess />} /> */}
 
