@@ -95,8 +95,8 @@ const AdminScreen = () => {
     }
     if (selectedMenu === "subscribers") {
       api
-        .get(`${BASE_URL}/api/subscribers`)
-        .then((res) => setSubscribers(res.data))
+        .get(`${BASE_URL}/api/subscription`)
+        .then((res) => setSubscribers(res.data.data))
         .catch((err) => console.error("Fetch subscribers failed:", err))
         .finally(() => setLoading(false));
     }
@@ -281,11 +281,11 @@ const AdminScreen = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Name</TableCell>
+                  {/* <TableCell>Name</TableCell> */}
                   <TableCell>Email</TableCell>
-                  <TableCell>Phone</TableCell>
-                  <TableCell>Age</TableCell>
-                  <TableCell>Location</TableCell>
+                  {/* <TableCell>Phone</TableCell> */}
+                  {/* <TableCell>Age</TableCell> */}
+                  {/* <TableCell>Location</TableCell> */}
                   <TableCell>Tier</TableCell>
                   <TableCell>Has Paid</TableCell>
                 </TableRow>
@@ -293,11 +293,11 @@ const AdminScreen = () => {
               <TableBody>
                 {subscribers.map((sub) => (
                   <TableRow key={sub._id} hover>
-                    <TableCell>{sub.name}</TableCell>
+                    {/* <TableCell>{sub.name}</TableCell> */}
                     <TableCell>{sub.email}</TableCell>
-                    <TableCell>{sub.phoneNumber || "-"}</TableCell>
-                    <TableCell>{sub.age || "-"}</TableCell>
-                    <TableCell>{sub.location || "-"}</TableCell>
+                    {/* <TableCell>{sub.phoneNumber || "-"}</TableCell> */}
+                    {/* <TableCell>{sub.age || "-"}</TableCell> */}
+                    {/* <TableCell>{sub.location || "-"}</TableCell> */}
                     <TableCell>
                       {sub.subscriptionTier || sub.tier || "-"}
                     </TableCell>
