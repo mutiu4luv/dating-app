@@ -14,6 +14,7 @@ import {
 import ezinne from "../../assets/images/ezinne.jpeg";
 import david from "../../assets/images/david.jpeg";
 import mutiu from "../../assets/images/mutiu.jpeg";
+import martins from "../../assets/images/martin.jpeg";
 
 const testimonies = [
   {
@@ -31,21 +32,21 @@ const testimonies = [
     name: "Mutiu & Sophia",
     text: "Our love story started with a simple chat, now it's a lifetime.",
   },
-  {
-    image: david,
-    name: "Ava & Noah",
-    text: "This app brought us together, forever grateful.",
-  },
-  {
-    image: ezinne,
-    name: "Sophia & Ethan",
-    text: "What started as a chat turned into a forever.",
-  },
-  {
-    image: mutiu,
-    name: "Emily & Liam",
-    text: "We built something beautiful, together.",
-  },
+  // {
+  //   image: david,
+  //   name: "Ava & Noah",
+  //   text: "This app brought us together, forever grateful.",
+  // },
+  // {
+  //   image: martins,
+  //   name: "Martin and Blessing",
+  //   text: "We found each other when we least expected it.",
+  // },
+  // {
+  //   image: mutiu,
+  //   name: "Emily & Liam",
+  //   text: "We built something beautiful, together.",
+  // },
 ];
 
 const LoveStory = () => {
