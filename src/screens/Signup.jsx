@@ -24,7 +24,7 @@ const maritalStatuses = ["Single", "Married", "Divorced", "Widowed"];
 const relationshipTypes = [
   "friendship",
   "dating",
-  "marriage",
+  // "marriage",
   "Online Dating ",
   "Males Friends ",
   "Female friends ",
@@ -161,7 +161,7 @@ const Signup = () => {
       justifyContent="center"
       sx={{
         background: `
-      linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)
+      linear-gradient(135deg, red 0%, #a78bfa 50%, #green 100%)
     `,
         py: 6,
         px: { xs: 1, sm: 2, md: 4 },
@@ -181,8 +181,8 @@ const Signup = () => {
         }}
       >
         <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <FavoriteIcon sx={{ color: "#ec4899", mr: 1, fontSize: 32 }} />
-          <Typography variant="h5" fontWeight="bold" color="#ec4899">
+          <FavoriteIcon sx={{ color: "#a78bfa", mr: 1, fontSize: 32 }} />
+          <Typography variant="h5" fontWeight="bold" color="#a78bfa">
             Create Your Account
           </Typography>
         </Box>
@@ -196,9 +196,9 @@ const Signup = () => {
                   width: 72,
                   height: 72,
                   mb: 1,
-                  bgcolor: "#ec4899",
+                  bgcolor: "#a78bfa",
                   border: "3px solid #fff",
-                  boxShadow: "0 2px 8px #ec4899",
+                  boxShadow: "0 2px 8px #a78bfa",
                 }}
               />
               <Button
@@ -206,8 +206,8 @@ const Signup = () => {
                 component="label"
                 sx={{
                   mb: 1,
-                  borderColor: "#ec4899",
-                  color: "#ec4899",
+                  borderColor: "#a78bfa",
+                  color: "#a78bfa",
                   fontWeight: "bold",
                   letterSpacing: 1,
                 }}
@@ -360,11 +360,11 @@ const Signup = () => {
               disabled={loading}
               sx={{
                 mt: 1,
-                background: "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
+                background: "linear-gradient(90deg, #a78bfa 60%, #b993d6 100%)",
                 fontWeight: "bold",
                 letterSpacing: 1,
                 fontSize: 18,
-                boxShadow: "0 2px 8px rgba(236,72,153,0.15)",
+                boxShadow: "0 2px 8px rgba(167,139,250,0.15)",
                 "&:hover": {
                   background:
                     "linear-gradient(90deg, #db2777 60%, #a78bfa 100%)",

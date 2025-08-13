@@ -19,6 +19,7 @@ import Unauthorized from "./components/Unauthorized";
 import DisclaimerScreen from "./screens/DisclaimerScreen/Disclaimer";
 import PrivacyPolicy from "./screens/PrivacyPolicyScreen/PrivacyPolicy";
 import TermsAndConditions from "./screens/Terms&condition/Terms&condition";
+import Signup from "./screens/Signup";
 
 function App() {
   const currentUserId = localStorage.getItem("userId");
@@ -113,11 +114,12 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<OtpScreen />} />
-        <Route
+        <Route path="/register" element={<Signup />} />
+        {/* <Route path="/register" element={<OtpScreen />} /> */}
+        {/* <Route
           path="/complete-registration"
           element={<CompleteRegistration />}
-        />
+        /> */}
 
         <Route
           path="/messages"
