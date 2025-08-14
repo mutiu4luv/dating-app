@@ -30,7 +30,7 @@ const HeroPage = () => {
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(to bottom right, #f472b6, #fca5a5, #fde68a)",
+            "linear-gradient(to bottom right, #D9A4F0, #fca5a5, #fde68a)",
           opacity: 0.25,
           filter: "blur(120px)",
           zIndex: 0,
