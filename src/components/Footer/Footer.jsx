@@ -161,10 +161,10 @@ const Footer = () => {
             >
               chidiemmamadu@gmail.com
             </Link>{" "}
-            |{" "}
+            {/* |{" "}
             <Link href="tel:+2347031911306" underline="hover" color="inherit">
               +2347031911306
-            </Link>
+            </Link> */}
           </Typography>
         </Box>
 
