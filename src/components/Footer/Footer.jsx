@@ -18,6 +18,7 @@ import {
 } from "@mui/icons-material";
 import { FaTiktok } from "react-icons/fa";
 import { Link as RouterLink } from "react-router-dom";
+import FavoriteIcon from "@mui/icons-material/Favorite";
 
 const Footer = () => {
   return (
@@ -35,7 +36,14 @@ const Footer = () => {
           {/* Logo and Tagline */}
           <Grid item xs={12} sm={4}>
             <Typography variant="h5" fontWeight="bold" gutterBottom>
-              FindYourMatch ❤️
+              FindYourMatch{" "}
+              <FavoriteIcon
+                sx={{
+                  color: "#D9A4F0",
+                  fontSize: "1.5em",
+                  verticalAlign: "middle",
+                }}
+              />
             </Typography>
             <Typography variant="body2">
               Find love, make memories, and share your story with someone
