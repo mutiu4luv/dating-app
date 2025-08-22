@@ -22,6 +22,7 @@ import TermsAndConditions from "./screens/Terms&condition/Terms&condition";
 import Signup from "./screens/Signup";
 import SafetyTips from "./screens/safetyTips/SafetyTips";
 import ContactUs from "./components/CONTACTuS/ContactUs";
+import AboutUs from "./components/ABOUT-US/AboutUs";
 
 function App() {
   const currentUserId = localStorage.getItem("userId");
@@ -119,6 +120,7 @@ function App() {
         <Route path="/register" element={<Signup />} />
         <Route path="/safetyTips" element={<SafetyTips />} />
         <Route path="/contact" element={<ContactUs />} />
+        <Route path="/about" element={<AboutUs />} />
         {/* <Route path="/register" element={<OtpScreen />} /> */}
         {/* <Route
           path="/complete-registration"
