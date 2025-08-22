@@ -140,7 +140,7 @@ const Navbar = () => {
               component="div"
               sx={{ fontWeight: "bold", color: "#2d0052" }}
             >
-              FindYourMatch{" "}
+              Truematchup{" "}
             </Typography>
           </Link>
         </Box>

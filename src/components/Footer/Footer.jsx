@@ -36,7 +36,7 @@ const Footer = () => {
           {/* Logo and Tagline */}
           <Grid item xs={12} sm={4}>
             <Typography variant="h5" fontWeight="bold" gutterBottom>
-              FindYourMatch{" "}
+              Truematchup{" "}
               <FavoriteIcon
                 sx={{
                   color: "#D9A4F0",
@@ -157,7 +157,7 @@ const Footer = () => {
                 underline="hover"
                 color="inherit"
               >
-                support@lovedating.com
+                support@truematchup.com
               </Link>
             </Typography>
           </Grid>
@@ -194,7 +194,7 @@ const Footer = () => {
           }}
         >
           <Typography variant="body2">
-            © {new Date().getFullYear()} FindYourMatch. Made with{" "}
+            © {new Date().getFullYear()} Truematchup. Made with{" "}
             <Favorite
               sx={{ color: "#ec4899", fontSize: 16, verticalAlign: "middle" }}
             />{" "}

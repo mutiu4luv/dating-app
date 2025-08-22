@@ -32,21 +32,21 @@ const testimonies = [
     name: "Mutiu & Sophia",
     text: "Our love story started with a simple chat, now it's a lifetime.",
   },
-  {
-    image: david,
-    name: "Ava & Noah",
-    text: "This app brought us together, forever grateful.",
-  },
-  {
-    image: martins,
-    name: "Martin and Blessing",
-    text: "We found each other when we least expected it.",
-  },
-  {
-    image: mutiu,
-    name: "Emily & Liam",
-    text: "We built something beautiful, together.",
-  },
+  // {
+  //   image: david,
+  //   name: "Ava & Noah",
+  //   text: "This app brought us together, forever grateful.",
+  // },
+  // {
+  //   image: martins,
+  //   name: "Martin and Blessing",
+  //   text: "We found each other when we least expected it.",
+  // },
+  // {
+  //   image: mutiu,
+  //   name: "Emily & Liam",
+  //   text: "We built something beautiful, together.",
+  // },
 ];
 
 const LoveStory = () => {
