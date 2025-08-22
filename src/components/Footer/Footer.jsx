@@ -45,6 +45,7 @@ const Footer = () => {
                 }}
               />
             </Typography>
+
             <Typography variant="body2">
               Find love, make memories, and share your story with someone
               special.
@@ -89,6 +90,14 @@ const Footer = () => {
                 color="inherit"
               >
                 Terms and Conditions
+              </Link>
+              <Link
+                component={RouterLink}
+                to="/safetyTips"
+                underline="hover"
+                color="inherit"
+              >
+                Safety Tips{" "}
               </Link>
             </Box>
           </Grid>
