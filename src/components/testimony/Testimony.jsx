@@ -139,7 +139,7 @@ const Testimony = () => {
     >
       <Box display="flex" alignItems="center" justifyContent="center" mb={4}>
         <Typography variant="h4" fontWeight="bold" color="#fff">
-          ❤️ TESTIMONIES
+          ❤️ TESTIMONIALS
         </Typography>
       </Box>
 
