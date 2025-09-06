@@ -17,12 +17,15 @@ import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import DiamondIcon from "@mui/icons-material/Diamond";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 
+const MERGE_EXPIRY_DAYS = 30;
+
 const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
   const [isMerged, setIsMerged] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [mergeExpired, setMergeExpired] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -58,6 +61,14 @@ const MergeScreen = () => {
     },
   };
 
+  // Helper to check if merge has expired (not used, backend is source of truth)
+  const checkMergeExpiry = (paidAt) => {
+    if (!paidAt) return true;
+    const now = Date.now();
+    const expiry = paidAt + MERGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+    return now > expiry;
+  };
+
   useEffect(() => {
     const fetchStatus = async () => {
       if (!member1 || !member2) return;
@@ -65,12 +76,10 @@ const MergeScreen = () => {
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
-        setHasPaid(res.data.hasPaid);
         setIsMerged(res.data.isMerged);
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
-        if (res.data.hasPaid) {
-          const hasPaid = localStorage.getItem("hasPaid") === "true";
-        }
+        setHasPaid(res.data.hasPaid);
+        setMergeExpired(res.data.expired); // Use backend expired status
       } catch (err) {
         console.error("Error fetching merge status:", err);
         alert("Could not verify merge/payment status.");
@@ -105,17 +114,7 @@ const MergeScreen = () => {
           setIsMerged(true);
           setHasPaid(true);
           setUserEmail(res.data.email || localStorage.getItem("email") || "");
-          const userId = localStorage.getItem("userId");
-          localStorage.setItem("hasPaid", "true");
-          if (userId) {
-            localStorage.setItem(`hasPaid_${userId}`, "true");
-          }
-
-          localStorage.setItem(
-            `hasPaid_${member2}`,
-            JSON.stringify({ status: true, paidAt: Date.now() })
-          );
-
+          setMergeExpired(false);
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -138,17 +137,8 @@ const MergeScreen = () => {
       }
     };
     mergeAfterPayment();
+    // eslint-disable-next-line
   }, [location.search, member1, member2, navigate]);
-
-  useEffect(() => {
-    const hasPaidData = localStorage.getItem(`hasPaid_${member2}`);
-    if (hasPaidData) {
-      const parsed = JSON.parse(hasPaidData);
-      if (parsed.status) {
-        setHasPaid(true);
-      }
-    }
-  }, [member2]);
 
   const handlePlanClick = async (planKey) => {
     const plan = subscriptionPlans[planKey];
@@ -159,11 +149,21 @@ const MergeScreen = () => {
       return;
     }
 
-    if (isMerged) {
+    // Only block Free plan if expired
+    if (mergeExpired && plan.amount === 0) {
+      setErrorMessage(
+        "Your subscription has expired. Please subscribe to continue."
+      );
+      return;
+    }
+
+    // Only allow opening chat if merged AND paid AND not expired
+    if (isMerged && hasPaid && !mergeExpired) {
       return navigate(`/chat/${member1}/${member2}`);
     }
 
-    if (hasPaid && plan.amount > 0) {
+    // If already paid for this plan and not expired, finalize merge
+    if (hasPaid && plan.amount > 0 && !mergeExpired) {
       try {
         const res = await api.post(
           "/merge",
@@ -175,10 +175,7 @@ const MergeScreen = () => {
           }
         );
         if (res.data.match) {
-          localStorage.setItem(
-            `hasPaid_${member2}`,
-            JSON.stringify({ status: true, paidAt: Date.now() })
-          );
+          setMergeExpired(false);
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -202,6 +199,7 @@ const MergeScreen = () => {
       return;
     }
 
+    // Free plan logic
     if (plan.amount === 0) {
       try {
         const res = await api.post(
@@ -214,10 +212,7 @@ const MergeScreen = () => {
           }
         );
         if (res.data.match) {
-          localStorage.setItem(
-            `hasPaid_${member2}`,
-            JSON.stringify({ status: true, paidAt: Date.now() })
-          );
+          setMergeExpired(false);
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -236,6 +231,7 @@ const MergeScreen = () => {
       return;
     }
 
+    // For paid plans, initiate payment
     try {
       const paymentRes = await api.post(
         "/subscription/initiate",
@@ -293,13 +289,15 @@ const MergeScreen = () => {
           Merge with Your Match
         </Typography>
         <Typography variant="body1" mb={2} textAlign="center">
-          {isMerged
+          {mergeExpired
+            ? "Your subscription has expired. Choose a subscription plan to unlock chat access."
+            : isMerged && hasPaid
             ? "You are already merged! Click a plan below to chat."
             : hasPaid
             ? "Payment received. Click to finalize your merge."
             : "Choose a subscription plan to unlock chat access."}
         </Typography>
-        {hasPaid && (
+        {hasPaid && !mergeExpired && (
           <Box mb={3}>
             <Button
               variant="outlined"
@@ -327,7 +325,12 @@ const MergeScreen = () => {
           container
           spacing={3}
           justifyContent="center"
-          sx={{ maxWidth: 1100, width: "100%", px: isMobile ? 1 : 3 }}
+          sx={{
+            maxWidth: 1100,
+            width: "100%",
+            px: isMobile ? 1 : 3,
+            mt: 2, // Add margin top to the grid container
+          }}
         >
           {Object.entries(subscriptionPlans).map(([key, plan]) => (
             <Grid
@@ -336,13 +339,18 @@ const MergeScreen = () => {
               sm={6}
               md={3}
               key={key}
-              sx={{ mt: isMobile ? 6 : 3, display: "flex" }}
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "stretch",
+              }}
             >
               <Paper
                 elevation={3}
                 sx={{
                   p: 3,
-                  height: "100%",
+                  width: "100%",
+                  maxWidth: 320,
                   borderRadius: 4,
                   border: "1px solid #ddd",
                   display: "flex",
@@ -350,7 +358,8 @@ const MergeScreen = () => {
                   alignItems: "center",
                   justifyContent: "space-between",
                   textAlign: "center",
-                  minHeight: 320,
+                  minHeight: 340,
+                  mt: 2, // Add margin top to each card
                 }}
               >
                 <Box mb={2}>{plan.icon}</Box>
@@ -374,10 +383,13 @@ const MergeScreen = () => {
                     px: 2,
                     py: 1.5,
                   }}
+                  disabled={mergeExpired && plan.amount === 0}
                 >
                   {plan.amount === 0
                     ? "Use Free Plan"
-                    : isMerged
+                    : mergeExpired
+                    ? "Subscribe & Merge"
+                    : isMerged && hasPaid && !mergeExpired
                     ? "Open Chat"
                     : hasPaid
                     ? "Finalize Merge"
