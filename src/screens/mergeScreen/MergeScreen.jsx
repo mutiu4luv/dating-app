@@ -22,10 +22,14 @@ const MERGE_EXPIRY_DAYS = 30;
 const MergeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [hasPaid, setHasPaid] = useState(false);
-  const [isMerged, setIsMerged] = useState(false);
+  const [isMerged, setIsMerged] = useState(
+    JSON.parse(localStorage.getItem("isMerged")) || false
+  );
   const [userEmail, setUserEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [mergeExpired, setMergeExpired] = useState(false);
+  const [mergeExpired, setMergeExpired] = useState(
+    JSON.parse(localStorage.getItem("mergeExpired")) || false
+  );
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -73,13 +77,19 @@ const MergeScreen = () => {
     const fetchStatus = async () => {
       if (!member1 || !member2) return;
       try {
+        console.log("Fetching merge status...");
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
+        console.log("Merge status response:", res.data);
         setIsMerged(res.data.isMerged);
         setUserEmail(res.data.email || localStorage.getItem("email") || "");
         setHasPaid(res.data.hasPaid);
         setMergeExpired(res.data.expired); // Use backend expired status
+
+        // Save to localStorage
+        localStorage.setItem("isMerged", JSON.stringify(res.data.isMerged));
+        localStorage.setItem("mergeExpired", JSON.stringify(res.data.expired));
       } catch (err) {
         console.error("Error fetching merge status:", err);
         alert("Could not verify merge/payment status.");
@@ -90,13 +100,124 @@ const MergeScreen = () => {
     fetchStatus();
   }, [member1, member2]);
 
+  // useEffect(() => {
+  //   const urlParams = new URLSearchParams(location.search);
+  //   const reference = urlParams.get("reference");
+  //   const mergeAfterPayment = async () => {
+  //     if (!reference || !member1 || !member2) return;
+  //     const selectedPlan = sessionStorage.getItem("selectedPlan") || "Free";
+  //     try {
+  //       // 1. Confirm subscription payment (activate subscription)
+  //       console.log("🔹 Sending subscription confirmation request...");
+  //       const confirmRes = await api.post(
+  //         "/subscription/confirm",
+  //         {
+  //           memberId: member1,
+  //           plan: selectedPlan,
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //           },
+  //         }
+  //       );
+  //       console.log("✅ Subscription confirmed successfully!");
+  //       console.log("Subscription response:", confirmRes.data);
+
+  //       // 2. Merge users
+  //       console.log("🔹 Sending merge request...");
+  //       const res = await api.post(
+  //         "/merge",
+  //         {
+  //           memberId1: member1,
+  //           memberId2: member2,
+  //           plan: selectedPlan,
+  //         },
+  //         {
+  //           headers: {
+  //             Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //           },
+  //         }
+  //       );
+  //       console.log("✅ Merge response:", res.data);
+
+  //       if (res.data.match) {
+  //         setIsMerged(true);
+  //         setHasPaid(true);
+  //         setUserEmail(res.data.email || localStorage.getItem("email") || "");
+  //         setMergeExpired(false);
+
+  //         // Save to localStorage
+  //         localStorage.setItem("isMerged", JSON.stringify(true));
+  //         localStorage.setItem("mergeExpired", JSON.stringify(false));
+
+  //         navigate(`/merge/success/${member2}`);
+  //       } else {
+  //         setErrorMessage(res.data.message || "Merge failed.");
+  //       }
+  //     } catch (err) {
+  //       const msg =
+  //         err?.response?.data?.message || "Merge failed after payment.";
+  //       if (
+  //         err.response?.status === 403 &&
+  //         msg.toLowerCase().includes("monthly limit")
+  //       ) {
+  //         setHasPaid(false);
+  //         setErrorMessage(
+  //           "Free plan limit exceeded. Please choose a higher plan to continue."
+  //         );
+  //         return;
+  //       }
+  //       setErrorMessage(msg);
+  //       console.error("❌ Error during merge after payment:", err);
+  //       if (err.response) {
+  //         console.error("Error response data:", err.response.data);
+  //       }
+  //     }
+  //   };
+  //   mergeAfterPayment();
+  //   // eslint-disable-next-line
+  // }, [location.search, member1, member2, navigate]);
+
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const reference = urlParams.get("reference");
+    console.log("mergeAfterPayment effect running", {
+      reference,
+      member1,
+      member2,
+    });
+
     const mergeAfterPayment = async () => {
-      if (!reference || !member1 || !member2) return;
+      if (!reference || !member1 || !member2) {
+        console.log("mergeAfterPayment: missing reference or member1/member2", {
+          reference,
+          member1,
+          member2,
+        });
+        return;
+      }
       const selectedPlan = sessionStorage.getItem("selectedPlan") || "Free";
       try {
+        // 1. Confirm subscription payment (activate subscription)
+        console.log("🔹 Sending subscription confirmation request...");
+        const confirmRes = await api.post(
+          "/subscription/confirm",
+          {
+            memberId: member1,
+            plan: selectedPlan,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        console.log("✅ Subscription confirmed successfully!");
+        console.log("Subscription response:", confirmRes.data);
+
+        // 2. Merge users
+        console.log("🔹 Sending merge request...");
         const res = await api.post(
           "/merge",
           {
@@ -110,11 +231,18 @@ const MergeScreen = () => {
             },
           }
         );
+        console.log("✅ Merge response:", res.data);
+
         if (res.data.match) {
           setIsMerged(true);
           setHasPaid(true);
           setUserEmail(res.data.email || localStorage.getItem("email") || "");
           setMergeExpired(false);
+
+          // Save to localStorage
+          localStorage.setItem("isMerged", JSON.stringify(true));
+          localStorage.setItem("mergeExpired", JSON.stringify(false));
+
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -133,16 +261,20 @@ const MergeScreen = () => {
           return;
         }
         setErrorMessage(msg);
-        console.error("Error during merge after payment:", err);
+        console.error("❌ Error during merge after payment:", err);
+        if (err.response) {
+          console.error("Error response data:", err.response.data);
+        }
       }
     };
     mergeAfterPayment();
     // eslint-disable-next-line
   }, [location.search, member1, member2, navigate]);
-
   const handlePlanClick = async (planKey) => {
     const plan = subscriptionPlans[planKey];
     setErrorMessage("");
+    console.log("handlePlanClick called with:", planKey);
+    console.log("Current state:", { isMerged, hasPaid, mergeExpired });
 
     if (!userEmail) {
       alert("Email missing. Please log in again.");
@@ -159,12 +291,18 @@ const MergeScreen = () => {
 
     // Only allow opening chat if merged AND paid AND not expired
     if (isMerged && hasPaid && !mergeExpired) {
-      return navigate(`/chat/${member1}/${member2}`);
+      // Save to localStorage for consistency
+      localStorage.setItem("isMerged", JSON.stringify(true));
+      localStorage.setItem("mergeExpired", JSON.stringify(false));
+      console.log("Navigating to chat:", `/chat/${member1}/${member2}`);
+      navigate(`/chat/${member1}/${member2}`);
+      return;
     }
 
     // If already paid for this plan and not expired, finalize merge
     if (hasPaid && plan.amount > 0 && !mergeExpired) {
       try {
+        console.log("Finalizing merge for paid plan...");
         const res = await api.post(
           "/merge",
           { memberId1: member1, memberId2: member2, plan: planKey },
@@ -174,8 +312,14 @@ const MergeScreen = () => {
             },
           }
         );
+        console.log("Merge response:", res.data);
         if (res.data.match) {
           setMergeExpired(false);
+
+          // Save to localStorage
+          localStorage.setItem("isMerged", JSON.stringify(true));
+          localStorage.setItem("mergeExpired", JSON.stringify(false));
+
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -202,6 +346,7 @@ const MergeScreen = () => {
     // Free plan logic
     if (plan.amount === 0) {
       try {
+        console.log("Trying free plan merge...");
         const res = await api.post(
           "/merge",
           { memberId1: member1, memberId2: member2, plan: planKey },
@@ -211,8 +356,14 @@ const MergeScreen = () => {
             },
           }
         );
+        console.log("Free plan merge response:", res.data);
         if (res.data.match) {
           setMergeExpired(false);
+
+          // Save to localStorage
+          localStorage.setItem("isMerged", JSON.stringify(true));
+          localStorage.setItem("mergeExpired", JSON.stringify(false));
+
           navigate(`/merge/success/${member2}`);
         } else {
           setErrorMessage(res.data.message || "Merge failed.");
@@ -233,6 +384,7 @@ const MergeScreen = () => {
 
     // For paid plans, initiate payment
     try {
+      console.log("Initiating payment for plan:", planKey);
       const paymentRes = await api.post(
         "/subscription/initiate",
         {
@@ -250,6 +402,7 @@ const MergeScreen = () => {
         }
       );
       const { authorization_url } = paymentRes.data;
+      console.log("Payment initiation response:", paymentRes.data);
       if (authorization_url) {
         sessionStorage.setItem("selectedPlan", planKey);
         window.location.href = authorization_url;
@@ -291,13 +444,13 @@ const MergeScreen = () => {
         <Typography variant="body1" mb={2} textAlign="center">
           {mergeExpired
             ? "Your subscription has expired. Choose a subscription plan to unlock chat access."
-            : isMerged && hasPaid
+            : isMerged && hasPaid && !mergeExpired
             ? "You are already merged! Click a plan below to chat."
             : hasPaid
-            ? "Payment received. Click to finalize your merge."
+            ? "Subscription active. Click to finalize your merge."
             : "Choose a subscription plan to unlock chat access."}
         </Typography>
-        {hasPaid && !mergeExpired && (
+        {/* {hasPaid && !mergeExpired && (
           <Box mb={3}>
             <Button
               variant="outlined"
@@ -309,7 +462,7 @@ const MergeScreen = () => {
               📘 Open Relationship eBook
             </Button>
           </Box>
-        )}
+        )} */}
         {errorMessage && (
           <Typography
             variant="body1"

@@ -73,6 +73,7 @@ const Members = () => {
               const res = await axiosInstance.get(
                 `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
               );
+              console.log(res);
               return { memberId: member._id, status: res.data };
             } catch {
               return {
@@ -151,7 +152,7 @@ const Members = () => {
   };
 
   const handleMerge = (member2) => navigate(`/merge/${userId}/${member2}`);
-  const handleChat = (member2) => navigate(`/chat/${member2}`);
+  const handleChat = (member2) => navigate(`/chat/${userId}/${member2}`);
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
