@@ -47,19 +47,19 @@ const MergeScreen = () => {
     },
     Basic: {
       label: "Basic Plan",
-      amount: 2000,
+      amount: 1000,
       description: "Access 10 merges per month for casual users.",
       icon: <StarIcon sx={{ fontSize: 32, color: "#3b82f6" }} />,
     },
     Standard: {
       label: "Standard Plan",
-      amount: 5000,
-      description: "20 merges/month. Best for serious users.",
+      amount: 3000,
+      description: "30 merges/month. Best for serious users.",
       icon: <WorkspacePremiumIcon sx={{ fontSize: 32, color: "#f59e0b" }} />,
     },
     Premium: {
       label: "Premium Plan",
-      amount: 7000,
+      amount: 5000,
       description: "Unlimited merges. Full experience unlocked.",
       icon: <DiamondIcon sx={{ fontSize: 32, color: "#a855f7" }} />,
     },
