@@ -31,8 +31,13 @@ const relationshipTypes = [
   "Chat mate ",
   "Friends with Benefits  ",
   "Sex chat  ",
-  "Gay",
-  "Lasbian",
+  // "Gay",
+  // "Lasbian",
+  "Sugar Daddy",
+  "Sugar Mommy",
+  "Casual Relationship",
+  "Long-term Relationship",
+  "Open Relationship",
 ];
 
 const UpdateProfileScreen = () => {
