@@ -24,15 +24,20 @@ const maritalStatuses = ["Single", "Married", "Divorced", "Widowed"];
 const relationshipTypes = [
   "friendship",
   "dating",
-  // "marriage",
+  "marriage",
   "Online Dating ",
   "Males Friends ",
   "Female friends ",
   "Chat mate ",
   "Friends with Benefits  ",
   "Sex chat  ",
-  "Gay",
-  "Lasbian",
+  // "Gay",
+  // "Lasbian",
+  "Sugar Daddy",
+  "Sugar Mommy",
+  "Casual Relationship",
+  "Long-term Relationship",
+  "Open Relationship",
 ];
 
 const Signup = () => {
