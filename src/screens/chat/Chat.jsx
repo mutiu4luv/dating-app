@@ -61,6 +61,19 @@ const Chat = () => {
 
   // Fetch chat history once
   useEffect(() => {
+    // const fetchChats = async () => {
+    //   try {
+    //     const res = await axios.get(
+    //       `${
+    //         import.meta.env.VITE_BASE_URL
+    //       }/api/chat?member1=${member1}&member2=${member2}`
+    //     );
+    //     setMessages(res.data);
+    //   } catch (err) {
+    //     console.error("❌ Error fetching messages:", err);
+    //   }
+    // };
+
     const fetchChats = async () => {
       try {
         const res = await axios.get(
@@ -70,7 +83,12 @@ const Chat = () => {
         );
         setMessages(res.data);
       } catch (err) {
-        console.error("❌ Error fetching messages:", err);
+        if (err.response?.status === 403) {
+          alert(
+            "Your subscription has expired. Please renew to continue chatting."
+          );
+          navigate(`/merge/${member1}/${member2}`);
+        }
       }
     };
 
@@ -108,17 +126,26 @@ const Chat = () => {
       room,
     };
 
-    // 🟢 Show message immediately for sender
-    setMessages((prev) => [...prev, data]);
-
-    // Emit to others in the room
-    socketInstance.emit("send_message", data);
-
-    // Save to DB
     try {
-      await axios.post(`${import.meta.env.VITE_BASE_URL}/api/chat/save`, data);
+      // 1️⃣ Save to DB first → ensures subscription is valid
+      const res = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/api/chat/save`,
+        data
+      );
+
+      // 2️⃣ Only add message if saved successfully
+      setMessages((prev) => [...prev, res.data]);
+
+      // 3️⃣ Emit to socket after saving
+      socketInstance.emit("send_message", res.data);
     } catch (err) {
-      console.error("❌ Failed to save message:", err);
+      if (err.response?.status === 403) {
+        alert("❌ Your subscription has expired. Renew to continue chatting.");
+        navigate("/subscription");
+      } else {
+        console.error("❌ Failed to send message:", err);
+      }
+      return;
     }
 
     setMessage("");
