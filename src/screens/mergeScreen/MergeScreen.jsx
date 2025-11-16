@@ -42,7 +42,7 @@ const MergeScreen = () => {
     Free: {
       label: "Free Plan",
       amount: 0,
-      description: "Access 2 merges per month. Great for exploring!",
+      description: "Access 1 merge per month. Great for exploring!",
       icon: <FavoriteBorderIcon sx={{ fontSize: 32, color: "#22c55e" }} />,
     },
     Basic: {
