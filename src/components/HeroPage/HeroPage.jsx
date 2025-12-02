@@ -18,10 +18,10 @@ const HeroPage = () => {
         position: "relative",
         height: "100vh",
         display: "flex",
-        alignItems: "flex-start", // changed from center
+        alignItems: "flex-start",
         justifyContent: "center",
         overflow: "hidden",
-        pt: 5, // push content down to avoid overlapping with navbar
+        pt: 5,
       }}
     >
       {/* Gradient Blur Layer */}
@@ -37,7 +37,50 @@ const HeroPage = () => {
         }}
       />
 
-      {/* Overlay Container for text */}
+      {/* === RATED 18 BADGE (Above Container) === */}
+      <motion.div
+        initial={{ opacity: 0, y: -20, rotate: -10 }}
+        animate={{
+          opacity: 1,
+          y: [0, -10, 0], // bounce
+          rotate: [-10, 10, -10], // wiggle
+        }}
+        transition={{
+          duration: 2,
+          repeat: Infinity,
+          repeatType: "loop",
+          ease: "easeInOut",
+        }}
+        style={{
+          position: "absolute",
+          top: 10,
+          zIndex: 20,
+          display: "flex",
+          justifyContent: "center",
+          width: "100%",
+        }}
+      >
+        <Box
+          sx={{
+            width: 60,
+            height: 60,
+            borderRadius: "50%",
+            backgroundColor: "#ff0033",
+            color: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontWeight: "bold",
+            fontSize: "1.2rem",
+            border: "3px solid white",
+            boxShadow: "0px 0px 10px rgba(0,0,0,0.5)",
+          }}
+        >
+          18+
+        </Box>
+      </motion.div>
+
+      {/* Overlay Container */}
       <Box
         sx={{
           position: "relative",
@@ -47,10 +90,11 @@ const HeroPage = () => {
           py: 4,
           maxWidth: 800,
           borderRadius: 4,
-          backgroundColor: "rgba(0, 0, 0, 0.5)", // overlay for better readability
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
           color: "#fff",
         }}
       >
+        {/* Main Heading */}
         <motion.div
           initial={{ opacity: 0, y: -50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -66,6 +110,7 @@ const HeroPage = () => {
           </Typography>
         </motion.div>
 
+        {/* Subheading */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -77,6 +122,7 @@ const HeroPage = () => {
           </Typography>
         </motion.div>
 
+        {/* Button */}
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -107,19 +153,6 @@ const HeroPage = () => {
       </Box>
 
       {/* Footer Text */}
-      {/* <Box
-        sx={{
-          position: "absolute",
-          bottom: 16,
-          width: "100%",
-          textAlign: "center",
-          color: "#f5f5f5",
-          fontSize: 14,
-          zIndex: 10,
-        }}
-      >
-        Made with ❤️ for modern love
-      </Box> */}
       <Box
         sx={{
           position: "absolute",
@@ -129,7 +162,7 @@ const HeroPage = () => {
           color: "#f5f5f5",
           fontSize: 14,
           zIndex: 10,
-          backgroundColor: "rgba(0, 0, 0, 0.4)", // optional: adds overlay background
+          backgroundColor: "rgba(0, 0, 0, 0.4)",
           py: 1,
         }}
       >
