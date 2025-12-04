@@ -34,6 +34,7 @@ const MergeScreen = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userId: member1, member2 } = useParams();
+  const isUpgradeOnly = member2 === "upgrade";
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -92,7 +93,7 @@ const MergeScreen = () => {
         localStorage.setItem("mergeExpired", JSON.stringify(res.data.expired));
       } catch (err) {
         console.error("Error fetching merge status:", err);
-        alert("Could not verify merge/payment status.");
+        // alert("Could not verify merge/payment status.");
       } finally {
         setLoading(false);
       }
@@ -431,6 +432,17 @@ const MergeScreen = () => {
   return (
     <>
       <Navbar />
+      {!isUpgradeOnly && (
+        <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
+          Merge with Your Match
+        </Typography>
+      )}
+      {isUpgradeOnly && (
+        <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
+          Upgrade Your Subscription
+        </Typography>
+      )}
+
       <Box
         display="flex"
         flexDirection="column"

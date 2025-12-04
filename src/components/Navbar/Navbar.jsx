@@ -20,6 +20,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
+import UpgradeIcon from "@mui/icons-material/WorkspacePremium"; // ★ UPGRADE ICON
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
@@ -35,7 +36,11 @@ const Navbar = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
+
   const userId = localStorage.getItem("userId");
+
+  // 🔥 Upgrade Link
+  const upgradeLink = `/merge/${userId}/upgrade`;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -78,6 +83,7 @@ const Navbar = () => {
 
   const handleMenuClick = async (item) => {
     handleMenuClose();
+
     switch (item) {
       case "Logout":
         try {
@@ -98,12 +104,15 @@ const Navbar = () => {
           navigate("/");
         }
         break;
+
       case "Home":
         navigate("/");
         break;
+
       case "Matches":
         navigate(`/members/${userId}`);
         break;
+
       case "Messages":
         try {
           const token = localStorage.getItem("token");
@@ -118,12 +127,19 @@ const Navbar = () => {
         }
         navigate("/messages");
         break;
+
       case "Profile":
         navigate("/profile");
         break;
+
+      case "Upgrade":
+        navigate(upgradeLink);
+        break;
+
       case "Login/SignIn":
         navigate("/login");
         break;
+
       default:
         break;
     }
@@ -144,6 +160,7 @@ const Navbar = () => {
             </Typography>
           </Link>
         </Box>
+
         <Box sx={{ display: "flex", alignItems: "center" }}>
           {isLoggedIn && username ? (
             <>
@@ -160,6 +177,7 @@ const Navbar = () => {
                   <ChatIcon />
                 </Badge>
               </IconButton>
+
               <Button
                 color="inherit"
                 startIcon={
@@ -187,6 +205,8 @@ const Navbar = () => {
               >
                 {username.split(" ")[0]}
               </Button>
+
+              {/* Dropdown Menu */}
               <Menu
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
@@ -212,25 +232,30 @@ const Navbar = () => {
                 }}
               >
                 <MenuItem onClick={() => handleMenuClick("Home")}>
-                  {" "}
-                  <HomeIcon sx={{ mr: 1, color: "#2d0052" }} /> Home{" "}
+                  <HomeIcon sx={{ mr: 1, color: "#2d0052" }} /> Home
                 </MenuItem>
+
                 <MenuItem onClick={() => handleMenuClick("Matches")}>
-                  {" "}
-                  <PeopleIcon sx={{ mr: 1, color: "#2d0052" }} /> Matches{" "}
+                  <PeopleIcon sx={{ mr: 1, color: "#2d0052" }} /> Matches
                 </MenuItem>
+
                 <MenuItem onClick={() => handleMenuClick("Messages")}>
-                  {" "}
-                  <ChatIcon sx={{ mr: 1, color: "#2d0052" }} /> Messages{" "}
+                  <ChatIcon sx={{ mr: 1, color: "#2d0052" }} /> Messages
                 </MenuItem>
+
                 <MenuItem onClick={() => handleMenuClick("Profile")}>
-                  {" "}
-                  <PersonIcon sx={{ mr: 1, color: "#2d0052" }} /> Profile{" "}
+                  <PersonIcon sx={{ mr: 1, color: "#2d0052" }} /> Profile
                 </MenuItem>
+
+                {/* ⭐ NEW UPGRADE MENU ITEM */}
+                <MenuItem onClick={() => handleMenuClick("Upgrade")}>
+                  <UpgradeIcon sx={{ mr: 1, color: "#2d0052" }} /> Upgrade Plan
+                </MenuItem>
+
                 <Divider sx={{ my: 1 }} />
+
                 <MenuItem onClick={() => handleMenuClick("Logout")}>
-                  {" "}
-                  <LogoutIcon sx={{ mr: 1, color: "#2d0052" }} /> Logout{" "}
+                  <LogoutIcon sx={{ mr: 1, color: "#2d0052" }} /> Logout
                 </MenuItem>
               </Menu>
             </>

@@ -9,36 +9,66 @@ import {
   useMediaQuery,
   keyframes,
   Link,
+  Tooltip,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
+
 import ebook from "../../assets/images/ebook.jpeg";
 import ebook1 from "../../assets/images/ebook1.jpeg";
 import ebook2 from "../../assets/images/ebook2.jpeg";
 import ebook3 from "../../assets/images/ebook3.jpeg";
 import online from "../../assets/images/online.webp";
 
-// Blinking animation
+// Animation
 const blink = keyframes`
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 `;
 
+const COPY_URL = "https://truematchup.com/";
+
 const images = [ebook, ebook1, ebook2, ebook3];
 
 const EbookAdvert = () => {
   const isMobile = useMediaQuery("(max-width:600px)");
+
   const [imageIndex, setImageIndex] = useState(0);
 
+  // copy button states
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // rotating image
   useEffect(() => {
     const interval = setInterval(() => {
       setImageIndex((prev) => (prev + 1) % images.length);
     }, 8000);
-
     return () => clearInterval(interval);
   }, []);
+
+  // copy function
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(COPY_URL);
+      setCopied(true);
+      setOpen(true);
+    } catch (err) {
+      console.error("Copy failed", err);
+      setCopied(false);
+      setOpen(true);
+    }
+  };
+
+  const handleClose = (_, reason) => {
+    if (reason === "clickaway") return;
+    setOpen(false);
+  };
 
   return (
     <Box
@@ -77,6 +107,7 @@ const EbookAdvert = () => {
             transition: "opacity 1s ease-in-out",
           }}
         />
+
         <CardContent
           sx={{
             background: "#fff0f6",
@@ -90,13 +121,13 @@ const EbookAdvert = () => {
           <Box display="flex" alignItems="center" mb={2}>
             <FavoriteIcon sx={{ color: "#D9A4F0", mr: 1 }} />
             <Typography variant="h5" fontWeight="bold" color="#D9A4F0">
-              Find Love here & say goodbye bye to Singlehood.
+              Find Love & Say Goodbye to Singlehood.
             </Typography>
           </Box>
 
           <Typography variant="body1" color="#4b5563" mb={2}>
-            Subscribe now and grab our exclusive relationship e-books above for
-            FREE as a gift. Absolutely all free!
+            Subscribe now and get our exclusive relationship e-books for FREE as
+            a gift.
           </Typography>
 
           <Button
@@ -119,7 +150,7 @@ const EbookAdvert = () => {
             startIcon={<LibraryBooksIcon />}
             onClick={() => (window.location.href = "/register")}
           >
-            Register, Subscribe & Get Free Ebook
+            Register & Get Free Ebook
           </Button>
         </CardContent>
       </Card>
@@ -170,9 +201,8 @@ const EbookAdvert = () => {
         </Link>
 
         <Typography variant="body2" color="#4b5563" mt={2}>
-          Discover the secrets to a fulfilling relationship with our online
-          book. Learn how to communicate effectively, resolve conflicts, and
-          build a deeper connection with your partner.
+          Discover how to build deep, meaningful relationships and improve your
+          love life.
         </Typography>
 
         <Button
@@ -193,7 +223,7 @@ const EbookAdvert = () => {
         </Button>
       </Box>
 
-      {/* Refer and Earn Section */}
+      {/* Refer & Earn Section */}
       <Box
         sx={{
           mt: 6,
@@ -209,34 +239,62 @@ const EbookAdvert = () => {
         <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
           <MonetizationOnIcon sx={{ color: "#D9A4F0", fontSize: 32, mr: 1 }} />
           <Typography variant="h6" fontWeight="bold" color="#D9A4F0">
-            Refer and Earn
+            Invite Your Single Friends
           </Typography>
         </Box>
+
         <Typography variant="body1" color="#4b5563" mb={2}>
-          Share our website link with friends and family and get a rewards for
-          every successful referral! Help others find love and earn rewards for
-          growing our community.
+          Share our website link with friends and family and earn rewards for
+          every successful referral!
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<WhatsAppIcon />}
+
+        {/* COPY SIGN */}
+        <Box
+          onClick={copyToClipboard}
           sx={{
-            background: "linear-gradient(90deg, #25D366 60%, #D9A4F0 100%)",
-            fontWeight: "bold",
-            borderRadius: 3,
-            px: 4,
-            py: 1.5,
-            animation: `${blink} 1.8s infinite ease-in-out`,
-            boxShadow: "0 0 10px #25D366",
-            "&:hover": {
-              background: "linear-gradient(90deg, #128C7E 60%, #a78bfa 100%)",
-            },
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 1,
+            px: 2,
+            py: 1,
+            borderRadius: 2,
+            background:
+              "linear-gradient(135deg, rgba(217,164,240,0.12), rgba(255,64,129,0.08))",
+            border: "1px solid rgba(45,0,82,0.06)",
+            cursor: "pointer",
+            userSelect: "none",
+            transition: "transform .12s ease, box-shadow .12s ease",
+            "&:hover": { transform: "translateY(-2px)", boxShadow: 3 },
           }}
-          href="https://wa.me/2347050605491?text=Hi!%20I'm%20interested%20in%20the%20Refer%20and%20Earn%20program%20on%20FindYourMatch.%20Please%20give%20me%20more%20details."
-          target="_blank"
         >
-          Refer Now via WhatsApp
-        </Button>
+          <Tooltip title="Click to copy link">
+            <Button
+              size="small"
+              startIcon={copied ? <CheckIcon /> : <ContentCopyIcon />}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                color: "#2d0052",
+                background: "transparent",
+                "&:hover": { background: "transparent" },
+                boxShadow: "none",
+                px: 0,
+              }}
+            >
+              {copied ? "Copied!" : "Copy Truematchup Link"}
+            </Button>
+          </Tooltip>
+        </Box>
+
+        <Snackbar open={open} autoHideDuration={2500} onClose={handleClose}>
+          <Alert
+            onClose={handleClose}
+            severity={copied ? "success" : "error"}
+            sx={{ width: "100%" }}
+          >
+            {copied ? "Link copied to clipboard!" : "Failed to copy link"}
+          </Alert>
+        </Snackbar>
       </Box>
     </Box>
   );

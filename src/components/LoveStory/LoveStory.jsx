@@ -11,6 +11,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { Link } from "react-router-dom";
+
 import ezinne from "../../assets/images/ezinne.jpeg";
 import david from "../../assets/images/david.jpeg";
 import mutiu from "../../assets/images/mutiu.jpeg";
@@ -32,28 +34,17 @@ const testimonies = [
     name: "Mutiu & Sophia",
     text: "Our love story started with a simple chat, now it's a lifetime.",
   },
-  // {
-  //   image: david,
-  //   name: "Ava & Noah",
-  //   text: "This app brought us together, forever grateful.",
-  // },
-  // {
-  //   image: martins,
-  //   name: "Martin and Blessing",
-  //   text: "We found each other when we least expected it.",
-  // },
-  // {
-  //   image: mutiu,
-  //   name: "Emily & Liam",
-  //   text: "We built something beautiful, together.",
-  // },
 ];
 
 const LoveStory = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Show only 3 items on small screens
+  // 🔥 Get logged-in userId from localStorage
+  const userId = localStorage.getItem("userId") || "guest";
+  const upgradeLink = `/merge/${userId}/upgrade`;
+  // 🔥 Dynamic upgrade link
+
   const visibleTestimonies = isSmallScreen
     ? testimonies.slice(0, 3)
     : testimonies;
@@ -61,6 +52,34 @@ const LoveStory = () => {
   return (
     <Box sx={{ bgcolor: "#fff0f5", py: 8 }}>
       <Container>
+        {/* 🔥 Blinking Upgrade Button */}
+        <Box sx={{ textAlign: "center", mb: 4 }}>
+          <Button
+            component={Link}
+            to={upgradeLink}
+            variant="contained"
+            sx={{
+              backgroundColor: "#ff4081",
+              color: "#fff",
+              fontWeight: "bold",
+              borderRadius: "25px",
+              px: 4,
+              py: 1.2,
+              fontSize: "1rem",
+              animation: "blink 1.2s infinite",
+              "@keyframes blink": {
+                "0%": { opacity: 1 },
+                "50%": { opacity: 0.4 },
+                "100%": { opacity: 1 },
+              },
+              "&:hover": { backgroundColor: "#ff5c95" },
+            }}
+          >
+            Upgrade to a Higher Plan to Chat With More People
+          </Button>
+        </Box>
+
+        {/* Title */}
         <Typography
           variant="h4"
           align="center"
@@ -71,6 +90,7 @@ const LoveStory = () => {
           ❤️ Real Love Stories
         </Typography>
 
+        {/* Testimonies */}
         <Grid container spacing={4} justifyContent="center">
           {visibleTestimonies.map((story, index) => (
             <Grid item xs={12} sm={4} md={4} key={index}>
@@ -118,26 +138,6 @@ const LoveStory = () => {
             </Grid>
           ))}
         </Grid>
-
-        {/* <Box sx={{ textAlign: "center", mt: 6 }}>
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              px: 5,
-              py: 1.5,
-              backgroundColor: "#D9A4F0",
-              color: "#2d0052",
-              fontWeight: "bold",
-              borderRadius: "30px",
-              fontSize: "1rem",
-              ":hover": { backgroundColor: "#D9A4F0" },
-              boxShadow: 3,
-            }}
-          >
-            Read More Testimonies
-          </Button>
-        </Box> */}
       </Container>
     </Box>
   );
