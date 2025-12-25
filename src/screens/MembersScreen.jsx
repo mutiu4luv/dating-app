@@ -54,12 +54,14 @@ const Members = () => {
       navigate("/login", { replace: true });
       return;
     }
+
     const fetchMembers = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
         const res = await axiosInstance.get(
-          `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
+          `${import.meta.env.VITE_BASE_URL}/api/user
+`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -83,6 +85,35 @@ const Members = () => {
             }
           })
         );
+        // const fetchMembers = async () => {
+        //   setLoading(true);
+        //   try {
+        //     const token = localStorage.getItem("token");
+        //     const res = await axiosInstance.get(
+        //       `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
+        //       { headers: { Authorization: `Bearer ${token}` } }
+        //     );
+
+        //     const data = Array.isArray(res.data)
+        //       ? res.data
+        //       : res.data.members || res.data.matches || [];
+
+        //     const onlineStatuses = await Promise.all(
+        //       data.map(async (member) => {
+        //         try {
+        //           const res = await axiosInstance.get(
+        //             `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
+        //           );
+        //           console.log(res);
+        //           return { memberId: member._id, status: res.data };
+        //         } catch {
+        //           return {
+        //             memberId: member._id,
+        //             status: { isOnline: false, lastSeen: null },
+        //           };
+        //         }
+        //       })
+        //     );
 
         const statusObj = {};
         onlineStatuses.forEach(({ memberId, status }) => {
@@ -157,9 +188,13 @@ const Members = () => {
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
     setSearchTerm(term);
-    const filtered = members.filter((m) =>
-      m.name?.toLowerCase().includes(term)
+
+    const filtered = members.filter(
+      (m) =>
+        m.name?.toLowerCase().includes(term) ||
+        m.location?.toLowerCase().includes(term)
     );
+
     setFilteredMembers(filtered);
     setCurrentPage(1);
   };
@@ -222,7 +257,7 @@ const Members = () => {
           <TextField
             variant="outlined"
             size="small"
-            placeholder="Search by name"
+            placeholder="Search by name or location"
             value={searchTerm}
             onChange={handleSearch}
             sx={{ backgroundColor: "#fff", borderRadius: 2, width: "300px" }}
