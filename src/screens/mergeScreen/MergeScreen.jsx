@@ -76,30 +76,70 @@ const MergeScreen = () => {
 
   useEffect(() => {
     const fetchStatus = async () => {
-      if (!member1 || !member2) return;
+      // 🚫 Skip merge status for upgrade page
+      if (isUpgradeOnly) {
+        const email =
+          localStorage.getItem("email") ||
+          JSON.parse(localStorage.getItem("user"))?.email;
+
+        setUserEmail(email || "");
+        setLoading(false);
+        return;
+      }
+
       try {
-        console.log("Fetching merge status...");
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
-        console.log("Merge status response:", res.data);
-        setIsMerged(res.data.isMerged);
-        setUserEmail(res.data.email || localStorage.getItem("email") || "");
-        setHasPaid(res.data.hasPaid);
-        setMergeExpired(res.data.expired); // Use backend expired status
 
-        // Save to localStorage
+        setIsMerged(res.data.isMerged);
+        setUserEmail(
+          res.data.email ||
+            localStorage.getItem("email") ||
+            JSON.parse(localStorage.getItem("user"))?.email ||
+            ""
+        );
+        setHasPaid(res.data.hasPaid);
+        setMergeExpired(res.data.expired);
+
         localStorage.setItem("isMerged", JSON.stringify(res.data.isMerged));
         localStorage.setItem("mergeExpired", JSON.stringify(res.data.expired));
       } catch (err) {
         console.error("Error fetching merge status:", err);
-        // alert("Could not verify merge/payment status.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchStatus();
-  }, [member1, member2]);
+  }, [member1, member2, isUpgradeOnly]);
+
+  // useEffect(() => {
+  //   const fetchStatus = async () => {
+  //     if (!member1 || !member2) return;
+  //     try {
+  //       console.log("Fetching merge status...");
+  //       const res = await api.get(
+  //         `/merge/status?member1=${member1}&member2=${member2}`
+  //       );
+  //       console.log("Merge status response:", res.data);
+  //       setIsMerged(res.data.isMerged);
+  //       setUserEmail(res.data.email || localStorage.getItem("email") || "");
+  //       setHasPaid(res.data.hasPaid);
+  //       setMergeExpired(res.data.expired);
+
+  //       // Save to localStorage
+  //       localStorage.setItem("isMerged", JSON.stringify(res.data.isMerged));
+  //       localStorage.setItem("mergeExpired", JSON.stringify(res.data.expired));
+  //     } catch (err) {
+  //       console.error("Error fetching merge status:", err);
+  //       // alert("Could not verify merge/payment status.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+  //   fetchStatus();
+  // }, [member1, member2]);
 
   // useEffect(() => {
   //   const urlParams = new URLSearchParams(location.search);
@@ -277,8 +317,18 @@ const MergeScreen = () => {
     console.log("handlePlanClick called with:", planKey);
     console.log("Current state:", { isMerged, hasPaid, mergeExpired });
 
-    if (!userEmail) {
-      alert("Email missing. Please log in again.");
+    // if (!userEmail) {
+    //   alert("Email missing. Please log in again.");
+    //   return;
+    // }
+    const email =
+      userEmail ||
+      localStorage.getItem("email") ||
+      JSON.parse(localStorage.getItem("user"))?.email;
+
+    if (!email) {
+      setErrorMessage("Session expired. Please log in again.");
+      navigate("/login");
       return;
     }
 
