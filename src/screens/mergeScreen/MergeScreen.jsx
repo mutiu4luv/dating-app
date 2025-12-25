@@ -388,7 +388,7 @@ const MergeScreen = () => {
     }
 
     // If already paid for this plan and not expired, finalize merge
-    if (hasPaid && plan.amount > 0 && !mergeExpired) {
+    if (!isUpgradeOnly && hasPaid && plan.amount > 0 && !mergeExpired) {
       try {
         console.log("Finalizing merge for paid plan...");
         const res = await api.post(
@@ -537,9 +537,9 @@ const MergeScreen = () => {
         mt={4}
         px={isMobile ? 2 : 4}
       >
-        <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
+        {/* <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
           Merge with Your Match
-        </Typography>
+        </Typography> */}
         <Typography variant="body1" mb={2} textAlign="center">
           {mergeExpired
             ? "Your subscription has expired. Choose a subscription plan to unlock chat access."
