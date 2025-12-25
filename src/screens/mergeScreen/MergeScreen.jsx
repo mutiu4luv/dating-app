@@ -240,7 +240,7 @@ const MergeScreen = () => {
       }
       const selectedPlan = sessionStorage.getItem("selectedPlan") || "Free";
       try {
-        // 1. Confirm subscription payment (activate subscription)
+        //  Confirm subscription payment (activate subscription)
         console.log("🔹 Sending subscription confirmation request...");
         const confirmRes = await api.post(
           "/subscription/confirm",
@@ -257,7 +257,13 @@ const MergeScreen = () => {
         console.log("✅ Subscription confirmed successfully!");
         console.log("Subscription response:", confirmRes.data);
 
-        // 2. Merge users
+        if (isUpgradeOnly) {
+          console.log("✅ Upgrade confirmed, skipping merge");
+
+          navigate("/");
+          return;
+        }
+        //  Merge users
         console.log("🔹 Sending merge request...");
         const res = await api.post(
           "/merge",
@@ -312,15 +318,10 @@ const MergeScreen = () => {
     // eslint-disable-next-line
   }, [location.search, member1, member2, navigate]);
   const handlePlanClick = async (planKey) => {
+    // 🔒 UPGRADE-ONLY PAYMENT FLOW
     const plan = subscriptionPlans[planKey];
     setErrorMessage("");
-    console.log("handlePlanClick called with:", planKey);
-    console.log("Current state:", { isMerged, hasPaid, mergeExpired });
 
-    // if (!userEmail) {
-    //   alert("Email missing. Please log in again.");
-    //   return;
-    // }
     const email =
       userEmail ||
       localStorage.getItem("email") ||
@@ -331,6 +332,42 @@ const MergeScreen = () => {
       navigate("/login");
       return;
     }
+
+    // 🔒 UPGRADE-ONLY FLOW
+    if (isUpgradeOnly && plan.amount > 0) {
+      try {
+        const paymentRes = await api.post("/subscription/initiate", {
+          email,
+          amount: plan.amount * 100,
+          member1,
+          plan: planKey,
+          redirect_url: `${window.location.origin}/merge/${member1}/upgrade`,
+        });
+
+        sessionStorage.setItem("selectedPlan", planKey);
+        window.location.href = paymentRes.data.authorization_url;
+        return;
+      } catch {
+        setErrorMessage("Payment initiation failed.");
+        return;
+      }
+    }
+
+    // const plan = subscriptionPlans[planKey];
+    // setErrorMessage("");
+    // console.log("handlePlanClick called with:", planKey);
+    // console.log("Current state:", { isMerged, hasPaid, mergeExpired });
+
+    // if (!userEmail) {
+    //   alert("Email missing. Please log in again.");
+    //   return;
+    // }
+
+    // if (!email) {
+    //   setErrorMessage("Session expired. Please log in again.");
+    //   navigate("/login");
+    //   return;
+    // }
 
     // Only block Free plan if expired
     if (mergeExpired && plan.amount === 0) {
