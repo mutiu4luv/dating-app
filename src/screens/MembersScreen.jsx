@@ -55,13 +55,42 @@ const Members = () => {
       return;
     }
 
+    //     const fetchMembers = async () => {
+    //       setLoading(true);
+    //       try {
+    //         const token = localStorage.getItem("token");
+    //         const res = await axiosInstance.get(
+    //           `${import.meta.env.VITE_BASE_URL}/api/user
+    // `,
+    //           { headers: { Authorization: `Bearer ${token}` } }
+    //         );
+
+    //         const data = Array.isArray(res.data)
+    //           ? res.data
+    //           : res.data.members || res.data.matches || [];
+
+    //         const onlineStatuses = await Promise.all(
+    //           data.map(async (member) => {
+    //             try {
+    //               const res = await axiosInstance.get(
+    //                 `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
+    //               );
+    //               console.log(res);
+    //               return { memberId: member._id, status: res.data };
+    //             } catch {
+    //               return {
+    //                 memberId: member._id,
+    //                 status: { isOnline: false, lastSeen: null },
+    //               };
+    //             }
+    //           })
+    //         );
     const fetchMembers = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
         const res = await axiosInstance.get(
-          `${import.meta.env.VITE_BASE_URL}/api/user
-`,
+          `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -85,35 +114,6 @@ const Members = () => {
             }
           })
         );
-        // const fetchMembers = async () => {
-        //   setLoading(true);
-        //   try {
-        //     const token = localStorage.getItem("token");
-        //     const res = await axiosInstance.get(
-        //       `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
-        //       { headers: { Authorization: `Bearer ${token}` } }
-        //     );
-
-        //     const data = Array.isArray(res.data)
-        //       ? res.data
-        //       : res.data.members || res.data.matches || [];
-
-        //     const onlineStatuses = await Promise.all(
-        //       data.map(async (member) => {
-        //         try {
-        //           const res = await axiosInstance.get(
-        //             `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
-        //           );
-        //           console.log(res);
-        //           return { memberId: member._id, status: res.data };
-        //         } catch {
-        //           return {
-        //             memberId: member._id,
-        //             status: { isOnline: false, lastSeen: null },
-        //           };
-        //         }
-        //       })
-        //     );
 
         const statusObj = {};
         onlineStatuses.forEach(({ memberId, status }) => {
