@@ -81,6 +81,10 @@ const MergeScreen = () => {
       setLoading(false);
       return;
     }
+    if (!member1 || member1 === "upgrade") {
+      setLoading(false);
+      return;
+    }
 
     const fetchStatus = async () => {
       try {
@@ -110,7 +114,7 @@ const MergeScreen = () => {
   }, [member1, member2, isUpgradeOnly]);
   useEffect(() => {
     const reference = new URLSearchParams(location.search).get("reference");
-    if (!reference || !member1) return;
+    if (!reference || !member1 || !member2 || member2 === "upgrade") return;
 
     const selectedPlan = sessionStorage.getItem("selectedPlan") || "Free";
 
@@ -154,11 +158,11 @@ const MergeScreen = () => {
     afterPayment();
   }, [location.search, member1, member2, isUpgradeOnly, navigate]);
 
-  useEffect(() => {
-    if (!loading && isMerged && hasPaid && !mergeExpired) {
-      navigate(`/chat/${member1}/${member2}`, { replace: true });
-    }
-  }, [loading, isMerged, hasPaid, mergeExpired, member1, member2, navigate]);
+  // useEffect(() => {
+  //   if (!loading && isMerged && hasPaid && !mergeExpired) {
+  //     navigate(`/chat/${member1}/${member2}`, { replace: true });
+  //   }
+  // }, [loading, isMerged, hasPaid, mergeExpired, member1, member2, navigate]);
 
   const handlePlanClick = async (planKey) => {
     setErrorMessage("");
@@ -225,14 +229,6 @@ const MergeScreen = () => {
       setErrorMessage("Payment initiation failed.");
     }
   };
-
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" minHeight="60vh">
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   if (loading) {
     return (
