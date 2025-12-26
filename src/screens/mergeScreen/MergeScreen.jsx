@@ -30,10 +30,11 @@ const MergeScreen = () => {
   // const [mergeExpired, setMergeExpired] = useState(
   //   JSON.parse(localStorage.getItem("mergeExpired")) || false
   // );
+  const canChat = hasPaid && !mergeExpired;
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { member1, member2 } = useParams();
+  const { userId: member1, member2 } = useParams();
 
   // const { userId: member1, member2 } = useParams();
   const isUpgradeOnly = member2 === "upgrade";
@@ -75,6 +76,7 @@ const MergeScreen = () => {
     const expiry = paidAt + MERGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     return now > expiry;
   };
+  console.log("🔍 useParams:", useParams());
 
   useEffect(() => {
     if (isUpgradeOnly) {
@@ -87,10 +89,19 @@ const MergeScreen = () => {
     }
 
     const fetchStatus = async () => {
+      console.log("🟢 MergeScreen mounted", {
+        member1,
+        member2,
+        isUpgradeOnly,
+        location: window.location.href,
+      });
       try {
+        console.log("🟠 About to call /merge/status");
+
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
+        console.log("🟢 merge status response", res);
 
         setIsMerged(res.data.isMerged);
         setHasPaid(res.data.hasPaid);
@@ -102,9 +113,12 @@ const MergeScreen = () => {
             JSON.parse(localStorage.getItem("user"))?.email ||
             ""
         );
-        console.log("status", res);
       } catch (err) {
-        console.error("❌ Failed to fetch merge status:", err);
+        console.error("🔴 merge status failed", {
+          message: err.message,
+          status: err.response?.status,
+          data: err.response?.data,
+        });
       } finally {
         setLoading(false);
       }
@@ -172,9 +186,34 @@ const MergeScreen = () => {
     //   navigate(`/chat/${member1}/${member2}`);
     //   return;
     // }
-    if (isMerged && hasPaid && !mergeExpired) {
-      navigate(`/chat/${member1}/${member2}`);
-      return;
+    // 🔓 PAID USER — OPEN CHAT (MERGE ON DEMAND)
+    if (canChat) {
+      try {
+        // Create merge ONLY if it doesn't exist
+        if (!isMerged) {
+          await api.post(
+            "/merge",
+            {
+              memberId1: member1,
+              memberId2: member2,
+              plan: "Paid",
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+          setIsMerged(true);
+        }
+
+        navigate(`/chat/${member1}/${member2}`);
+        return;
+      } catch (err) {
+        console.error("❌ Merge on chat open failed:", err);
+        setErrorMessage("Unable to start chat. Please try again.");
+        return;
+      }
     }
 
     const plan = subscriptionPlans[planKey];
@@ -274,7 +313,7 @@ const MergeScreen = () => {
         <Typography variant="body1" mb={2} textAlign="center">
           {mergeExpired
             ? "Your subscription has expired. Choose a subscription plan to unlock chat access."
-            : isMerged && hasPaid && !mergeExpired
+            : canChat
             ? "You are already merged! Click a plan below to chat."
             : hasPaid
             ? "Subscription active. Click to finalize your merge."
@@ -282,7 +321,7 @@ const MergeScreen = () => {
         </Typography>
 
         <Typography textAlign="center" mb={3}>
-          {isMerged && hasPaid && !mergeExpired
+          {canChat
             ? "You are merged! Open chat below."
             : hasPaid
             ? "Subscription active. Finalize your merge."
@@ -399,7 +438,7 @@ const MergeScreen = () => {
                   variant="contained"
                   onClick={() => handlePlanClick(key)}
                 >
-                  {isMerged && hasPaid && !mergeExpired
+                  {canChat
                     ? "Open Chat"
                     : hasPaid
                     ? "Finalize Merge"
