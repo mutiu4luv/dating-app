@@ -181,44 +181,15 @@ const MergeScreen = () => {
   const handlePlanClick = async (planKey) => {
     setErrorMessage("");
 
-    // 🔓 OPEN CHAT IF ALREADY PAID + MERGED
-    // if (isMerged && hasPaid) {
-    //   navigate(`/chat/${member1}/${member2}`);
-    //   return;
-    // }
-    // 🔓 PAID USER — OPEN CHAT (MERGE ON DEMAND)
+    // ✅ PAID USER → OPEN CHAT ONLY
     if (canChat) {
-      try {
-        // Create merge ONLY if it doesn't exist
-        if (!isMerged) {
-          await api.post(
-            "/merge",
-            {
-              memberId1: member1,
-              memberId2: member2,
-              plan: "Paid",
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
-          setIsMerged(true);
-        }
-
-        navigate(`/chat/${member1}/${member2}`);
-        return;
-      } catch (err) {
-        console.error("❌ Merge on chat open failed:", err);
-        setErrorMessage("Unable to start chat. Please try again.");
-        return;
-      }
+      navigate(`/chat/${member1}/${member2}`);
+      return;
     }
 
     const plan = subscriptionPlans[planKey];
 
-    // FREE PLAN
+    // ✅ FREE PLAN
     if (plan.amount === 0) {
       try {
         const res = await api.post(
@@ -240,7 +211,7 @@ const MergeScreen = () => {
       return;
     }
 
-    // PAID PLAN — INITIATE PAYMENT
+    // ✅ PAID PLAN → START PAYMENT
     try {
       const email =
         userEmail ||
@@ -310,22 +281,12 @@ const MergeScreen = () => {
         {/* <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
           Merge with Your Match
         </Typography> */}
-        <Typography variant="body1" mb={2} textAlign="center">
+        <Typography textAlign="center" mb={2}>
           {mergeExpired
-            ? "Your subscription has expired. Choose a subscription plan to unlock chat access."
+            ? "Your subscription has expired. Please renew to continue chatting."
             : canChat
-            ? "You are already merged! Click a plan below to chat."
-            : hasPaid
-            ? "Subscription active. Click to finalize your merge."
+            ? "Your subscription is active. You can chat with this match."
             : "Choose a subscription plan to unlock chat access."}
-        </Typography>
-
-        <Typography textAlign="center" mb={3}>
-          {canChat
-            ? "You are merged! Open chat below."
-            : hasPaid
-            ? "Subscription active. Finalize your merge."
-            : "Choose a plan to unlock chat access."}
         </Typography>
 
         {errorMessage && (
@@ -357,58 +318,72 @@ const MergeScreen = () => {
             {errorMessage}
           </Typography>
         )}
-        <Grid
-          container
-          spacing={3}
-          justifyContent="center"
-          sx={{
-            maxWidth: 1100,
-            width: "100%",
-            px: isMobile ? 1 : 3,
-            mt: 2, // Add margin top to the grid container
-          }}
-        >
-          {Object.entries(subscriptionPlans).map(([key, plan]) => (
-            <Grid
-              item
-              xs={12}
-              sm={6}
-              md={3}
-              key={key}
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "stretch",
-              }}
+
+        {canChat && (
+          <Box mb={4}>
+            <Button
+              variant="contained"
+              size="large"
+              sx={{ px: 6, py: 1.5, fontWeight: "bold" }}
+              onClick={() => navigate(`/chat/${member1}/${member2}`)}
             >
-              <Paper
-                elevation={3}
+              Open Chat
+            </Button>
+          </Box>
+        )}
+        {!canChat && (
+          <Grid
+            container
+            spacing={3}
+            justifyContent="center"
+            sx={{
+              maxWidth: 1100,
+              width: "100%",
+              px: isMobile ? 1 : 3,
+              mt: 2, // Add margin top to the grid container
+            }}
+          >
+            {Object.entries(subscriptionPlans).map(([key, plan]) => (
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={3}
+                key={key}
                 sx={{
-                  p: 3,
-                  width: "100%",
-                  maxWidth: 320,
-                  borderRadius: 4,
-                  border: "1px solid #ddd",
                   display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  textAlign: "center",
-                  minHeight: 340,
-                  mt: 2, // Add margin top to each card
+                  justifyContent: "center",
+                  alignItems: "stretch",
                 }}
               >
-                <Box mb={2}>{plan.icon}</Box>
-                <Typography variant="h6" fontWeight="bold" mb={1}>
-                  {plan.label}
-                </Typography>
-                <Typography variant="body2" color="textSecondary" mb={2}>
-                  {plan.description}
-                </Typography>
-                <Typography variant="h6" color="primary" mb={2}>
-                  ₦{plan.amount.toLocaleString()}
-                </Typography>
-                {/* <Button
+                <Paper
+                  elevation={3}
+                  sx={{
+                    p: 3,
+                    width: "100%",
+                    maxWidth: 320,
+                    borderRadius: 4,
+                    border: "1px solid #ddd",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    textAlign: "center",
+                    minHeight: 340,
+                    mt: 2, // Add margin top to each card
+                  }}
+                >
+                  <Box mb={2}>{plan.icon}</Box>
+                  <Typography variant="h6" fontWeight="bold" mb={1}>
+                    {plan.label}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary" mb={2}>
+                    {plan.description}
+                  </Typography>
+                  <Typography variant="h6" color="primary" mb={2}>
+                    ₦{plan.amount.toLocaleString()}
+                  </Typography>
+                  {/* <Button
                   variant="contained"
                   fullWidth
                   onClick={() => handlePlanClick(key)}
@@ -431,25 +406,11 @@ const MergeScreen = () => {
                     ? "Finalize Merge"
                     : "Subscribe & Merge"}
                 </Button> */}
-
-                <Button
-                  fullWidth
-                  sx={{ mt: 2 }}
-                  variant="contained"
-                  onClick={() => handlePlanClick(key)}
-                >
-                  {canChat
-                    ? "Open Chat"
-                    : hasPaid
-                    ? "Finalize Merge"
-                    : plan.amount === 0
-                    ? "Use Free Plan"
-                    : "Subscribe & Merge "}
-                </Button>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        )}
       </Box>
     </>
   );
