@@ -72,15 +72,23 @@ const HowItWorks = () => {
           </Typography>
         </Box>
 
-        {/* Steps Grid - EXACT spacing and constraints from CategoryGrid */}
+        {/* Steps Grid */}
         <Grid
           container
-          spacing={{ xs: 2, sm: 3, md: 7 }} // Exact spacing from your reference
+          spacing={{ xs: 3, sm: 3, md: 7 }} // Increased xs spacing for better mobile look
           justifyContent="center"
+          alignItems="center" // Ensures items are vertically aligned if heights vary
           sx={{ maxWidth: 1100, mx: "auto", px: 2 }}
         >
           {steps.map((step, index) => (
-            <Grid item xs={6} sm={4} key={index}>
+            <Grid
+              item
+              xs={11} // Use 11 instead of 12 to show a tiny bit of the background on edges
+              sm={6} // Two cards per row on tablets
+              md={4} // Three cards per row on desktop
+              key={index}
+              sx={{ display: "flex", justifyContent: "center" }} // Extra centering insurance
+            >
               <MotionBox
                 initial={{ opacity: 0, y: 25 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -91,8 +99,8 @@ const HowItWorks = () => {
                   borderRadius: 3,
                   p: 2.5,
                   width: "100%",
-                  // EXACT HEIGHTS FROM CATEGORY CARD
-                  height: { xs: 170, sm: 190, md: 210 },
+                  maxWidth: { xs: 320, sm: "100%" }, // Prevents cards from getting too wide on mobile
+                  height: { xs: 180, sm: 190, md: 210 },
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
@@ -107,37 +115,34 @@ const HowItWorks = () => {
                   },
                 }}
               >
-                {/* Image - EXACT SIZING FROM CATEGORY CARD */}
                 <Avatar
                   src={step.image}
                   alt={step.title}
                   sx={{
-                    width: { xs: 60, sm: 70, md: 85 },
-                    height: { xs: 60, sm: 70, md: 85 },
+                    width: { xs: 65, sm: 70, md: 85 },
+                    height: { xs: 65, sm: 70, md: 85 },
                     border: "2px solid #D9A4F0",
                     bgcolor: "#fff",
                   }}
                 />
 
-                {/* Title */}
                 <Typography
                   sx={{
                     color: "#fff",
                     fontWeight: 700,
-                    fontSize: { xs: 13, sm: 14, md: 15 }, // Adjusted slightly for longer step titles
+                    fontSize: { xs: 13, sm: 14, md: 15 },
                     lineHeight: 1.2,
                   }}
                 >
                   {step.title}
                 </Typography>
 
-                {/* Description */}
                 <Typography
                   sx={{
                     color: "rgba(255,255,255,0.6)",
                     fontSize: { xs: 11, sm: 12, md: 13 },
                     lineHeight: 1.4,
-                    maxWidth: 220,
+                    maxWidth: 240,
                   }}
                 >
                   {step.text}

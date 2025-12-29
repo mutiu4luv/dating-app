@@ -142,7 +142,6 @@ const CategoryGrid = () => {
           Choose How You Want to Connect 💜
         </Typography>
 
-        {/* CONTINUOUS TYPEWRITER TEXT */}
         <Typography
           sx={{
             maxWidth: 560,
@@ -150,14 +149,14 @@ const CategoryGrid = () => {
             color: "#555",
             fontSize: 15,
             lineHeight: 1.7,
-            minHeight: 26, // prevents layout jump
+            minHeight: 26,
           }}
         >
           <Typewriter
             words={[
-              "Love, friendship, marriage, or meaningful chats  connect your way.",
+              "Love, friendship, marriage, or meaningful chats – connect your way.",
             ]}
-            loop={0} // infinite
+            loop={0}
             cursor
             cursorStyle="|"
             typeSpeed={90}
@@ -170,7 +169,7 @@ const CategoryGrid = () => {
       {/* Cards */}
       <Grid
         container
-        spacing={{ xs: 2, sm: 3, md: 7 }}
+        spacing={{ xs: 3, sm: 3, md: 7 }} // Increased xs spacing for vertical gap on mobile
         justifyContent="center"
         sx={{
           maxWidth: 1100,
@@ -179,7 +178,16 @@ const CategoryGrid = () => {
         }}
       >
         {categories.map((item, index) => (
-          <Grid item xs={6} sm={4} key={item.id}>
+          <Grid
+            item
+            xs={11} // Takes up most of the width on mobile to ensure centering
+            sm={4} // Back to 3 columns on tablet/desktop
+            key={item.id}
+            sx={{
+              display: "flex",
+              justifyContent: "center", // Centers the card within the grid item
+            }}
+          >
             <CategoryCard {...item} index={index} />
           </Grid>
         ))}
