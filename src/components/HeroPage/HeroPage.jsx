@@ -1,179 +1,171 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { Box, Typography, Button } from "@mui/material";
-import bgImg from "../../assets/images/background.jpeg";
-import { Typewriter } from "react-simple-typewriter";
-
-import "../HeroPage/HeroPage.css";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { Typewriter } from "react-simple-typewriter";
+import bgImg from "../../assets/images/background.jpeg";
 
 const HeroPage = () => {
   return (
     <Box
       sx={{
+        minHeight: "100vh",
         backgroundImage: `url(${bgImg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
         position: "relative",
-        height: "100vh",
         display: "flex",
-        alignItems: "flex-start",
+        alignItems: "center",
         justifyContent: "center",
         overflow: "hidden",
-        pt: 5,
       }}
     >
-      {/* Gradient Blur Layer */}
+      {/* Dark + Purple Overlay */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(to bottom right, #D9A4F0, #fca5a5, #fde68a)",
-          opacity: 0.25,
-          filter: "blur(120px)",
+            "radial-gradient(circle at top, rgba(217,164,240,0.35), rgba(0,0,0,0.9))",
           zIndex: 0,
         }}
       />
 
-      {/* === RATED 18 BADGE (Above Container) === */}
+      {/* Main Content */}
       <motion.div
-        initial={{ opacity: 0, y: -20, rotate: -10 }}
-        animate={{
-          opacity: 1,
-          y: [0, -10, 0], // bounce
-          rotate: [-10, 10, -10], // wiggle
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          repeatType: "loop",
-          ease: "easeInOut",
-        }}
-        style={{
-          position: "absolute",
-          top: 10,
-          zIndex: 20,
-          display: "flex",
-          justifyContent: "center",
-          width: "100%",
-        }}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: "easeOut" }}
+        style={{ zIndex: 5 }}
       >
         <Box
           sx={{
-            width: 60,
-            height: 60,
-            borderRadius: "50%",
-            backgroundColor: "#ff0033",
-            color: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: "bold",
-            fontSize: "1.2rem",
-            border: "3px solid white",
-            boxShadow: "0px 0px 10px rgba(0,0,0,0.5)",
+            maxWidth: 880,
+            px: { xs: 3, md: 6 },
+            py: { xs: 4, md: 6 },
+            textAlign: "center",
+            borderRadius: "22px",
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(217,164,240,0.25)",
+            boxShadow: "0 25px 80px rgba(0,0,0,0.7)",
           }}
         >
-          18+
+          {/* 18+ BADGE (CENTERED, ROUND, DANGER RED) */}
+          <motion.div
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 1.8, repeat: Infinity }}
+          >
+            <Box
+              sx={{
+                width: 72,
+                height: 72,
+                mx: "auto",
+                mb: 3,
+                borderRadius: "50%",
+                backgroundColor: "#dc2626",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 900,
+                fontSize: "1.1rem",
+                border: "3px solid #fff",
+                boxShadow: "0 0 25px rgba(220,38,38,0.7)",
+              }}
+            >
+              18+
+            </Box>
+          </motion.div>
+
+          {/* HEADING */}
+          <Typography
+            variant="h2"
+            fontWeight={900}
+            sx={{
+              color: "#fff",
+              lineHeight: 1.15,
+              mb: 1,
+            }}
+          >
+            Find{" "}
+            <Box component="span" sx={{ color: "#D9A4F0" }}>
+              Real Love
+            </Box>
+            <br />
+            Without the Games
+          </Typography>
+
+          {/* SUBTITLE */}
+          <Typography
+            sx={{
+              color: "#e5e5e5",
+              fontSize: "1.05rem",
+              maxWidth: 620,
+              mx: "auto",
+              mt: 2,
+            }}
+          >
+            Connect with verified people ready for serious relationships. Secure
+            chats. Meaningful connections.
+          </Typography>
+
+          {/* CTA BUTTON */}
+          <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }}>
+            <Button
+              component={Link}
+              to="/login"
+              sx={{
+                mt: 4,
+                px: 7,
+                py: 1.7,
+                borderRadius: "60px",
+                fontSize: "1rem",
+                fontWeight: 800,
+                color: "#2d0052",
+                background: "linear-gradient(135deg, #D9A4F0, #b65cff)",
+                boxShadow: "0 12px 35px rgba(217,164,240,0.65)",
+                textTransform: "none",
+                ":hover": {
+                  background: "linear-gradient(135deg, #e8b8ff, #c77dff)",
+                },
+              }}
+            >
+              Get Started
+            </Button>
+          </motion.div>
+
+          {/* TRUST LINE (TYPED) */}
+          <Typography
+            sx={{
+              mt: 2,
+              fontSize: "0.85rem",
+              color: "#cfcfcf",
+            }}
+          >
+            <Typewriter
+              words={["🔒 Private chats · Verified profiles · Real matches"]}
+              typeSpeed={100}
+            />
+          </Typography>
         </Box>
       </motion.div>
 
-      {/* Overlay Container */}
-      <Box
-        sx={{
-          position: "relative",
-          zIndex: 10,
-          textAlign: "center",
-          px: 3,
-          py: 4,
-          maxWidth: 800,
-          borderRadius: 4,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          color: "#fff",
-        }}
-      >
-        {/* Main Heading */}
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <Typography
-            variant="h2"
-            component="h1"
-            fontWeight="bold"
-            gutterBottom
-          >
-            Find Love, Real Connections
-          </Typography>
-        </motion.div>
-
-        {/* Subheading */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-        >
-          <Typography variant="h6" sx={{ color: "#fce7f3" }} gutterBottom>
-            Join thousands who have already started their love journey. Swipe,
-            chat, and find your person.
-          </Typography>
-        </motion.div>
-
-        {/* Button */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-        >
-          <Button
-            variant="contained"
-            size="large"
-            sx={{
-              mt: 3,
-              px: 5,
-              py: 1.5,
-              fontSize: "1rem",
-              borderRadius: "50px",
-              backgroundColor: "#D9A4F0",
-              ":hover": { backgroundColor: "#db2777" },
-              boxShadow: 3,
-            }}
-          >
-            <Link
-              to="/login"
-              style={{ textDecoration: "none", color: "#2d0052" }}
-            >
-              Get Started
-            </Link>
-          </Button>
-        </motion.div>
-      </Box>
-
-      {/* Footer Text */}
+      {/* FOOTER TEXT */}
       <Box
         sx={{
           position: "absolute",
-          bottom: 16,
+          bottom: 18,
           width: "100%",
           textAlign: "center",
-          color: "#f5f5f5",
-          fontSize: 14,
-          zIndex: 10,
-          backgroundColor: "rgba(0, 0, 0, 0.4)",
-          py: 1,
+          color: "#cfcfcf",
+          fontSize: "13px",
+          zIndex: 5,
         }}
       >
         <Typewriter
-          words={["Made with ❤️ for modern love"]}
-          loop={false}
-          cursor
-          cursorStyle="|"
-          typeSpeed={80}
-          deleteSpeed={50}
-          delaySpeed={2000}
+          words={["Built with 💜 for serious relationships"]}
+          typeSpeed={100}
         />
       </Box>
     </Box>
