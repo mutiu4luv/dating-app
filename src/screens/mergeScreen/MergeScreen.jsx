@@ -76,7 +76,7 @@ const MergeScreen = () => {
     const expiry = paidAt + MERGE_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     return now > expiry;
   };
-  console.log("🔍 useParams:", useParams());
+  // console.log("🔍 useParams:", useParams());
 
   useEffect(() => {
     if (isUpgradeOnly) {
@@ -89,19 +89,19 @@ const MergeScreen = () => {
     }
 
     const fetchStatus = async () => {
-      console.log("🟢 MergeScreen mounted", {
-        member1,
-        member2,
-        isUpgradeOnly,
-        location: window.location.href,
-      });
+      // console.log("🟢 MergeScreen mounted", {
+      //   member1,
+      //   member2,
+      //   isUpgradeOnly,
+      //   location: window.location.href,
+      // });
       try {
-        console.log("🟠 About to call /merge/status");
+        // console.log("🟠 About to call /merge/status");
 
         const res = await api.get(
           `/merge/status?member1=${member1}&member2=${member2}`
         );
-        console.log("🟢 merge status response", res);
+        // console.log("🟢 merge status response", res);
 
         setIsMerged(res.data.isMerged);
         setHasPaid(res.data.hasPaid);
@@ -171,12 +171,6 @@ const MergeScreen = () => {
 
     afterPayment();
   }, [location.search, member1, member2, isUpgradeOnly, navigate]);
-
-  // useEffect(() => {
-  //   if (!loading && isMerged && hasPaid && !mergeExpired) {
-  //     navigate(`/chat/${member1}/${member2}`, { replace: true });
-  //   }
-  // }, [loading, isMerged, hasPaid, mergeExpired, member1, member2, navigate]);
 
   const handlePlanClick = async (planKey) => {
     setErrorMessage("");
@@ -261,11 +255,6 @@ const MergeScreen = () => {
           Merge with Your Match
         </Typography>
       )}
-      {/* {isUpgradeOnly && (
-        <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
-          Upgrade Your Subscription
-        </Typography>
-      )} */}
 
       <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>
         {isUpgradeOnly ? "Upgrade Subscription" : "Merge with Your Match"}
@@ -278,9 +267,6 @@ const MergeScreen = () => {
         mt={4}
         px={isMobile ? 2 : 4}
       >
-        {/* <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
-          Merge with Your Match
-        </Typography> */}
         <Typography textAlign="center" mb={2}>
           {mergeExpired
             ? "Your subscription has expired. Please renew to continue chatting."
@@ -294,19 +280,7 @@ const MergeScreen = () => {
             {errorMessage}
           </Typography>
         )}
-        {/* {hasPaid && !mergeExpired && (
-          <Box mb={3}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              href="/ebook/relationship-guide.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              📘 Open Relationship eBook
-            </Button>
-          </Box>
-        )} */}
+
         {errorMessage && (
           <Typography
             variant="body1"
@@ -331,6 +305,7 @@ const MergeScreen = () => {
             </Button>
           </Box>
         )}
+
         {!canChat && (
           <Grid
             container
@@ -370,7 +345,7 @@ const MergeScreen = () => {
                     justifyContent: "space-between",
                     textAlign: "center",
                     minHeight: 340,
-                    mt: 2, // Add margin top to each card
+                    mt: 2,
                   }}
                 >
                   <Box mb={2}>{plan.icon}</Box>
@@ -383,29 +358,6 @@ const MergeScreen = () => {
                   <Typography variant="h6" color="primary" mb={2}>
                     ₦{plan.amount.toLocaleString()}
                   </Typography>
-                  {/* <Button
-                  variant="contained"
-                  fullWidth
-                  onClick={() => handlePlanClick(key)}
-                  sx={{
-                    background: "#D9A4F0",
-                    borderRadius: 6,
-                    fontWeight: 600,
-                    px: 2,
-                    py: 1.5,
-                  }}
-                  disabled={mergeExpired && plan.amount === 0}
-                >
-                  {plan.amount === 0
-                    ? "Use Free Plan"
-                    : mergeExpired
-                    ? "Subscribe & Merge"
-                    : isMerged && hasPaid && !mergeExpired
-                    ? "Open Chat"
-                    : hasPaid
-                    ? "Finalize Merge"
-                    : "Subscribe & Merge"}
-                </Button> */}
                 </Paper>
               </Grid>
             ))}

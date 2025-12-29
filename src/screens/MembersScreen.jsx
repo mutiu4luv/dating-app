@@ -104,7 +104,7 @@ const Members = () => {
               const res = await axiosInstance.get(
                 `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
               );
-              console.log(res);
+              // console.log(res);
               return { memberId: member._id, status: res.data };
             } catch {
               return {

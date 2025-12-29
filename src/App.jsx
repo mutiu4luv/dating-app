@@ -28,7 +28,7 @@ function App() {
   const currentUserId = localStorage.getItem("userId");
   const user = JSON.parse(localStorage.getItem("user"));
 
-  console.log("Current User ID:", currentUserId);
+  // console.log("Current User ID:", currentUserId);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
