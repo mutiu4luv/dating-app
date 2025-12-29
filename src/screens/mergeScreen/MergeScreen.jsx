@@ -250,11 +250,11 @@ const MergeScreen = () => {
   return (
     <>
       <Navbar />
-      {!isUpgradeOnly && (
+      {/* {!isUpgradeOnly && (
         <Typography variant="h5" fontWeight="bold" mb={2} textAlign="center">
           Merge with Your Match
         </Typography>
-      )}
+      )} */}
 
       <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>
         {isUpgradeOnly ? "Upgrade Subscription" : "Merge with Your Match"}
@@ -349,6 +349,8 @@ const MergeScreen = () => {
                   }}
                 >
                   <Box mb={2}>{plan.icon}</Box>
+
+                  <Box mb={2}>{plan.icon}</Box>
                   <Typography variant="h6" fontWeight="bold" mb={1}>
                     {plan.label}
                   </Typography>
@@ -358,6 +360,27 @@ const MergeScreen = () => {
                   <Typography variant="h6" color="primary" mb={2}>
                     ₦{plan.amount.toLocaleString()}
                   </Typography>
+                  <Button
+                    fullWidth
+                    disabled={canChat && !mergeExpired}
+                    variant={key === "Free" ? "outlined" : "contained"}
+                    color={key === "Free" ? "success" : "primary"}
+                    sx={{
+                      mt: 2,
+                      fontWeight: "bold",
+                      borderRadius: 3,
+                      py: 1,
+                    }}
+                    onClick={() => handlePlanClick(key)}
+                  >
+                    {canChat
+                      ? "Open Chat"
+                      : key === "Free"
+                      ? "Continue Free"
+                      : mergeExpired
+                      ? "Renew"
+                      : "Upgrade"}
+                  </Button>
                 </Paper>
               </Grid>
             ))}
