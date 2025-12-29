@@ -11,12 +11,12 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
 import ezinne from "../../assets/images/ezinne.jpeg";
 import david from "../../assets/images/david.jpeg";
 import mutiu from "../../assets/images/mutiu.jpeg";
-import martins from "../../assets/images/martin.jpeg";
 
 const testimonies = [
   {
@@ -40,101 +40,150 @@ const LoveStory = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // 🔥 Get logged-in userId from localStorage
   const userId = localStorage.getItem("userId") || "guest";
   const upgradeLink = `/merge/${userId}/upgrade`;
-  // 🔥 Dynamic upgrade link
 
   const visibleTestimonies = isSmallScreen
     ? testimonies.slice(0, 3)
     : testimonies;
 
   return (
-    <Box sx={{ bgcolor: "#fff0f5", py: 8 }}>
+    <Box
+      sx={{
+        py: 10,
+        background: "linear-gradient(to bottom, #0b0b0b, #120014)",
+        color: "#fff",
+      }}
+    >
       <Container>
-        {/* 🔥 Blinking Upgrade Button */}
-        <Box sx={{ textAlign: "center", mb: 4 }}>
-          <Button
-            component={Link}
-            to={upgradeLink}
-            variant="contained"
-            sx={{
-              backgroundColor: "#ff4081",
-              color: "#fff",
-              fontWeight: "bold",
-              borderRadius: "25px",
-              px: 4,
-              py: 1.2,
-              fontSize: "1rem",
-              animation: "blink 1.2s infinite",
-              "@keyframes blink": {
-                "0%": { opacity: 1 },
-                "50%": { opacity: 0.4 },
-                "100%": { opacity: 1 },
-              },
-              "&:hover": { backgroundColor: "#ff5c95" },
-            }}
+        {/* CTA */}
+        <Box sx={{ textAlign: "center", mb: 6 }}>
+          <motion.div
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
           >
-            Upgrade to a Higher Plan to Chat With More People
-          </Button>
+            <Button
+              component={Link}
+              to={upgradeLink}
+              sx={{
+                px: 5,
+                py: 1.4,
+                fontSize: "1rem",
+                fontWeight: 800,
+                borderRadius: "50px",
+                color: "#2d0052",
+                background: "linear-gradient(135deg, #D9A4F0, #b65cff)",
+                boxShadow: "0 12px 30px rgba(217,164,240,0.6)",
+                textTransform: "none",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #e8b8ff, #c77dff)",
+                },
+              }}
+            >
+              Upgrade Your Plan — Meet More People
+            </Button>
+          </motion.div>
         </Box>
 
-        {/* Title */}
-        <Typography
-          variant="h4"
-          align="center"
-          fontWeight="bold"
-          gutterBottom
-          sx={{ mb: 6 }}
-        >
-          ❤️ Real Love Stories
-        </Typography>
+        {/* TITLE */}
+        <Box textAlign="center" mb={8}>
+          <Typography variant="h4" fontWeight={900}>
+            Real{" "}
+            <Box component="span" sx={{ color: "#D9A4F0" }}>
+              Love Stories
+            </Box>
+          </Typography>
+          <Typography sx={{ color: "#cfcfcf", maxWidth: 520, mx: "auto" }}>
+            Genuine connections that started with a simple conversation.
+          </Typography>
+        </Box>
 
-        {/* Testimonies */}
-        <Grid container spacing={4} justifyContent="center">
+        {/* STORIES */}
+        <Grid container spacing={5} justifyContent="center">
           {visibleTestimonies.map((story, index) => (
-            <Grid item xs={12} sm={4} md={4} key={index}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  textAlign: "center",
-                }}
+            <Grid item xs={12} sm={4} key={index}>
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.15 }}
+                viewport={{ once: true }}
               >
-                <Card
-                  sx={{
-                    width: 200,
-                    height: 200,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    boxShadow: 4,
-                    mb: 2,
-                    transition: "transform 0.3s",
-                    "&:hover": { transform: "scale(1.05)" },
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    image={story.image}
-                    alt={story.name}
-                    sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </Card>
-                <CardContent sx={{ p: 0, maxWidth: 240 }}>
-                  <Typography
-                    variant="subtitle1"
-                    component="div"
-                    fontWeight="bold"
-                    gutterBottom
+                <Box textAlign="center">
+                  {/* DANCING IMAGE */}
+                  <motion.div
+                    animate={{
+                      y: [0, -10, 0],
+                      rotate: [0, 1.5, -1.5, 0],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
                   >
-                    {story.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {story.text}
-                  </Typography>
-                </CardContent>
-              </Box>
+                    <Card
+                      sx={{
+                        width: 210,
+                        height: 210,
+                        mx: "auto",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                        border: "3px solid rgba(217,164,240,0.4)",
+                        boxShadow: "0 15px 40px rgba(0,0,0,0.7)",
+                        mb: 3,
+                      }}
+                    >
+                      <CardMedia
+                        component="img"
+                        image={story.image}
+                        alt={story.name}
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
+                    </Card>
+                  </motion.div>
+
+                  {/* NAME + ANIMATED UNDERLINE */}
+                  <CardContent sx={{ p: 0 }}>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={700}
+                      sx={{ color: "#fff" }}
+                    >
+                      {story.name}
+                    </Typography>
+
+                    <motion.div
+                      animate={{ width: ["20%", "60%", "20%"] }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      style={{
+                        height: 3,
+                        backgroundColor: "#D9A4F0",
+                        margin: "6px auto 10px",
+                        borderRadius: 4,
+                      }}
+                    />
+
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "#cfcfcf",
+                        maxWidth: 260,
+                        mx: "auto",
+                      }}
+                    >
+                      {story.text}
+                    </Typography>
+                  </CardContent>
+                </Box>
+              </motion.div>
             </Grid>
           ))}
         </Grid>
