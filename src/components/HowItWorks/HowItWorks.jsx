@@ -4,130 +4,167 @@ import {
   Container,
   Typography,
   Grid,
-  Card,
-  CardContent,
-  CardMedia,
   Button,
+  Avatar,
 } from "@mui/material";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+
+// Assets
 import single from "../../assets/images/single.webp";
 import girls from "../../assets/images/girls.avif";
 import vers from "../../assets/images/vers.jpg";
 import member from "../../assets/images/member.webp";
 import start from "../../assets/images/start.avif";
-import { Link } from "react-router-dom";
 
 const steps = [
   {
     title: "1. Create A Profile",
-    text: "Create your profile in seconds with our easy sign-up. Don't forget to add a photo!",
+    text: "Create your profile in seconds with our easy sign-up. Don't forget a photo!",
     image: single,
   },
   {
-    title: "2.  Subscribe and have access to free relationship ebooks",
-    text: "Get instant access to carefully selected relationship ebooks to guide you on love, dating, and lasting companionship.",
+    title: "2. Unlock Ebooks",
+    text: "Get instant access to carefully selected relationship ebooks.",
     image: girls,
   },
   {
     title: "3. Start Communicating",
-    text: "Connect with white men/white women.",
+    text: "Connect with white men/white women and start building connections.",
     image: vers,
   },
   {
-    title: " 4. Browse members and find your match",
-    text: "Discover a wide range of members based on your preferences and connect with someone who truly matches your vibe.",
+    title: "4. Browse & Match",
+    text: "Discover members based on your preferences and match your vibe.",
     image: member,
   },
   {
-    title: "5. Start chatting",
-    text: "Send messages instantly and build genuine connections through real-time chat.",
+    title: "5. Real-Time Chat",
+    text: "Send messages instantly and build genuine connections through chat.",
     image: start,
   },
 ];
+
 const userId = localStorage.getItem("userId");
+const MotionBox = motion(Box);
 
 const HowItWorks = () => {
   return (
-    <Box sx={{ bgcolor: "#fdf6f9", py: 10 }}>
+    <Box sx={{ backgroundColor: "#0f0f0f", py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
-        <Typography
-          variant="h4"
-          align="center"
-          fontWeight="bold"
-          gutterBottom
-          sx={{ color: "#D9A4F0" }}
-        >
-          How It Works
-        </Typography>
-        <Typography
-          variant="subtitle1"
-          align="center"
-          color="textSecondary"
-          sx={{ mb: 6 }}
-        >
-          Get started on FindYourMatch today in 5 simple steps:
-        </Typography>
+        {/* Header Section */}
+        <Box sx={{ textAlign: "center", mb: 8 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 800, color: "#fff", mb: 1.5 }}
+          >
+            How It <span style={{ color: "#D9A4F0" }}>Works</span> 💜
+          </Typography>
+          <Typography
+            sx={{
+              maxWidth: 520,
+              mx: "auto",
+              color: "rgba(255,255,255,0.7)",
+              fontSize: 15,
+            }}
+          >
+            Get started on FindYourMatch today in 5 simple steps.
+          </Typography>
+        </Box>
 
-        <Grid container spacing={4} justifyContent="center">
+        {/* Steps Grid - EXACT spacing and constraints from CategoryGrid */}
+        <Grid
+          container
+          spacing={{ xs: 2, sm: 3, md: 7 }} // Exact spacing from your reference
+          justifyContent="center"
+          sx={{ maxWidth: 1100, mx: "auto", px: 2 }}
+        >
           {steps.map((step, index) => (
-            <Grid item xs={12} sm={4} md={4} key={index}>
-              <Box
+            <Grid item xs={6} sm={4} key={index}>
+              <MotionBox
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: index * 0.08 }}
+                viewport={{ once: true }}
                 sx={{
+                  backgroundColor: "#0f0f0f",
+                  borderRadius: 3,
+                  p: 2.5,
+                  width: "100%",
+                  // EXACT HEIGHTS FROM CATEGORY CARD
+                  height: { xs: 170, sm: 190, md: 210 },
                   display: "flex",
                   flexDirection: "column",
                   alignItems: "center",
+                  justifyContent: "space-around",
                   textAlign: "center",
+                  border: "1px solid rgba(217,164,240,0.25)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-6px)",
+                    boxShadow: "0 18px 40px rgba(217,164,240,0.4)",
+                    borderColor: "#D9A4F0",
+                  },
                 }}
               >
-                <Box
+                {/* Image - EXACT SIZING FROM CATEGORY CARD */}
+                <Avatar
+                  src={step.image}
+                  alt={step.title}
                   sx={{
-                    width: 180,
-                    height: 180,
-                    borderRadius: "50%",
-                    overflow: "hidden",
-                    boxShadow: 4,
-                    mb: 2,
+                    width: { xs: 60, sm: 70, md: 85 },
+                    height: { xs: 60, sm: 70, md: 85 },
+                    border: "2px solid #D9A4F0",
+                    bgcolor: "#fff",
+                  }}
+                />
+
+                {/* Title */}
+                <Typography
+                  sx={{
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: { xs: 13, sm: 14, md: 15 }, // Adjusted slightly for longer step titles
+                    lineHeight: 1.2,
                   }}
                 >
-                  <CardMedia
-                    component="img"
-                    image={step.image}
-                    alt={step.title}
-                    sx={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                </Box>
-                <CardContent sx={{ maxWidth: 260 }}>
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    gutterBottom
-                    sx={{ color: "#D9A4F0" }}
-                  >
-                    {step.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {step.text}
-                  </Typography>
-                </CardContent>
-              </Box>
+                  {step.title}
+                </Typography>
+
+                {/* Description */}
+                <Typography
+                  sx={{
+                    color: "rgba(255,255,255,0.6)",
+                    fontSize: { xs: 11, sm: 12, md: 13 },
+                    lineHeight: 1.4,
+                    maxWidth: 220,
+                  }}
+                >
+                  {step.text}
+                </Typography>
+              </MotionBox>
             </Grid>
           ))}
         </Grid>
 
-        <Box sx={{ textAlign: "center", mt: 6 }}>
+        {/* CTA Button */}
+        <Box sx={{ textAlign: "center", mt: 10 }}>
           <Link to={`/members/${userId}`} style={{ textDecoration: "none" }}>
             <Button
               variant="contained"
-              size="large"
               sx={{
                 px: 6,
                 py: 1.8,
-                fontSize: "1rem",
-                backgroundColor: "#D9A4F0",
-                color: "#2d0052",
+                background: "linear-gradient(45deg, #D9A4F0 30%, #bf72e8 90%)",
+                color: "#000",
                 fontWeight: "bold",
                 borderRadius: "30px",
-                ":hover": { backgroundColor: "#db2777" },
-                boxShadow: 3,
+                textTransform: "none",
+                fontSize: "1rem",
+                "&:hover": {
+                  background: "#fff",
+                  transform: "scale(1.05)",
+                },
               }}
             >
               Find Your Match
