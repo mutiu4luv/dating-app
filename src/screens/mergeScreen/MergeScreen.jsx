@@ -30,7 +30,7 @@ const MergeScreen = () => {
   // const [mergeExpired, setMergeExpired] = useState(
   //   JSON.parse(localStorage.getItem("mergeExpired")) || false
   // );
-  const canChat = hasPaid;
+  const canChat = hasPaid || isMerged;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -136,7 +136,7 @@ const MergeScreen = () => {
       try {
         await api.post(
           "/subscription/confirm",
-          { memberId: member1, plan: selectedPlan },
+          { memberId: member1, plan: selectedPlan, reference },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
