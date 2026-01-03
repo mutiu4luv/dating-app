@@ -100,6 +100,23 @@ const Chat = () => {
 
     fetchReceiver();
   }, [member2]);
+  // Mark messages as read
+  useEffect(() => {
+    if (!member1 || !member2) return;
+
+    const markAsRead = async () => {
+      try {
+        await axios.put(
+          `${import.meta.env.VITE_BASE_URL}/api/chat/read/${member1}`,
+          { otherUserId: member2 }
+        );
+      } catch (err) {
+        console.error("❌ Failed to mark messages as read", err);
+      }
+    };
+
+    markAsRead();
+  }, [member1, member2]);
 
   // Auto-scroll to bottom on new message
   useEffect(() => {

@@ -155,7 +155,7 @@
 // };
 
 // export default MessagesScreen;
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   List,
   ListItem,
@@ -181,6 +181,8 @@ const MessagesScreen = () => {
   const token = localStorage.getItem("token");
 
   useEffect(() => {
+    if (!userId || !token) return;
+
     const fetchConversations = async () => {
       try {
         const res = await api.get(`/chat/conversations/${userId}`, {
@@ -194,25 +196,7 @@ const MessagesScreen = () => {
       }
     };
 
-    const markAllAsRead = async () => {
-      try {
-        await api.put(
-          `/chat/read/${userId}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        // Notify navbar to reset unread counter
-        window.dispatchEvent(new CustomEvent("unreadReset"));
-      } catch (err) {
-        console.error("❌ Failed to mark messages as read:", err);
-      }
-    };
-
-    if (userId && token) {
-      fetchConversations();
-      markAllAsRead();
-    }
+    fetchConversations();
   }, [userId, token]);
 
   const handleClick = (matchId) => {
@@ -251,8 +235,10 @@ const MessagesScreen = () => {
           <Paper elevation={2} sx={{ borderRadius: 3, p: 1 }}>
             <List>
               {conversations.map((chat) => {
-                const unreadCount = chat.unreadCount || 0;
-                const isUnread = unreadCount > 0 || chat.unread;
+                // const unreadCount = chat.unreadCount || 0;
+                // const isUnread = unreadCount > 0;
+                const unreadCount = chat.unreadCount ?? 0;
+                const isUnread = chat.unread === true;
 
                 return (
                   <ListItem
@@ -294,7 +280,6 @@ const MessagesScreen = () => {
                         <Typography
                           fontWeight={isUnread ? 700 : 500}
                           fontSize="1rem"
-                          color={isUnread ? "textPrimary" : "textSecondary"}
                         >
                           {chat.username}
                         </Typography>
