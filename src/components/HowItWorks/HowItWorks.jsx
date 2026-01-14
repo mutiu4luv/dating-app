@@ -50,7 +50,7 @@ const MotionBox = motion(Box);
 
 const HowItWorks = () => {
   return (
-    <Box sx={{ backgroundColor: "#0f0f0f", py: { xs: 8, md: 12 } }}>
+    <Box sx={{ backgroundColor: "#D9A4F0", py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
         {/* Header Section */}
         <Box sx={{ textAlign: "center", mb: 8 }}>
@@ -58,13 +58,13 @@ const HowItWorks = () => {
             variant="h4"
             sx={{ fontWeight: 800, color: "#fff", mb: 1.5 }}
           >
-            How It <span style={{ color: "#D9A4F0" }}>Works</span> 💜
+            How It <span style={{ color: "#000" }}>Works</span> 💜
           </Typography>
           <Typography
             sx={{
               maxWidth: 520,
               mx: "auto",
-              color: "rgba(255,255,255,0.7)",
+              color: "rgba(3, 3, 3, 0.7)",
               fontSize: 15,
             }}
           >

@@ -51,7 +51,7 @@ const LoveStory = () => {
     <Box
       sx={{
         py: 10,
-        background: "linear-gradient(to bottom, #0b0b0b, #120014)",
+        background: "#D9A4F0",
         color: "#fff",
       }}
     >
@@ -72,7 +72,7 @@ const LoveStory = () => {
                 fontWeight: 800,
                 borderRadius: "50px",
                 color: "#2d0052",
-                background: "linear-gradient(135deg, #D9A4F0, #b65cff)",
+                background: "linear-gradient(black, #D9A4F0, #b65cff)",
                 boxShadow: "0 12px 30px rgba(217,164,240,0.6)",
                 textTransform: "none",
                 "&:hover": {
@@ -89,11 +89,11 @@ const LoveStory = () => {
         <Box textAlign="center" mb={8}>
           <Typography variant="h4" fontWeight={900}>
             Real{" "}
-            <Box component="span" sx={{ color: "#D9A4F0" }}>
+            <Box component="span" sx={{ color: "black" }}>
               Love Stories
             </Box>
           </Typography>
-          <Typography sx={{ color: "#cfcfcf", maxWidth: 520, mx: "auto" }}>
+          <Typography sx={{ color: "black", maxWidth: 520, mx: "auto" }}>
             Genuine connections that started with a simple conversation.
           </Typography>
         </Box>
@@ -174,7 +174,7 @@ const LoveStory = () => {
                     <Typography
                       variant="body2"
                       sx={{
-                        color: "#cfcfcf",
+                        color: "#000",
                         maxWidth: 260,
                         mx: "auto",
                       }}

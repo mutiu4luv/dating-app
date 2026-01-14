@@ -67,7 +67,7 @@ const EbookAdvert = () => {
   };
 
   return (
-    <Box sx={{ backgroundColor: "#ffffff", py: { xs: 8, md: 12 } }}>
+    <Box sx={{ backgroundColor: "#D9A4F0", py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
         {/* Main eBook Offer Card */}
         <Card
