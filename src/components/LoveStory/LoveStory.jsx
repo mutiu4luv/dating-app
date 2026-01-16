@@ -56,31 +56,49 @@ const LoveStory = () => {
       }}
     >
       <Container>
-        {/* CTA */}
+        {/* 🔥 SHARP CTA */}
         <Box sx={{ textAlign: "center", mb: 6 }}>
           <motion.div
-            animate={{ scale: [1, 1.05, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={{
+              scale: [1, 1.08, 1],
+              boxShadow: [
+                "0 0 0 rgba(255,0,128,0)",
+                "0 0 35px rgba(255,0,128,0.9)",
+                "0 0 0 rgba(255,0,128,0)",
+              ],
+              y: [0, -6, 0],
+            }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            style={{ display: "inline-block" }}
           >
             <Button
               component={Link}
               to={upgradeLink}
               sx={{
-                px: 5,
-                py: 1.4,
-                fontSize: "1rem",
-                fontWeight: 800,
+                px: 6,
+                py: 1.6,
+                fontSize: "1.05rem",
+                fontWeight: 900,
                 borderRadius: "50px",
-                color: "#2d0052",
-                background: "linear-gradient(black, #D9A4F0, #b65cff)",
-                boxShadow: "0 12px 30px rgba(217,164,240,0.6)",
+                color: "#fff",
+                background:
+                  "linear-gradient(135deg, #5a00ff, #ff007a, #ffb703)",
+                boxShadow: "0 12px 35px rgba(255,0,122,0.8)",
                 textTransform: "none",
+                letterSpacing: 0.6,
                 "&:hover": {
-                  background: "linear-gradient(135deg, #e8b8ff, #c77dff)",
+                  transform: "translateY(-2px)",
+                  background:
+                    "linear-gradient(135deg, #ff007a, #ffb703, #5a00ff)",
+                  boxShadow: "0 18px 45px rgba(255,183,3,0.95)",
                 },
               }}
             >
-              Upgrade Your Plan — Meet More People
+              🚀 Upgrade Your Plan — Meet More People
             </Button>
           </motion.div>
         </Box>
@@ -109,7 +127,6 @@ const LoveStory = () => {
                 viewport={{ once: true }}
               >
                 <Box textAlign="center">
-                  {/* DANCING IMAGE */}
                   <motion.div
                     animate={{
                       y: [0, -10, 0],
@@ -146,7 +163,6 @@ const LoveStory = () => {
                     </Card>
                   </motion.div>
 
-                  {/* NAME + ANIMATED UNDERLINE */}
                   <CardContent sx={{ p: 0 }}>
                     <Typography
                       variant="subtitle1"
