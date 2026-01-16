@@ -52,7 +52,7 @@ const HowItWorks = () => {
   return (
     <Box sx={{ backgroundColor: "#D9A4F0", py: { xs: 8, md: 12 } }}>
       <Container maxWidth="lg">
-        {/* Header Section */}
+        {/* Header */}
         <Box sx={{ textAlign: "center", mb: 8 }}>
           <Typography
             variant="h4"
@@ -68,38 +68,50 @@ const HowItWorks = () => {
               fontSize: 15,
             }}
           >
-            Get started on FindYourMatch today in 5 simple steps.
+            Get started on TrueMatchUp today in 5 simple steps.
           </Typography>
         </Box>
 
-        {/* Steps Grid */}
+        {/* Steps */}
         <Grid
           container
-          spacing={{ xs: 3, sm: 3, md: 7 }} // Increased xs spacing for better mobile look
+          spacing={{ xs: 3, sm: 3, md: 7 }}
           justifyContent="center"
-          alignItems="center" // Ensures items are vertically aligned if heights vary
+          alignItems="center"
           sx={{ maxWidth: 1100, mx: "auto", px: 2 }}
         >
           {steps.map((step, index) => (
             <Grid
               item
-              xs={11} // Use 11 instead of 12 to show a tiny bit of the background on edges
-              sm={6} // Two cards per row on tablets
-              md={4} // Three cards per row on desktop
+              xs={11}
+              sm={6}
+              md={4}
               key={index}
-              sx={{ display: "flex", justifyContent: "center" }} // Extra centering insurance
+              sx={{ display: "flex", justifyContent: "center" }}
             >
               <MotionBox
-                initial={{ opacity: 0, y: 25 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.45, delay: index * 0.08 }}
-                viewport={{ once: true }}
+                initial={{
+                  opacity: 0,
+                  x: index % 2 === 0 ? -80 : 80, // 👈 alternating left/right
+                }}
+                whileInView={{
+                  opacity: 1,
+                  x: 0,
+                }}
+                transition={{
+                  duration: 0.55,
+                  ease: "easeOut",
+                }}
+                viewport={{
+                  once: false, // 🔥 re-trigger on every scroll
+                  amount: 0.3, // trigger when 30% visible
+                }}
                 sx={{
                   backgroundColor: "#0f0f0f",
                   borderRadius: 3,
                   p: 2.5,
                   width: "100%",
-                  maxWidth: { xs: 320, sm: "100%" }, // Prevents cards from getting too wide on mobile
+                  maxWidth: { xs: 320, sm: "100%" },
                   height: { xs: 180, sm: 190, md: 210 },
                   display: "flex",
                   flexDirection: "column",
@@ -152,7 +164,7 @@ const HowItWorks = () => {
           ))}
         </Grid>
 
-        {/* CTA Button */}
+        {/* CTA */}
         <Box sx={{ textAlign: "center", mt: 10 }}>
           <Link to={`/members/${userId}`} style={{ textDecoration: "none" }}>
             <Button
