@@ -352,11 +352,11 @@ const Members = () => {
                           cursor: "help",
                         }}
                       >
-                        {onlineStatus?.isOnline
+                        {/* {onlineStatus?.isOnline
                           ? "🟢 Online"
                           : `Last seen: ${
                               onlineStatus?.lastSeen?.relative || "Unknown"
-                            }`}
+                            }`} */}
                       </Typography>
                     </Tooltip>
 
