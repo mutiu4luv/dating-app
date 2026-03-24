@@ -188,6 +188,7 @@ const Testimony = () => {
                       variant="body2"
                       color="#fff"
                       align="center"
+                      textAlign={isExpanded ? "left" : "center"}
                       sx={{
                         display: "-webkit-box",
                         WebkitLineClamp: isExpanded
