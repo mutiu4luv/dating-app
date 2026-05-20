@@ -135,10 +135,16 @@ const Testimony = () => {
         py: 6,
         px: { xs: 1, sm: 2, md: 4 },
         minHeight: "100vh",
+        overflowX: "hidden",
       }}
     >
       <Box display="flex" justifyContent="center" mb={4}>
-        <Typography variant="h4" fontWeight="bold" color="#fff">
+        <Typography
+          variant="h4"
+          fontWeight="bold"
+          color="#fff"
+          sx={{ fontSize: { xs: "1.65rem", md: "2.125rem" } }}
+        >
           ❤️ TESTIMONIALS
         </Typography>
       </Box>
@@ -148,7 +154,7 @@ const Testimony = () => {
           const isExpanded = expanded[index];
 
           return (
-            <Grid item xs={6} sm={4} md={3} key={index}>
+            <Grid item xs={12} sm={6} md={3} key={index}>
               <motion.div
                 initial={{ opacity: 0, x: index % 2 === 0 ? -120 : 120 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -162,6 +168,7 @@ const Testimony = () => {
                     backdropFilter: "blur(8px)",
                     border: "1.5px solid rgba(236,72,153,0.18)",
                     maxWidth: 240,
+                    mx: "auto",
                     height: isExpanded ? "auto" : `${CARD_HEIGHT}px`,
                   }}
                 >
@@ -169,7 +176,10 @@ const Testimony = () => {
                     component="img"
                     image={item.photo}
                     alt={item.name}
-                    sx={{ height: 390, objectFit: "cover" }}
+                    sx={{
+                      height: { xs: 320, sm: 360, md: 390 },
+                      objectFit: "cover",
+                    }}
                   />
 
                   <CardContent

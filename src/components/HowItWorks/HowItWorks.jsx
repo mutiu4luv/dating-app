@@ -6,6 +6,8 @@ import {
   Grid,
   Button,
   Avatar,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -49,14 +51,28 @@ const userId = localStorage.getItem("userId");
 const MotionBox = motion(Box);
 
 const HowItWorks = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
-    <Box sx={{ backgroundColor: "#D9A4F0", py: { xs: 8, md: 12 } }}>
+    <Box
+      sx={{
+        backgroundColor: "#D9A4F0",
+        py: { xs: 6, md: 12 },
+        overflowX: "hidden",
+      }}
+    >
       <Container maxWidth="lg">
         {/* Header */}
         <Box sx={{ textAlign: "center", mb: 8 }}>
           <Typography
             variant="h4"
-            sx={{ fontWeight: 800, color: "#fff", mb: 1.5 }}
+            sx={{
+              fontWeight: 800,
+              color: "#fff",
+              mb: 1.5,
+              fontSize: { xs: "1.75rem", md: "2.125rem" },
+            }}
           >
             How It <span style={{ color: "#000" }}>Works</span> 💜
           </Typography>
@@ -92,7 +108,7 @@ const HowItWorks = () => {
               <MotionBox
                 initial={{
                   opacity: 0,
-                  x: index % 2 === 0 ? -80 : 80, // 👈 alternating left/right
+                  x: isMobile ? 0 : index % 2 === 0 ? -80 : 80,
                 }}
                 whileInView={{
                   opacity: 1,

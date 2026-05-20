@@ -137,6 +137,7 @@ const CategoryGrid = () => {
             fontWeight: 800,
             color: "#111",
             mb: 1.5,
+            fontSize: { xs: "1.75rem", md: "2.125rem" },
           }}
         >
           Choose How You Want to Connect 💜
@@ -147,7 +148,7 @@ const CategoryGrid = () => {
             maxWidth: 560,
             mx: "auto",
             color: "#555",
-            fontSize: 15,
+            fontSize: { xs: 14, md: 15 },
             lineHeight: 1.7,
             minHeight: 26,
           }}
@@ -180,8 +181,9 @@ const CategoryGrid = () => {
         {categories.map((item, index) => (
           <Grid
             item
-            xs={11} // Takes up most of the width on mobile to ensure centering
-            sm={4} // Back to 3 columns on tablet/desktop
+            xs={12}
+            sm={6}
+            md={4}
             key={item.id}
             sx={{
               display: "flex",

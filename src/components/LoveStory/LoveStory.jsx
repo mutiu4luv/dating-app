@@ -50,7 +50,7 @@ const LoveStory = () => {
   return (
     <Box
       sx={{
-        py: 10,
+        py: { xs: 6, md: 10 },
         background: "#D9A4F0",
         color: "#fff",
       }}
@@ -79,9 +79,9 @@ const LoveStory = () => {
               component={Link}
               to={upgradeLink}
               sx={{
-                px: 6,
+                px: { xs: 3, sm: 6 },
                 py: 1.6,
-                fontSize: "1.05rem",
+                fontSize: { xs: "0.9rem", sm: "1.05rem" },
                 fontWeight: 900,
                 borderRadius: "50px",
                 color: "#fff",
@@ -105,7 +105,11 @@ const LoveStory = () => {
 
         {/* TITLE */}
         <Box textAlign="center" mb={8}>
-          <Typography variant="h4" fontWeight={900}>
+          <Typography
+            variant="h4"
+            fontWeight={900}
+            sx={{ fontSize: { xs: "1.75rem", md: "2.125rem" } }}
+          >
             Real{" "}
             <Box component="span" sx={{ color: "black" }}>
               Love Stories
@@ -142,6 +146,8 @@ const LoveStory = () => {
                       sx={{
                         width: 210,
                         height: 210,
+                        maxWidth: "72vw",
+                        maxHeight: "72vw",
                         mx: "auto",
                         borderRadius: "50%",
                         overflow: "hidden",

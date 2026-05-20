@@ -9,7 +9,7 @@ const HeroPage = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: { xs: "calc(100vh - 56px)", md: "100vh" },
         backgroundImage: `url(${bgImg})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
@@ -41,8 +41,9 @@ const HeroPage = () => {
         <Box
           sx={{
             maxWidth: 880,
-            px: { xs: 3, md: 6 },
-            py: { xs: 4, md: 6 },
+            width: { xs: "calc(100vw - 28px)", sm: "auto" },
+            px: { xs: 2, sm: 3, md: 6 },
+            py: { xs: 3, md: 6 },
             textAlign: "center",
             borderRadius: "22px",
             background: "rgba(0,0,0,0.6)",
@@ -69,7 +70,7 @@ const HeroPage = () => {
                 alignItems: "center",
                 justifyContent: "center",
                 fontWeight: 900,
-                fontSize: "1.1rem",
+                fontSize: { xs: "0.95rem", md: "1.1rem" },
                 border: "3px solid #fff",
                 boxShadow: "0 0 25px rgba(220,38,38,0.7)",
               }}
@@ -86,6 +87,7 @@ const HeroPage = () => {
               color: "#fff",
               lineHeight: 1.15,
               mb: 1,
+              fontSize: { xs: "2.25rem", sm: "3.1rem", md: "4rem" },
             }}
           >
             Find{" "}
@@ -100,7 +102,7 @@ const HeroPage = () => {
           <Typography
             sx={{
               color: "#e5e5e5",
-              fontSize: "1.05rem",
+              fontSize: { xs: "0.92rem", sm: "1rem", md: "1.05rem" },
               maxWidth: 620,
               mx: "auto",
               mt: 2,
@@ -117,7 +119,7 @@ const HeroPage = () => {
               to="/login"
               sx={{
                 mt: 4,
-                px: 7,
+                px: { xs: 4, sm: 7 },
                 py: 1.7,
                 borderRadius: "60px",
                 fontSize: "1rem",
@@ -156,6 +158,7 @@ const HeroPage = () => {
         sx={{
           position: "absolute",
           bottom: 18,
+          px: 2,
           width: "100%",
           textAlign: "center",
           color: "#cfcfcf",
