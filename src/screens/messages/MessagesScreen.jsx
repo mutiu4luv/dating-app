@@ -1,180 +1,33 @@
-// import React, { useEffect, useState } from "react";
-// import {
-//   List,
-//   ListItem,
-//   ListItemText,
-//   ListItemAvatar,
-//   Avatar,
-//   Typography,
-//   CircularProgress,
-//   Badge,
-//   Box,
-//   Paper,
-// } from "@mui/material";
-// import { useNavigate } from "react-router-dom";
-// import api from "../../components/api/Api";
-// import Navbar from "../../components/Navbar/Navbar";
-
-// const MessagesScreen = () => {
-//   const [conversations, setConversations] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const navigate = useNavigate();
-//   const userId = localStorage.getItem("userId");
-//   const token = localStorage.getItem("token");
-
-//   useEffect(() => {
-//     const fetchConversations = async () => {
-//       try {
-//         const res = await api.get(`/chat/conversations/${userId}`, {
-//           headers: { Authorization: `Bearer ${token}` },
-//         });
-//         setConversations(res.data);
-//       } catch (err) {
-//         console.error("❌ Failed to load conversations:", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     const markAllAsRead = async () => {
-//       try {
-//         await api.put(
-//           `/chat/read/${userId}`,
-//           {},
-//           {
-//             headers: { Authorization: `Bearer ${token}` },
-//           }
-//         );
-
-//         // ✅ Notify Navbar to update unread count using custom event
-//         window.dispatchEvent(new CustomEvent("unreadReset"));
-//       } catch (err) {
-//         console.error("❌ Failed to mark messages as read:", err);
-//       }
-//     };
-
-//     if (userId && token) {
-//       fetchConversations();
-//       markAllAsRead();
-//     }
-//   }, [userId, token]);
-
-//   const handleClick = (matchId) => {
-//     navigate(`/chat/${userId}/${matchId}`);
-//   };
-
-//   if (loading) {
-//     return (
-//       <Box textAlign="center" mt={8}>
-//         <CircularProgress color="secondary" />
-//         <Typography mt={2} color="textSecondary">
-//           Loading conversations...
-//         </Typography>
-//       </Box>
-//     );
-//   }
-
-//   return (
-//     <>
-//       <Navbar />
-//       <Box maxWidth="sm" mx="auto" mt={4} px={2}>
-//         <Typography
-//           variant="h5"
-//           fontWeight="bold"
-//           gutterBottom
-//           sx={{ color: "#db2777" }}
-//         >
-//           Conversations
-//         </Typography>
-
-//         {conversations.length === 0 ? (
-//           <Typography color="textSecondary" mt={4} textAlign="center">
-//             You don’t have any messages yet.
-//           </Typography>
-//         ) : (
-//           <Paper elevation={2} sx={{ borderRadius: 3, p: 1 }}>
-//             <List>
-//               {conversations.map((chat) => (
-//                 <ListItem
-//                   key={chat.matchId}
-//                   button
-//                   onClick={() => handleClick(chat.matchId)}
-//                   sx={{
-//                     borderRadius: 2,
-//                     mb: 1,
-//                     py: 2,
-//                     px: 2,
-//                     transition: "0.3s",
-//                     backgroundColor: chat.unread ? "#fdf2f8" : "#fff",
-//                     "&:hover": {
-//                       backgroundColor: "#fce7f3",
-//                     },
-//                   }}
-//                 >
-//                   <ListItemAvatar>
-//                     <Badge
-//                       variant="dot"
-//                       color="error"
-//                       invisible={!chat.unread}
-//                       overlap="circular"
-//                     >
-//                       <Avatar
-//                         sx={{
-//                           bgcolor: "#ec4899",
-//                           color: "white",
-//                           fontWeight: "bold",
-//                         }}
-//                       >
-//                         {chat.username?.[0]?.toUpperCase()}
-//                       </Avatar>
-//                     </Badge>
-//                   </ListItemAvatar>
-//                   <ListItemText
-//                     primary={
-//                       <Typography
-//                         fontWeight={chat.unread ? 700 : 500}
-//                         fontSize="1rem"
-//                       >
-//                         {chat.username}
-//                       </Typography>
-//                     }
-//                     secondary={
-//                       <Typography variant="body2" color="textSecondary" noWrap>
-//                         {chat.lastMessage || "Say hi..."}
-//                       </Typography>
-//                     }
-//                   />
-//                 </ListItem>
-//               ))}
-//             </List>
-//           </Paper>
-//         )}
-//       </Box>
-//     </>
-//   );
-// };
-
-// export default MessagesScreen;
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
   Avatar,
-  Typography,
-  CircularProgress,
   Badge,
   Box,
+  CircularProgress,
+  InputAdornment,
+  List,
+  ListItem,
+  ListItemAvatar,
+  ListItemText,
   Paper,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import ChatIcon from "@mui/icons-material/Chat";
+import PeopleIcon from "@mui/icons-material/People";
 import { useNavigate } from "react-router-dom";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
 
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
+  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("conversations");
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   const userId = localStorage.getItem("userId");
@@ -183,32 +36,75 @@ const MessagesScreen = () => {
   useEffect(() => {
     if (!userId || !token) return;
 
-    const fetchConversations = async () => {
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const fetchChatHub = async () => {
       try {
-        const res = await api.get(`/chat/conversations/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setConversations(res.data);
+        const [conversationRes, membersRes] = await Promise.all([
+          api.get(`/chat/conversations/${userId}`, { headers }),
+          api.get("/user/chat-directory", { headers }),
+        ]);
+
+        setConversations(conversationRes.data || []);
+        setMembers(membersRes.data.members || []);
       } catch (err) {
-        console.error("❌ Failed to load conversations:", err);
+        console.error("Failed to load chat hub:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchConversations();
+    fetchChatHub();
   }, [userId, token]);
 
-  const handleClick = (matchId) => {
-    navigate(`/chat/${userId}/${matchId}`);
+  const filteredMembers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return members;
+
+    return members.filter((member) =>
+      [
+        member.name,
+        member.username,
+        member.location,
+        member.occupation,
+        member.relationshipType,
+      ]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term))
+    );
+  }, [members, searchTerm]);
+
+  const handleChatOpen = (memberId) => {
+    navigate(`/chat/${userId}/${memberId}`);
   };
+
+  const renderAvatar = (name, photo, isOnline = false) => (
+    <Badge
+      color={isOnline ? "success" : "default"}
+      variant="dot"
+      overlap="circular"
+      invisible={!isOnline}
+      anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+    >
+      <Avatar
+        src={photo || ""}
+        sx={{
+          bgcolor: "#D9A4F0",
+          color: "#2d0052",
+          fontWeight: 800,
+        }}
+      >
+        {name?.[0]?.toUpperCase()}
+      </Avatar>
+    </Badge>
+  );
 
   if (loading) {
     return (
       <Box textAlign="center" mt={8}>
         <CircularProgress color="secondary" />
         <Typography mt={2} color="textSecondary">
-          Loading conversations...
+          Loading chat...
         </Typography>
       </Box>
     );
@@ -217,90 +113,225 @@ const MessagesScreen = () => {
   return (
     <>
       <Navbar />
-      <Box maxWidth="sm" mx="auto" mt={4} px={2}>
-        <Typography
-          variant="h5"
-          fontWeight="bold"
-          gutterBottom
-          sx={{ color: "#db2777" }}
-        >
-          Conversations
-        </Typography>
+      <Box
+        sx={{
+          minHeight: "100vh",
+          background:
+            "linear-gradient(135deg, #fdf2f8 0%, #ffffff 42%, #f3e8ff 100%)",
+          py: { xs: 3, sm: 5 },
+          px: 2,
+        }}
+      >
+        <Box maxWidth="md" mx="auto">
+          <Box mb={3}>
+            <Typography variant="h4" fontWeight={900} color="#2d0052">
+              Chat
+            </Typography>
+            <Typography color="#6b4679" mt={0.5}>
+              Continue conversations or start a new chat with any member.
+            </Typography>
+          </Box>
 
-        {conversations.length === 0 ? (
-          <Typography color="textSecondary" mt={4} textAlign="center">
-            You don’t have any messages yet.
-          </Typography>
-        ) : (
-          <Paper elevation={2} sx={{ borderRadius: 3, p: 1 }}>
-            <List>
-              {conversations.map((chat) => {
-                // const unreadCount = chat.unreadCount || 0;
-                // const isUnread = unreadCount > 0;
-                const unreadCount = chat.unreadCount ?? 0;
-                const isUnread = chat.unread === true;
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: "1px solid rgba(45, 0, 82, 0.1)",
+              overflow: "hidden",
+            }}
+          >
+            <Tabs
+              value={tab}
+              onChange={(_, value) => setTab(value)}
+              variant="fullWidth"
+              sx={{
+                bgcolor: "#fff",
+                borderBottom: "1px solid rgba(45, 0, 82, 0.1)",
+                "& .MuiTab-root": {
+                  color: "#6b4679",
+                  fontWeight: 800,
+                  textTransform: "none",
+                },
+                "& .Mui-selected": { color: "#2d0052" },
+                "& .MuiTabs-indicator": { bgcolor: "#D9A4F0", height: 3 },
+              }}
+            >
+              <Tab
+                value="conversations"
+                icon={<ChatIcon />}
+                iconPosition="start"
+                label="Conversations"
+              />
+              <Tab
+                value="members"
+                icon={<PeopleIcon />}
+                iconPosition="start"
+                label="All Users"
+              />
+            </Tabs>
 
-                return (
-                  <ListItem
-                    key={chat.matchId}
-                    button
-                    onClick={() => handleClick(chat.matchId)}
-                    sx={{
-                      borderRadius: 2,
-                      mb: 1,
-                      py: 2,
-                      px: 2,
-                      backgroundColor: isUnread ? "#fdf2f8" : "#fff",
-                      "&:hover": {
-                        backgroundColor: "#fce7f3",
-                      },
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Badge
-                        badgeContent={unreadCount}
-                        color="error"
-                        invisible={!isUnread}
-                        overlap="circular"
-                      >
-                        <Avatar
+            {tab === "conversations" ? (
+              <Box sx={{ bgcolor: "#fff", p: { xs: 1, sm: 2 } }}>
+                {conversations.length === 0 ? (
+                  <Box textAlign="center" py={6}>
+                    <Typography color="#6b4679">
+                      No conversations yet. Open All Users to start chatting.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <List disablePadding>
+                    {conversations.map((chat) => {
+                      const unreadCount = chat.unreadCount ?? 0;
+                      const isUnread = chat.unread === true;
+
+                      return (
+                        <ListItem
+                          key={chat.matchId}
+                          button
+                          onClick={() => handleChatOpen(chat.matchId)}
                           sx={{
-                            bgcolor: "#ec4899",
-                            color: "white",
-                            fontWeight: "bold",
+                            borderRadius: 2,
+                            mb: 1,
+                            py: 1.5,
+                            backgroundColor: isUnread ? "#fdf2f8" : "#fff",
+                            "&:hover": { backgroundColor: "#fce7f3" },
                           }}
                         >
-                          {chat.username?.[0]?.toUpperCase()}
-                        </Avatar>
-                      </Badge>
-                    </ListItemAvatar>
+                          <ListItemAvatar>
+                            <Badge
+                              badgeContent={unreadCount}
+                              color="error"
+                              invisible={!isUnread}
+                              overlap="circular"
+                            >
+                              <Avatar
+                                sx={{
+                                  bgcolor: "#D9A4F0",
+                                  color: "#2d0052",
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {chat.username?.[0]?.toUpperCase()}
+                              </Avatar>
+                            </Badge>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography fontWeight={isUnread ? 800 : 700}>
+                                {chat.username}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography
+                                variant="body2"
+                                noWrap
+                                fontWeight={isUnread ? 700 : 400}
+                                color={isUnread ? "#2d0052" : "#6b4679"}
+                              >
+                                {chat.lastMessage || "Say hi..."}
+                              </Typography>
+                            }
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+              </Box>
+            ) : (
+              <Box sx={{ bgcolor: "#fff", p: { xs: 1.5, sm: 2 } }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search by name, location, occupation, or relationship type"
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      bgcolor: "#fdf2f8",
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: "#6b4679" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-                    <ListItemText
-                      primary={
-                        <Typography
-                          fontWeight={isUnread ? 700 : 500}
-                          fontSize="1rem"
-                        >
-                          {chat.username}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography
-                          variant="body2"
-                          noWrap
-                          fontWeight={isUnread ? 600 : 400}
-                          color={isUnread ? "textPrimary" : "textSecondary"}
-                        >
-                          {chat.lastMessage || "Say hi..."}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                );
-              })}
-            </List>
+                {filteredMembers.length === 0 ? (
+                  <Box textAlign="center" py={6}>
+                    <Typography color="#6b4679">
+                      No users match your search.
+                    </Typography>
+                  </Box>
+                ) : (
+                  <List disablePadding>
+                    {filteredMembers.map((member) => (
+                      <ListItem
+                        key={member._id}
+                        button
+                        onClick={() => handleChatOpen(member._id)}
+                        sx={{
+                          borderRadius: 2,
+                          mb: 1,
+                          py: 1.5,
+                          "&:hover": { backgroundColor: "#fce7f3" },
+                        }}
+                      >
+                        <ListItemAvatar>
+                          {renderAvatar(
+                            member.username || member.name,
+                            member.photo,
+                            member.isOnline
+                          )}
+                        </ListItemAvatar>
+                        <ListItemText
+                          primary={
+                            <Box
+                              display="flex"
+                              alignItems="center"
+                              gap={1}
+                              flexWrap="wrap"
+                            >
+                              <Typography fontWeight={800} color="#2d0052">
+                                {member.username || member.name}
+                              </Typography>
+                              {member.isOnline && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    bgcolor: "#dcfce7",
+                                    color: "#166534",
+                                    px: 1,
+                                    borderRadius: 99,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  Online
+                                </Typography>
+                              )}
+                            </Box>
+                          }
+                          secondary={
+                            <Typography variant="body2" color="#6b4679" noWrap>
+                              {[member.location, member.occupation]
+                                .filter(Boolean)
+                                .join(" - ") || "Start a conversation"}
+                            </Typography>
+                          }
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </Box>
+            )}
           </Paper>
-        )}
+        </Box>
       </Box>
     </>
   );
