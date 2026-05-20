@@ -19,6 +19,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import ChatIcon from "@mui/icons-material/Chat";
 import PeopleIcon from "@mui/icons-material/People";
 import { useNavigate } from "react-router-dom";
+import io from "socket.io-client";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
 
@@ -56,6 +57,43 @@ const MessagesScreen = () => {
 
     fetchChatHub();
   }, [userId, token]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const socket = io(
+      import.meta.env.VITE_BACKEND_URL ||
+        import.meta.env.VITE_BASE_URL ||
+        "http://localhost:7000",
+      { transports: ["websocket"] }
+    );
+
+    socket.emit("register_user", userId);
+
+    const handlePresenceUpdate = ({ userId: changedUserId, isOnline, lastSeen }) => {
+      setMembers((prev) =>
+        prev.map((member) =>
+          member._id === changedUserId
+            ? { ...member, isOnline, lastSeen }
+            : member
+        )
+      );
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.matchId === changedUserId
+            ? { ...conversation, isOnline, lastSeen }
+            : conversation
+        )
+      );
+    };
+
+    socket.on("presence_update", handlePresenceUpdate);
+
+    return () => {
+      socket.off("presence_update", handlePresenceUpdate);
+      socket.disconnect();
+    };
+  }, [userId]);
 
   const filteredMembers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -205,6 +243,7 @@ const MessagesScreen = () => {
                               overlap="circular"
                             >
                               <Avatar
+                                src={chat.photo || ""}
                                 sx={{
                                   bgcolor: "#D9A4F0",
                                   color: "#2d0052",
@@ -217,9 +256,20 @@ const MessagesScreen = () => {
                           </ListItemAvatar>
                           <ListItemText
                             primary={
-                              <Typography fontWeight={isUnread ? 800 : 700}>
-                                {chat.username}
-                              </Typography>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography fontWeight={isUnread ? 800 : 700}>
+                                  {chat.username}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: chat.isOnline ? "#166534" : "#6b7280",
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  {chat.isOnline ? "Online" : "Offline"}
+                                </Typography>
+                              </Box>
                             }
                             secondary={
                               <Typography
@@ -312,6 +362,20 @@ const MessagesScreen = () => {
                                   }}
                                 >
                                   Online
+                                </Typography>
+                              )}
+                              {!member.isOnline && (
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    bgcolor: "#f3f4f6",
+                                    color: "#6b7280",
+                                    px: 1,
+                                    borderRadius: 99,
+                                    fontWeight: 800,
+                                  }}
+                                >
+                                  Offline
                                 </Typography>
                               )}
                             </Box>
