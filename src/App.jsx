@@ -8,7 +8,6 @@ import MergeScreen from "./screens/mergeScreen/MergeScreen";
 import { useEffect } from "react";
 import PaymentSuccess from "./components/payment/PaymentScreen";
 import MessagesScreen from "./screens/messages/MessagesScreen";
-import { io } from "socket.io-client";
 import UpdateProfileScreen from "./screens/UpdateProfileScreen";
 import OtpScreen from "./screens/OtpScreen";
 import ForgotPassword from "./screens/forgotPasswordScreen/ForgotPassword";
@@ -23,13 +22,10 @@ import Signup from "./screens/Signup";
 import SafetyTips from "./screens/safetyTips/SafetyTips";
 import ContactUs from "./components/CONTACTuS/ContactUs";
 import AboutUs from "./components/ABOUT-US/AboutUs";
+import MobileBottomNav from "./components/MobileBottomNav/MobileBottomNav";
+import AgeGate from "./components/AgeGate/AgeGate";
 
 function App() {
-  const currentUserId = localStorage.getItem("userId");
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  // console.log("Current User ID:", currentUserId);
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -37,105 +33,91 @@ function App() {
     }
   }, []);
 
-  const socket = io(
-    import.meta.env.VITE_BACKEND_URL || "http://localhost:7000",
-    {
-      transports: ["websocket"],
-    }
-  );
-
-  useEffect(() => {
-    const userId = localStorage.getItem("userId");
-    if (userId) {
-      socket.emit("user_connected", userId);
-    }
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
   return (
     <>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
+      <AgeGate />
+      <div className="app-shell">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
 
-        <Route
-          path="/members/:matchId"
-          element={
-            <ProtectedRoute>
-              <Members />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/members/:matchId"
+            element={
+              <ProtectedRoute>
+                <Members />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Admin Route - Reads isAdmin fresh from localStorage */}
-        <Route
-          path="/admin"
-          element={
-            localStorage.getItem("isAdmin") === "true" ? (
-              <AdminScreen />
-            ) : (
-              <Navigate to="/unauthorized" />
-            )
-          }
-        />
+          {/* Admin Route - Reads isAdmin fresh from localStorage */}
+          <Route
+            path="/admin"
+            element={
+              localStorage.getItem("isAdmin") === "true" ? (
+                <AdminScreen />
+              ) : (
+                <Navigate to="/unauthorized" />
+              )
+            }
+          />
 
-        <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route path="/disclaimer" element={<DisclaimerScreen />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
-        <Route path="/terms" element={<TermsAndConditions />} />
-        <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/disclaimer" element={<DisclaimerScreen />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/merge/success/:member2" element={<PaymentSuccess />} />
 
-        <Route
-          path="/chat/:member1/:member2"
-          element={
-            <ProtectedRoute>
-              <Chat />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/chat/:member1/:member2"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <UpdateProfileScreen />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UpdateProfileScreen />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/merge/:userId/:member2"
-          element={
-            <ProtectedRoute>
-              <MergeScreen />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/merge/:userId/:member2"
+            element={
+              <ProtectedRoute>
+                <MergeScreen />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Signup />} />
-        <Route path="/safetyTips" element={<SafetyTips />} />
-        <Route path="/contact" element={<ContactUs />} />
-        <Route path="/about" element={<AboutUs />} />
-        {/* <Route path="/register" element={<OtpScreen />} /> */}
-        {/* <Route
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Signup />} />
+          <Route path="/safetyTips" element={<SafetyTips />} />
+          <Route path="/contact" element={<ContactUs />} />
+          <Route path="/about" element={<AboutUs />} />
+          {/* <Route path="/register" element={<OtpScreen />} /> */}
+          {/* <Route
           path="/complete-registration"
           element={<CompleteRegistration />}
         /> */}
 
-        <Route
-          path="/messages"
-          element={
-            <ProtectedRoute>
-              <MessagesScreen />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagesScreen />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </div>
+      <MobileBottomNav />
     </>
   );
 }

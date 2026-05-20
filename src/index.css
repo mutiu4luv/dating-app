@@ -2,3 +2,9 @@
   padding: 0;
   margin: 0;
 }
+
+@media (max-width: 600px) {
+  .app-shell {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+}

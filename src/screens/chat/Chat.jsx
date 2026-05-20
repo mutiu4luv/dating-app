@@ -4,11 +4,14 @@ import {
   Typography,
   TextField,
   Button,
+  IconButton,
   Paper,
   List,
   ListItem,
   ListItemText,
 } from "@mui/material";
+import ImageIcon from "@mui/icons-material/Image";
+import CloseIcon from "@mui/icons-material/Close";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
@@ -20,9 +23,13 @@ const Chat = () => {
 
   const [socketInstance, setSocketInstance] = useState(null);
   const [message, setMessage] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
   const [receiver, setReceiver] = useState(null);
   const messagesEndRef = useRef();
+  const imageInputRef = useRef(null);
+  const token = localStorage.getItem("token");
 
   // Prevent chatting with self
   useEffect(() => {
@@ -37,6 +44,10 @@ const Chat = () => {
     const newSocket = io(import.meta.env.VITE_BASE_URL, {
       transports: ["websocket"],
     });
+
+    if (member1) {
+      newSocket.emit("register_user", member1);
+    }
 
     setSocketInstance(newSocket);
 
@@ -71,17 +82,24 @@ const Chat = () => {
         const res = await axios.get(
           `${
             import.meta.env.VITE_BASE_URL
-          }/api/chat?member1=${member1}&member2=${member2}`
+          }/api/chat?member1=${member1}&member2=${member2}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
 
         setMessages(res.data);
       } catch (err) {
         console.log("🔥 Chat fetch error:", err.response?.data || err.message);
+        if (err.response?.status === 403) {
+          alert(err.response.data?.error || "Renew your subscription to chat.");
+          navigate(`/merge/${member1}/${member2}`);
+        }
       }
     };
 
     fetchChats();
-  }, [member1, member2]);
+  }, [member1, member2, navigate, token]);
 
   // Fetch receiver info
   useEffect(() => {
@@ -108,15 +126,19 @@ const Chat = () => {
       try {
         await axios.put(
           `${import.meta.env.VITE_BASE_URL}/api/chat/read/${member1}`,
-          { otherUserId: member2 }
+          { otherUserId: member2 },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
+        window.dispatchEvent(new CustomEvent("unreadReset"));
       } catch (err) {
         console.error("❌ Failed to mark messages as read", err);
       }
     };
 
     markAsRead();
-  }, [member1, member2]);
+  }, [member1, member2, token]);
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
@@ -124,19 +146,27 @@ const Chat = () => {
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!message.trim() || !socketInstance) return;
+    if ((!message.trim() && !selectedImage) || !socketInstance || sending) {
+      return;
+    }
 
-    const data = {
-      senderId: member1,
-      receiverId: member2,
-      content: message,
-      room,
-    };
+    const formData = new FormData();
+    formData.append("senderId", member1);
+    formData.append("receiverId", member2);
+    formData.append("content", message);
+    formData.append("room", room);
+    if (selectedImage) {
+      formData.append("image", selectedImage);
+    }
 
     try {
+      setSending(true);
       const res = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/chat/save`,
-        data
+        formData,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       // Save to UI
@@ -149,10 +179,18 @@ const Chat = () => {
         "🔥 ERROR SENDING MESSAGE:",
         err.response?.data || err.message
       );
+      if (err.response?.status === 403) {
+        alert(err.response.data?.error || "Renew your subscription to chat.");
+        navigate(`/merge/${member1}/${member2}`);
+      }
       return;
+    } finally {
+      setSending(false);
     }
 
     setMessage("");
+    setSelectedImage(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   return (
@@ -193,7 +231,25 @@ const Chat = () => {
               }}
             >
               <ListItemText
-                primary={msg.content}
+                primary={
+                  <Box>
+                    {msg.imageUrl && (
+                      <Box
+                        component="img"
+                        src={msg.imageUrl}
+                        alt="Chat upload"
+                        sx={{
+                          width: "100%",
+                          maxHeight: 260,
+                          objectFit: "cover",
+                          borderRadius: 2,
+                          mb: msg.content ? 1 : 0,
+                        }}
+                      />
+                    )}
+                    {msg.content && <Typography>{msg.content}</Typography>}
+                  </Box>
+                }
                 sx={{
                   background: msg.senderId === member1 ? "#2979ff" : "#424242",
                   color: "#fff",
@@ -208,7 +264,46 @@ const Chat = () => {
         </List>
       </Paper>
 
+      {selectedImage && (
+        <Box
+          mx={2}
+          mb={1}
+          display="flex"
+          alignItems="center"
+          gap={1}
+          sx={{ color: "#fff" }}
+        >
+          <Typography variant="body2" noWrap flex={1}>
+            {selectedImage.name}
+          </Typography>
+          <IconButton
+            size="small"
+            color="inherit"
+            onClick={() => {
+              setSelectedImage(null);
+              if (imageInputRef.current) imageInputRef.current.value = "";
+            }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )}
+
       <Box display="flex" gap={1} px={2} pb={2}>
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+        />
+        <IconButton
+          color="primary"
+          onClick={() => imageInputRef.current?.click()}
+          sx={{ backgroundColor: "#2a2a2a" }}
+        >
+          <ImageIcon />
+        </IconButton>
         <TextField
           fullWidth
           variant="outlined"
@@ -226,9 +321,9 @@ const Chat = () => {
         <Button
           variant="contained"
           onClick={sendMessage}
-          disabled={!message.trim()}
+          disabled={sending || (!message.trim() && !selectedImage)}
         >
-          Send
+          {sending ? "Sending" : "Send"}
         </Button>
       </Box>
     </Box>

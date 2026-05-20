@@ -25,7 +25,11 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
 
-const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:7000");
+const socket = io(
+  import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_BASE_URL ||
+    "http://localhost:7000"
+);
 
 const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -64,17 +68,39 @@ const Navbar = () => {
 
     if (userId) {
       fetchUnreadMessages();
+      socket.emit("register_user", userId);
       socket.emit("join_room", userId);
+
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
     }
 
-    socket.on("receive_message", (data) => {
+    const handleReceiveMessage = (data) => {
       if (data.receiverId === userId) {
         setUnreadCount((prev) => prev + 1);
+
+        if ("Notification" in window && Notification.permission === "granted") {
+          const body =
+            data.content || (data.imageUrl ? "Sent you a photo" : "New message");
+          new Notification("New message", {
+            body,
+            tag: `message-${data.senderId}`,
+          });
+        }
       }
-    });
+    };
+
+    const handleUnreadReset = () => {
+      fetchUnreadMessages();
+    };
+
+    socket.on("receive_message", handleReceiveMessage);
+    window.addEventListener("unreadReset", handleUnreadReset);
 
     return () => {
-      socket.off("receive_message");
+      socket.off("receive_message", handleReceiveMessage);
+      window.removeEventListener("unreadReset", handleUnreadReset);
     };
   }, [userId]);
 
@@ -114,17 +140,6 @@ const Navbar = () => {
         break;
 
       case "Messages":
-        try {
-          const token = localStorage.getItem("token");
-          await api.put(
-            `/chat/read/${userId}`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          setUnreadCount(0);
-        } catch (err) {
-          console.error("Failed to mark messages as read", err);
-        }
         navigate("/messages");
         break;
 

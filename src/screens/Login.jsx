@@ -280,6 +280,7 @@ const Login = () => {
       );
 
       console.log("Login success:", { userId, isAdmin });
+      window.dispatchEvent(new CustomEvent("authChanged"));
 
       // Redirect to admin panel if admin
       if (isAdmin) {

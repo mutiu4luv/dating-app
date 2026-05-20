@@ -420,14 +420,14 @@ const MergeScreen = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // ✅ USER CAN CHAT IF THEY HAVE EVER PAID
-  const canChat = hasPaid || isMerged;
+  // Chat is available only while a paid subscription is active.
+  const canChat = hasPaid;
 
   const subscriptionPlans = {
     Free: {
       label: "Free Plan",
       amount: 0,
-      description: "Access 1 merge per month. Great for exploring!",
+      description: "Access 1 merge per month. Upgrade to start chatting.",
       icon: <FavoriteBorderIcon sx={{ fontSize: 32, color: "#22c55e" }} />,
     },
     Basic: {
@@ -561,7 +561,8 @@ const MergeScreen = () => {
         );
 
         if (res.data.match) {
-          navigate(`/chat/${member1}/${member2}`);
+          setIsMerged(true);
+          setErrorMessage("Free merge saved. Upgrade to a paid plan to chat.");
         }
       } catch (err) {
         setErrorMessage(err?.response?.data?.message || "Free merge failed.");
@@ -634,7 +635,7 @@ const MergeScreen = () => {
         <Typography textAlign="center" mb={2}>
           {canChat
             ? "Your subscription is active. You can chat with this match."
-            : "Choose a subscription plan to unlock chat access."}
+            : "Choose a paid subscription plan to unlock chat access."}
         </Typography>
 
         {errorMessage && (
