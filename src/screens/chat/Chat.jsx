@@ -15,6 +15,10 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
+import {
+  requestNotificationPermission,
+  showMessageNotification,
+} from "../../utility/notifications";
 
 const Chat = () => {
   const { member1, member2 } = useParams();
@@ -41,9 +45,14 @@ const Chat = () => {
 
   // Initialize socket
   useEffect(() => {
-    const newSocket = io(import.meta.env.VITE_BASE_URL, {
-      transports: ["websocket"],
-    });
+    const newSocket = io(
+      import.meta.env.VITE_BACKEND_URL ||
+        import.meta.env.VITE_BASE_URL ||
+        "http://localhost:7000",
+      {
+        transports: ["websocket"],
+      }
+    );
 
     if (member1) {
       newSocket.emit("register_user", member1);
@@ -63,13 +72,36 @@ const Chat = () => {
     socketInstance.emit("join_room", room);
 
     const handleReceive = (data) => {
-      setMessages((prev) => [...prev, data]);
+      if (data.room === room) {
+        setMessages((prev) => [...prev, data]);
+        return;
+      }
+
+      if (data.receiverId === member1) {
+        showMessageNotification(data);
+      }
+    };
+
+    const handlePresenceUpdate = (data) => {
+      if (data.userId === member2) {
+        setReceiver((prev) =>
+          prev
+            ? {
+                ...prev,
+                isOnline: data.isOnline,
+                lastSeen: data.lastSeen,
+              }
+            : prev
+        );
+      }
     };
 
     socketInstance.on("receive_message", handleReceive);
+    socketInstance.on("presence_update", handlePresenceUpdate);
 
     return () => {
       socketInstance.off("receive_message", handleReceive);
+      socketInstance.off("presence_update", handlePresenceUpdate);
     };
   }, [socketInstance, room, member1, member2]);
 
@@ -150,6 +182,8 @@ const Chat = () => {
       return;
     }
 
+    requestNotificationPermission();
+
     const formData = new FormData();
     formData.append("senderId", member1);
     formData.append("receiverId", member2);
@@ -180,9 +214,12 @@ const Chat = () => {
         err.response?.data || err.message
       );
       if (err.response?.status === 403) {
-        alert(err.response.data?.error || "Renew your subscription to chat.");
-        navigate(`/merge/${member1}/${member2}`);
-      }
+          alert(
+            err.response.data?.error ||
+              "You have reached your monthly chat limit."
+          );
+          navigate(`/merge/${member1}/${member2}`);
+        }
       return;
     } finally {
       setSending(false);
@@ -208,6 +245,17 @@ const Chat = () => {
     >
       <Typography variant="h6" align="center" gutterBottom sx={{ mb: 2 }}>
         Chat with <strong>{receiver?.username || "User"}</strong>
+        <Typography
+          component="span"
+          variant="caption"
+          sx={{
+            display: "block",
+            color: receiver?.isOnline ? "#4ade80" : "#9ca3af",
+            mt: 0.5,
+          }}
+        >
+          {receiver?.isOnline ? "Online" : "Offline"}
+        </Typography>
       </Typography>
 
       <Paper

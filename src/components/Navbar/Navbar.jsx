@@ -24,6 +24,10 @@ import UpgradeIcon from "@mui/icons-material/WorkspacePremium"; // ★ UPGRADE I
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
+import {
+  requestNotificationPermission,
+  showMessageNotification,
+} from "../../utility/notifications";
 
 const socket = io(
   import.meta.env.VITE_BACKEND_URL ||
@@ -70,24 +74,19 @@ const Navbar = () => {
       fetchUnreadMessages();
       socket.emit("register_user", userId);
       socket.emit("join_room", userId);
-
-      if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission().catch(() => {});
-      }
     }
+
+    const askForNotifications = () => {
+      requestNotificationPermission();
+    };
+
+    window.addEventListener("click", askForNotifications, { once: true });
+    window.addEventListener("touchstart", askForNotifications, { once: true });
 
     const handleReceiveMessage = (data) => {
       if (data.receiverId === userId) {
         setUnreadCount((prev) => prev + 1);
-
-        if ("Notification" in window && Notification.permission === "granted") {
-          const body =
-            data.content || (data.imageUrl ? "Sent you a photo" : "New message");
-          new Notification("New message", {
-            body,
-            tag: `message-${data.senderId}`,
-          });
-        }
+        showMessageNotification(data);
       }
     };
 
@@ -101,6 +100,8 @@ const Navbar = () => {
     return () => {
       socket.off("receive_message", handleReceiveMessage);
       window.removeEventListener("unreadReset", handleUnreadReset);
+      window.removeEventListener("click", askForNotifications);
+      window.removeEventListener("touchstart", askForNotifications);
     };
   }, [userId]);
 
