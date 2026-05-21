@@ -10,6 +10,7 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
 import { useParams, useNavigate } from "react-router-dom";
@@ -252,20 +253,42 @@ const Chat = () => {
         color: "#fff",
       }}
     >
-      <Typography variant="h6" align="center" gutterBottom sx={{ mb: 2 }}>
-        Chat with <strong>{receiver?.username || "User"}</strong>
-        <Typography
-          component="span"
-          variant="caption"
+      <Box
+        display="flex"
+        alignItems="center"
+        gap={1}
+        px={1.5}
+        pb={1.5}
+        sx={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+      >
+        <IconButton
+          onClick={() => navigate(-1)}
+          aria-label="Go back"
           sx={{
-            display: "block",
-            color: receiver?.isOnline ? "#4ade80" : "#9ca3af",
-            mt: 0.5,
+            color: "#fff",
+            bgcolor: "rgba(255,255,255,0.08)",
+            "&:hover": { bgcolor: "rgba(255,255,255,0.14)" },
           }}
         >
-          {receiver?.isOnline ? "Online" : "Offline"}
-        </Typography>
-      </Typography>
+          <ArrowBackIcon />
+        </IconButton>
+        <Box flex={1} textAlign="center" pr={5}>
+          <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
+            Chat with <strong>{receiver?.username || "User"}</strong>
+          </Typography>
+          <Typography
+            component="span"
+            variant="caption"
+            sx={{
+              display: "block",
+              color: receiver?.isOnline ? "#4ade80" : "#9ca3af",
+              mt: 0.5,
+            }}
+          >
+            {receiver?.isOnline ? "Online" : "Offline"}
+          </Typography>
+        </Box>
+      </Box>
 
       <Paper
         elevation={3}

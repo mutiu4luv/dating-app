@@ -32,6 +32,7 @@ const hiddenPaths = [
   "/register",
   "/forgot-password",
   "/unauthorized",
+  "/admin",
   "/privacy",
   "/terms",
   "/disclaimer",

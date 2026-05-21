@@ -12,11 +12,14 @@ import {
   InputAdornment,
   Pagination,
   Tooltip,
+  Chip,
+  LinearProgress,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import ImageIcon from "@mui/icons-material/Image";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useNavigate } from "react-router-dom";
@@ -84,6 +87,7 @@ const Members = () => {
   const [loading, setLoading] = useState(true);
   const [mergeStatuses, setMergeStatuses] = useState({});
   const [userStatuses, setUserStatuses] = useState({});
+  const [suggestedMembers, setSuggestedMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hasPaid, setHasPaid] = useState(false);
@@ -191,9 +195,18 @@ const Members = () => {
           statusMap[memberId] = status;
         });
 
+        const suggestedRes = await axiosInstance.get(
+          `${import.meta.env.VITE_BASE_URL}/api/user/suggested/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const suggestions = Array.isArray(suggestedRes.data?.suggestions)
+          ? suggestedRes.data.suggestions
+          : [];
+
         setMergeStatuses(statusMap);
         setMembers(sorted);
         setFilteredMembers(sorted);
+        setSuggestedMembers(sortByOnlineStatus(suggestions, statusObj));
 
         // ✅ Check if any member has a valid paid record
         const now = new Date();
@@ -214,6 +227,8 @@ const Members = () => {
         });
       } catch {
         setMembers([]);
+        setFilteredMembers([]);
+        setSuggestedMembers([]);
       }
       setLoading(false);
     };
@@ -267,7 +282,9 @@ const Members = () => {
     const filtered = members.filter(
       (m) =>
         m.name?.toLowerCase().includes(term) ||
-        m.location?.toLowerCase().includes(term)
+        m.location?.toLowerCase().includes(term) ||
+        m.occupation?.toLowerCase().includes(term) ||
+        m.relationshipType?.toLowerCase().includes(term)
     );
 
     setFilteredMembers(sortByOnlineStatus(filtered, userStatuses));
@@ -327,6 +344,231 @@ const Members = () => {
             Members With Your Relationship Type
           </Typography>
         </Box>
+
+        {suggestedMembers.length > 0 && (
+          <Box
+            sx={{
+              maxWidth: 1180,
+              mx: "auto",
+              mb: 4,
+              borderRadius: 2,
+              border: "1px solid rgba(217,164,240,0.28)",
+              background: "rgba(13, 16, 30, 0.68)",
+              boxShadow: "0 20px 50px rgba(0,0,0,0.24)",
+              backdropFilter: "blur(14px)",
+              p: { xs: 1.5, sm: 2.25 },
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              justifyContent="space-between"
+              alignItems={{ xs: "flex-start", sm: "center" }}
+              spacing={1}
+              mb={2}
+            >
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <AutoAwesomeIcon sx={{ color: "#D9A4F0" }} />
+                <Box>
+                  <Typography color="#fff" fontWeight={900} fontSize={20}>
+                    Suggested for you
+                  </Typography>
+                  <Typography color="rgba(255,255,255,0.66)" fontSize={13}>
+                    Ranked by relationship goal, location, age, interests, and activity.
+                  </Typography>
+                </Box>
+              </Stack>
+              <Chip
+                label={`${suggestedMembers.length} strong matches`}
+                size="small"
+                sx={{
+                  bgcolor: "rgba(217,164,240,0.16)",
+                  color: "#f7e6ff",
+                  border: "1px solid rgba(217,164,240,0.35)",
+                  fontWeight: 800,
+                }}
+              />
+            </Stack>
+
+            <Box
+              sx={{
+                display: "grid",
+                gridAutoFlow: { xs: "column", md: "row" },
+                gridAutoColumns: { xs: "minmax(260px, 82vw)", sm: "310px" },
+                gridTemplateColumns: {
+                  xs: "none",
+                  md: "repeat(2, minmax(0, 1fr))",
+                  lg: "repeat(4, minmax(0, 1fr))",
+                },
+                gap: 1.5,
+                overflowX: { xs: "auto", md: "visible" },
+                pb: { xs: 0.5, md: 0 },
+                scrollSnapType: { xs: "x mandatory", md: "none" },
+                "&::-webkit-scrollbar": { height: 8 },
+                "&::-webkit-scrollbar-thumb": {
+                  background: "rgba(217,164,240,0.42)",
+                  borderRadius: 99,
+                },
+              }}
+            >
+              {suggestedMembers.slice(0, 4).map((member) => {
+                const status = mergeStatuses[member._id];
+                const score = Number(member.compatibilityScore || 0);
+                const onlineStatus = userStatuses[member._id] || member;
+
+                return (
+                  <Box
+                    key={`suggested-${member._id}`}
+                    sx={{
+                      scrollSnapAlign: "start",
+                      minWidth: 0,
+                      borderRadius: 2,
+                      p: 1.25,
+                      background: "#ffffff",
+                      border: "1px solid rgba(255,255,255,0.14)",
+                      display: "grid",
+                      gridTemplateColumns: "72px minmax(0, 1fr)",
+                      gap: 1.25,
+                      alignItems: "center",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 72,
+                        height: 84,
+                        borderRadius: 1.5,
+                        overflow: "hidden",
+                        bgcolor: "#f4e8fb",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {member.photo ? (
+                        <Box
+                          component="img"
+                          src={member.photo}
+                          alt={member.name}
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      ) : (
+                        <ImageIcon sx={{ color: "#9d63b7", fontSize: 36 }} />
+                      )}
+                    </Box>
+
+                    <Box minWidth={0}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        spacing={1}
+                      >
+                        <Typography
+                          fontWeight={900}
+                          color="#171827"
+                          noWrap
+                          sx={{ minWidth: 0 }}
+                        >
+                          {member.name}
+                        </Typography>
+                        <Typography
+                          fontWeight={900}
+                          color="#8b3ba8"
+                          fontSize={13}
+                          whiteSpace="nowrap"
+                        >
+                          {score}%
+                        </Typography>
+                      </Stack>
+
+                      <LinearProgress
+                        variant="determinate"
+                        value={score}
+                        sx={{
+                          my: 0.85,
+                          height: 6,
+                          borderRadius: 99,
+                          bgcolor: "#eee7f2",
+                          "& .MuiLinearProgress-bar": {
+                            borderRadius: 99,
+                            background:
+                              "linear-gradient(90deg, #8b3ba8, #ec4899)",
+                          },
+                        }}
+                      />
+
+                      <Typography
+                        color="#5b5f72"
+                        fontSize={12}
+                        fontWeight={700}
+                        noWrap
+                      >
+                        {member.relationshipType || "Relationship goal"} -{" "}
+                        {onlineStatus?.isOnline
+                          ? "Online now"
+                          : getLastSeenLabel(onlineStatus)}
+                      </Typography>
+
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        mt={1}
+                        sx={{ overflow: "hidden" }}
+                      >
+                        {(member.compatibilityReasons || [])
+                          .slice(0, 2)
+                          .map((reason) => (
+                            <Chip
+                              key={`${member._id}-${reason}`}
+                              label={reason}
+                              size="small"
+                              sx={{
+                                maxWidth: 118,
+                                height: 24,
+                                borderRadius: 1,
+                                bgcolor: "#f7eefb",
+                                color: "#6f2a86",
+                                fontWeight: 800,
+                                "& .MuiChip-label": {
+                                  px: 0.75,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                },
+                              }}
+                            />
+                          ))}
+                      </Stack>
+
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        sx={{
+                          mt: 1.1,
+                          bgcolor: "#171827",
+                          borderRadius: 1.25,
+                          textTransform: "none",
+                          fontWeight: 850,
+                          "&:hover": { bgcolor: "#8b3ba8" },
+                        }}
+                        onClick={
+                          status?.canChat
+                            ? () => handleChat(member._id)
+                            : () => handleMerge(member._id)
+                        }
+                      >
+                        {status?.canChat ? "Chat" : "View Merge"}
+                      </Button>
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          </Box>
+        )}
 
         <Box display="flex" justifyContent="center" mb={4}>
           <TextField

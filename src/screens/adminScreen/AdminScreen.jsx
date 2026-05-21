@@ -12,6 +12,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Drawer,
   FormControl,
   FormControlLabel,
   Grid,
@@ -44,6 +45,9 @@ import {
   Edit as EditIcon,
   Group as GroupIcon,
   Home as HomeIcon,
+  Menu as MenuIcon,
+  Close as CloseIcon,
+  Logout as LogoutIcon,
   PeopleAlt as PeopleAltIcon,
   PersonAdd as PersonAddIcon,
   Refresh as RefreshIcon,
@@ -68,6 +72,17 @@ const formatDate = (value) =>
         year: "numeric",
         month: "short",
         day: "numeric",
+      })
+    : "-";
+
+const formatDateTime = (value) =>
+  value
+    ? new Date(value).toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
       })
     : "-";
 
@@ -104,9 +119,10 @@ const StatCard = ({ label, value, icon, accent, helper }) => (
     elevation={0}
     sx={{
       height: "100%",
-      borderRadius: 2,
-      border: "1px solid rgba(45,0,82,0.09)",
+      borderRadius: 3,
+      border: "1px solid rgba(15,23,42,0.08)",
       bgcolor: "#fff",
+      boxShadow: "0 18px 40px rgba(15,23,42,0.06)",
     }}
   >
     <CardContent>
@@ -115,7 +131,7 @@ const StatCard = ({ label, value, icon, accent, helper }) => (
           sx={{
             width: 46,
             height: 46,
-            borderRadius: 2,
+            borderRadius: 2.2,
             display: "grid",
             placeItems: "center",
             color: "#2d0052",
@@ -142,10 +158,42 @@ const StatCard = ({ label, value, icon, accent, helper }) => (
   </Card>
 );
 
+const AdminContentShell = ({ sidebar, children, mobileOpen, onMobileClose }) => (
+  <Box
+    sx={{
+      display: "grid",
+      gridTemplateColumns: { xs: "1fr", md: "280px minmax(0, 1fr)" },
+      gap: { xs: 2, md: 3 },
+      alignItems: "start",
+    }}
+  >
+    <Box sx={{ display: { xs: "none", md: "block" } }}>{sidebar}</Box>
+    <Drawer
+      anchor="left"
+      open={mobileOpen}
+      onClose={onMobileClose}
+      PaperProps={{
+        sx: {
+          width: "min(86vw, 320px)",
+          bgcolor: "transparent",
+          boxShadow: "none",
+          p: 1,
+          maxHeight: "100vh",
+          overflow: "hidden",
+        },
+      }}
+    >
+      {sidebar}
+    </Drawer>
+    <Box sx={{ minWidth: 0 }}>{children}</Box>
+  </Box>
+);
+
 const AdminScreen = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
+  const [chatActivity, setChatActivity] = useState([]);
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteUserId, setDeleteUserId] = useState(null);
@@ -162,6 +210,7 @@ const AdminScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [page, setPage] = useState(1);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   const isMobile = useMediaQuery("(max-width:768px)");
   const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -176,13 +225,15 @@ const AdminScreen = () => {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [usersRes, subscribersRes] = await Promise.all([
+      const [usersRes, subscribersRes, chatRes] = await Promise.all([
         api.get(`${BASE_URL}/api/user/`, authHeaders),
         api.get(`${BASE_URL}/api/subscription`, authHeaders),
+        api.get(`${BASE_URL}/api/chat/admin/activity`, authHeaders),
       ]);
 
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
       setSubscribers(subscribersRes.data?.data || []);
+      setChatActivity(chatRes.data?.data || []);
     } catch (err) {
       console.error("Admin fetch failed:", err);
       setToast({
@@ -316,6 +367,8 @@ const AdminScreen = () => {
       safeIncludes(user.location, searchQuery)
   );
 
+  const filteredOnlineUsers = filteredUsers.filter(isReallyOnline);
+
   const filteredSubscribers = subscribers.filter((sub) => {
     const sourceDate =
       sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
@@ -334,12 +387,36 @@ const AdminScreen = () => {
     return matchesMonth && matchesSearch;
   });
 
+  const filteredChatActivity = chatActivity.filter((chat) => {
+    const participantText = (chat.participants || [])
+      .map((member) =>
+        [member.name, member.username, member.email].filter(Boolean).join(" ")
+      )
+      .join(" ");
+
+    return (
+      safeIncludes(participantText, searchQuery) ||
+      safeIncludes(chat.lastMessage, searchQuery) ||
+      safeIncludes(chat.room, searchQuery)
+    );
+  });
+
   const activeRows =
-    selectedTab === "subscribers" ? filteredSubscribers : filteredUsers;
+    selectedTab === "subscribers"
+      ? filteredSubscribers
+      : selectedTab === "online"
+      ? filteredOnlineUsers
+      : filteredUsers;
   const paginatedRows = activeRows.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
+  const paginatedChatRows = filteredChatActivity.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
+  const currentRowCount =
+    selectedTab === "chats" ? filteredChatActivity.length : activeRows.length;
 
   const openEditModal = (user) => {
     setSelectedUser(user);
@@ -429,6 +506,12 @@ const AdminScreen = () => {
       icon: <DashboardIcon />,
     },
     {
+      value: "online",
+      label: "Online Users",
+      helper: `${activeUsers} currently online`,
+      icon: <ChatIcon />,
+    },
+    {
       value: "users",
       label: "All Users",
       helper: `${users.length} accounts`,
@@ -440,117 +523,246 @@ const AdminScreen = () => {
       helper: `${subscribers.length} paid before`,
       icon: <SubscriptionsIcon />,
     },
+    {
+      value: "chats",
+      label: "Users That Chat",
+      helper: `${chatActivity.length} conversations`,
+      icon: <BarChartIcon />,
+    },
   ];
+
+  const handleSidebarSelect = (value) => {
+    setSelectedTab(value);
+    if (isMobile) setMobileSidebarOpen(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await api.post(`${BASE_URL}/api/user/logout`, {}, authHeaders);
+    } catch (err) {
+      console.error("Admin logout failed:", err);
+    } finally {
+      localStorage.clear();
+      window.dispatchEvent(new CustomEvent("authChanged"));
+      navigate("/login", { replace: true });
+    }
+  };
 
   const renderSidebar = () => (
     <Paper
       elevation={0}
       sx={{
-        width: { xs: "100%", md: 248 },
-        flexShrink: 0,
-        borderRadius: 2,
-        border: "1px solid rgba(45,0,82,0.08)",
-        bgcolor: "#fff",
-        p: 1.5,
+        width: "100%",
+        height: { xs: "calc(100vh - 20px)", md: "calc(100vh - 48px)" },
+        borderRadius: 3,
+        border: "1px solid rgba(255,255,255,0.12)",
+        bgcolor: "#17112a",
+        color: "#fff",
+        p: { xs: 1.5, md: 1.75 },
         position: { md: "sticky" },
         top: { md: 24 },
         alignSelf: { md: "flex-start" },
+        boxShadow: "0 22px 50px rgba(15,23,42,0.18)",
       }}
     >
-      <Stack spacing={1}>
-        <Stack direction="row" spacing={1.2} alignItems="center" px={1} py={1}>
+      <Stack spacing={1.2} sx={{ height: "100%", minHeight: 0 }}>
+        <Stack
+          direction="row"
+          spacing={1.2}
+          alignItems="center"
+          justifyContent="space-between"
+          px={1}
+          py={1.2}
+        >
+          <Stack direction="row" spacing={1.2} alignItems="center">
           <Box
             sx={{
-              width: 38,
-              height: 38,
+              width: 42,
+              height: 42,
               borderRadius: 2,
               display: "grid",
               placeItems: "center",
-              bgcolor: "#f3e8ff",
-              color: "#2d0052",
+              bgcolor: "#D9A4F0",
+              color: "#17112a",
             }}
           >
             <DashboardIcon />
           </Box>
           <Box>
-            <Typography fontWeight={950} color="#2d0052">
+            <Typography fontWeight={950} color="#fff">
               Admin Panel
             </Typography>
-            <Typography fontSize={12} color="#6b4679">
+            <Typography fontSize={12} color="rgba(255,255,255,0.62)">
               Monitor activity
             </Typography>
           </Box>
+          </Stack>
+          {isMobile && (
+            <IconButton
+              onClick={() => setMobileSidebarOpen(false)}
+              aria-label="Close admin menu"
+              sx={{ color: "#fff" }}
+            >
+              <CloseIcon />
+            </IconButton>
+          )}
         </Stack>
 
-        {navItems.map((item) => {
-          const active = selectedTab === item.value;
-          return (
-            <Button
-              key={item.value}
-              fullWidth
-              onClick={() => setSelectedTab(item.value)}
-              startIcon={item.icon}
-              sx={{
-                justifyContent: "flex-start",
-                textTransform: "none",
-                borderRadius: 1.5,
-                px: 1.4,
-                py: 1.2,
-                bgcolor: active ? "#2d0052" : "transparent",
-                color: active ? "#fff" : "#2d0052",
-                "&:hover": {
-                  bgcolor: active ? "#2d0052" : "#f8f3fb",
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            pr: 0.5,
+            py: 0.5,
+            "&::-webkit-scrollbar": { width: 6 },
+            "&::-webkit-scrollbar-thumb": {
+              bgcolor: "rgba(255,255,255,0.22)",
+              borderRadius: 99,
+            },
+          }}
+        >
+          <Stack spacing={{ xs: 2.4, md: 1.05 }}>
+            {navItems.map((item) => {
+              const active = selectedTab === item.value;
+              return (
+                <Button
+                  key={item.value}
+                  fullWidth
+                  onClick={() => handleSidebarSelect(item.value)}
+                  startIcon={item.icon}
+                  sx={{
+                    justifyContent: "flex-start",
+                    textTransform: "none",
+                    borderRadius: 2.2,
+                    px: { xs: 1.75, md: 1.5 },
+                    py: { xs: 2.1, md: 1.25 },
+                    bgcolor: active ? "#fff" : "rgba(255,255,255,0.04)",
+                    color: active ? "#17112a" : "rgba(255,255,255,0.82)",
+                    border: "1px solid rgba(255,255,255,0.08)",
+                    "&:hover": {
+                      bgcolor: active ? "#fff" : "rgba(255,255,255,0.1)",
+                    },
+                    "& .MuiButton-startIcon": {
+                      color: active ? "#2d0052" : "#D9A4F0",
+                    },
+                  }}
+                >
+                  <Box textAlign="left">
+                    <Typography fontWeight={900} fontSize={14}>
+                      {item.label}
+                    </Typography>
+                    <Typography
+                      fontSize={11}
+                      sx={{
+                        color: active ? "#6b4679" : "rgba(255,255,255,0.54)",
+                      }}
+                    >
+                      {item.helper}
+                    </Typography>
+                  </Box>
+                </Button>
+              );
+            })}
+          </Stack>
+
+          <Box
+            sx={{
+              borderTop: "1px solid rgba(255,255,255,0.1)",
+              mt: 2.2,
+              pt: 1.8,
+            }}
+          >
+            <Typography
+              px={1}
+              mb={1.2}
+              fontSize={12}
+              fontWeight={900}
+              color="rgba(255,255,255,0.56)"
+              textTransform="uppercase"
+            >
+              Quick View
+            </Typography>
+            <Stack direction="column" spacing={1.05}>
+              {[
+                {
+                  icon: <GroupIcon />,
+                  label: `${users.length} total users`,
+                  bg: "#e0f2fe",
+                  color: "#075985",
                 },
+                {
+                  icon: <ChatIcon />,
+                  label: `${activeUsers} online now`,
+                  bg: "#dcfce7",
+                  color: "#166534",
+                },
+                {
+                  icon: <PremiumIcon />,
+                  label: `${subscribers.length} paid before`,
+                  bg: "#f3e8ff",
+                  color: "#2d0052",
+                },
+                {
+                  icon: <BarChartIcon />,
+                  label: `${activeSubscribers} active plans`,
+                  bg: "#ede9fe",
+                  color: "#5b21b6",
+                },
+                {
+                  icon: <SubscriptionsIcon />,
+                  label: `${expiredSubscribers} expired plans`,
+                  bg: "#fee2e2",
+                  color: "#991b1b",
+                },
+                {
+                  icon: <ChatIcon />,
+                  label: `${chatActivity.length} chat rooms`,
+                  bg: "#fef3c7",
+                  color: "#92400e",
+                },
+                {
+                  icon: <PersonAddIcon />,
+                  label: `${adminUsers} admins`,
+                  bg: "#f3f4f6",
+                  color: "#374151",
+                },
+              ].map((item) => (
+                <Chip
+                  key={item.label}
+                  icon={item.icon}
+                  label={item.label}
+                  sx={{
+                    justifyContent: "flex-start",
+                    bgcolor: item.bg,
+                    color: item.color,
+                    fontWeight: 900,
+                    height: 34,
+                    "& .MuiChip-label": { px: 0.5 },
+                  }}
+                />
+              ))}
+            </Stack>
+
+            <Button
+              fullWidth
+              startIcon={<LogoutIcon />}
+              onClick={handleLogout}
+              sx={{
+                mt: 2,
+                py: 1.2,
+                borderRadius: 1.8,
+                textTransform: "none",
+                fontWeight: 900,
+                color: "#fff",
+                bgcolor: "rgba(239,68,68,0.18)",
+                border: "1px solid rgba(248,113,113,0.32)",
+                "&:hover": { bgcolor: "rgba(239,68,68,0.28)" },
               }}
             >
-              <Box textAlign="left">
-                <Typography fontWeight={900} fontSize={14}>
-                  {item.label}
-                </Typography>
-                <Typography
-                  fontSize={11}
-                  sx={{ color: active ? "rgba(255,255,255,0.72)" : "#7c6f86" }}
-                >
-                  {item.helper}
-                </Typography>
-              </Box>
+              Logout
             </Button>
-          );
-        })}
-
-        <Box sx={{ borderTop: "1px solid #eadcf0", mt: 1, pt: 1.5 }}>
-          <Typography
-            px={1}
-            mb={1}
-            fontSize={12}
-            fontWeight={900}
-            color="#6b4679"
-            textTransform="uppercase"
-          >
-            Quick View
-          </Typography>
-          <Stack direction={{ xs: "row", md: "column" }} spacing={1}>
-            <Chip
-              icon={<ChatIcon />}
-              label={`${activeUsers} online now`}
-              sx={{
-                justifyContent: "flex-start",
-                bgcolor: "#dcfce7",
-                color: "#166534",
-                fontWeight: 900,
-              }}
-            />
-            <Chip
-              icon={<BarChartIcon />}
-              label={`${activeSubscribers} active plans`}
-              sx={{
-                justifyContent: "flex-start",
-                bgcolor: "#f3e8ff",
-                color: "#2d0052",
-                fontWeight: 900,
-              }}
-            />
-          </Stack>
+          </Box>
         </Box>
       </Stack>
     </Paper>
@@ -682,32 +894,144 @@ const AdminScreen = () => {
     </TableContainer>
   );
 
+  const renderChatActivityTable = () => (
+    <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2 }}>
+      <Table size={isMobile ? "small" : "medium"}>
+        <TableHead>
+          <TableRow sx={{ bgcolor: "#f8f3fb" }}>
+            <TableCell>Conversation</TableCell>
+            <TableCell>Last Message</TableCell>
+            <TableCell>Total Messages</TableCell>
+            <TableCell>Unread</TableCell>
+            <TableCell>Date / Time / Year</TableCell>
+            <TableCell>Status</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {paginatedChatRows.map((chat) => {
+            const participants = chat.participants || [];
+            const onlineCount = participants.filter(isReallyOnline).length;
+            const participantNames = participants
+              .map((member) => member.name || member.username || "User")
+              .join(" <-> ");
+
+            return (
+              <TableRow key={chat.room} hover>
+                <TableCell>
+                  <Stack spacing={1}>
+                    <Typography fontWeight={900} color="#2d0052">
+                      {participantNames || "Conversation"}
+                    </Typography>
+                    {participants.map((member) => (
+                      <Stack
+                        key={member._id}
+                        direction="row"
+                        spacing={1.5}
+                        alignItems="center"
+                      >
+                        <Avatar src={member.photo || ""}>
+                          {member.username?.[0]?.toUpperCase() ||
+                            member.name?.[0] ||
+                            "U"}
+                        </Avatar>
+                        <Box>
+                          <Typography fontWeight={800}>
+                            {member.name || member.username || "User"}
+                          </Typography>
+                          <Typography variant="caption" color="#6b4679">
+                            {member.email || "-"}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </TableCell>
+                <TableCell sx={{ maxWidth: 260 }}>
+                  <Typography noWrap>{chat.lastMessage || "-"}</Typography>
+                </TableCell>
+                <TableCell>{chat.totalMessages || 0}</TableCell>
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={chat.unreadMessages || 0}
+                    sx={{
+                      bgcolor: chat.unreadMessages ? "#fee2e2" : "#f3f4f6",
+                      color: chat.unreadMessages ? "#991b1b" : "#6b7280",
+                      fontWeight: 900,
+                    }}
+                  />
+                </TableCell>
+                <TableCell>{formatDateTime(chat.lastMessageAt)}</TableCell>
+                <TableCell>
+                  <Chip
+                    size="small"
+                    label={`${onlineCount}/${participants.length} online`}
+                    sx={{
+                      bgcolor: onlineCount ? "#dcfce7" : "#f3f4f6",
+                      color: onlineCount ? "#166534" : "#6b7280",
+                      fontWeight: 900,
+                    }}
+                  />
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#f7f2fb",
-        color: "#2d0052",
-        px: { xs: 1.5, sm: 3, lg: 4 },
-        py: { xs: 2, md: 4 },
+        bgcolor: "#f6f7fb",
+        color: "#17112a",
+        px: { xs: 1.5, sm: 3, lg: 3.5 },
+        py: { xs: 2, md: 3 },
       }}
     >
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        alignItems={{ xs: "flex-start", md: "center" }}
-        justifyContent="space-between"
-        spacing={2}
-        mb={3}
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          mb: 2.5,
+          p: { xs: 2, md: 2.5 },
+          border: "1px solid rgba(15,23,42,0.08)",
+          bgcolor: "#fff",
+          boxShadow: "0 18px 40px rgba(15,23,42,0.05)",
+        }}
       >
-        <Box>
-          <Typography variant={isMobile ? "h5" : "h4"} fontWeight={950}>
-            Admin Dashboard
-          </Typography>
-          <Typography color="#6b4679">
-            Monitor users, subscriptions, activity, and account access.
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          alignItems={{ xs: "flex-start", md: "center" }}
+          justifyContent="space-between"
+          spacing={2}
+        >
+          <Stack direction="row" alignItems="center" spacing={1.2}>
+            {isMobile && (
+              <IconButton
+                onClick={() => setMobileSidebarOpen(true)}
+                aria-label="Open admin menu"
+                sx={{
+                  bgcolor: "#17112a",
+                  color: "#fff",
+                  "&:hover": { bgcolor: "#2d0052" },
+                }}
+              >
+                <MenuIcon />
+              </IconButton>
+            )}
+          <Box>
+            <Typography variant={isMobile ? "h5" : "h4"} fontWeight={950}>
+              Admin Dashboard
+            </Typography>
+            <Typography color="#6b4679">
+              Monitor users, subscriptions, activity, and account access.
+            </Typography>
+          </Box>
+          </Stack>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           <FormControl size="small" sx={{ minWidth: { xs: 160, sm: 190 } }}>
             <InputLabel>Monitor Month</InputLabel>
             <Select
@@ -764,18 +1088,20 @@ const AdminScreen = () => {
           >
             Refresh
           </Button>
+          </Stack>
         </Stack>
-      </Stack>
+      </Paper>
 
       {loading ? (
         <Box minHeight="60vh" display="grid" sx={{ placeItems: "center" }}>
           <CircularProgress color="secondary" />
         </Box>
       ) : (
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2.5}>
-          {renderSidebar()}
-
-          <Box sx={{ minWidth: 0, flex: 1 }}>
+        <AdminContentShell
+          sidebar={renderSidebar()}
+          mobileOpen={mobileSidebarOpen}
+          onMobileClose={() => setMobileSidebarOpen(false)}
+        >
             {selectedTab === "dashboard" && (
               <>
                 <Grid container spacing={2.5} mb={3}>
@@ -824,7 +1150,7 @@ const AdminScreen = () => {
                 </Grid>
 
                 <Grid container spacing={2.5} mb={3}>
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="Selected Month Users"
                       value={monitoredUsers.length}
@@ -837,7 +1163,7 @@ const AdminScreen = () => {
                       icon={<GroupIcon />}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="Selected Month Paid"
                       value={monitoredSubscribers.length}
@@ -846,13 +1172,22 @@ const AdminScreen = () => {
                       icon={<PremiumIcon />}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="Selected Month Online"
                       value={monitoredUsers.filter(isReallyOnline).length}
                       helper="Online now from users created in that month"
                       accent="#dcfce7"
                       icon={<ChatIcon />}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <StatCard
+                      label="Chat Conversations"
+                      value={chatActivity.length}
+                      helper="Rooms with at least one message"
+                      accent="#fef3c7"
+                      icon={<BarChartIcon />}
                     />
                   </Grid>
                 </Grid>
@@ -1172,57 +1507,22 @@ const AdminScreen = () => {
                 <Box
                   p={{ xs: 1.5, md: 2 }}
                   display="flex"
-                  flexDirection={{ xs: "column", md: "row" }}
+                  flexDirection={{ xs: "column", sm: "row" }}
                   gap={2}
-                  justifyContent="space-between"
+                  justifyContent="flex-end"
                   alignItems={{ xs: "stretch", md: "center" }}
                   sx={{ borderBottom: "1px solid #eadcf0" }}
                 >
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      bgcolor: "#f8f3fb",
-                      borderRadius: 2,
-                      p: 0.5,
-                    }}
-                  >
-                    {navItems
-                      .filter((item) => item.value !== "dashboard")
-                      .map((item) => (
-                        <Button
-                          key={item.value}
-                          onClick={() => setSelectedTab(item.value)}
-                          variant={
-                            selectedTab === item.value ? "contained" : "text"
-                          }
-                          sx={{
-                            textTransform: "none",
-                            borderRadius: 1.5,
-                            fontWeight: 900,
-                            bgcolor:
-                              selectedTab === item.value
-                                ? "#2d0052"
-                                : "transparent",
-                            color:
-                              selectedTab === item.value ? "#fff" : "#6b4679",
-                            "&:hover": {
-                              bgcolor:
-                                selectedTab === item.value ? "#2d0052" : "#fff",
-                            },
-                          }}
-                        >
-                          {item.label}
-                        </Button>
-                      ))}
-                  </Stack>
-
                   <TextField
                     size="small"
                     placeholder="Search name, email, phone, location..."
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
-                    sx={{ minWidth: { xs: "100%", md: 360 } }}
+                    sx={{
+                      width: { xs: "100%", sm: 420 },
+                      maxWidth: "100%",
+                      flexShrink: 0,
+                    }}
                     InputProps={{
                       startAdornment: (
                         <InputAdornment position="start">
@@ -1234,7 +1534,9 @@ const AdminScreen = () => {
                 </Box>
 
                 <Box sx={{ overflowX: "auto" }}>
-                  {selectedTab === "subscribers"
+                  {selectedTab === "chats"
+                    ? renderChatActivityTable()
+                    : selectedTab === "subscribers"
                     ? renderSubscriberTable()
                     : renderUsersTable()}
                 </Box>
@@ -1243,7 +1545,7 @@ const AdminScreen = () => {
                   <Pagination
                     count={Math.max(
                       1,
-                      Math.ceil(activeRows.length / rowsPerPage)
+                      Math.ceil(currentRowCount / rowsPerPage)
                     )}
                     page={page}
                     onChange={(_, value) => setPage(value)}
@@ -1252,8 +1554,7 @@ const AdminScreen = () => {
                 </Box>
               </Paper>
             )}
-          </Box>
-        </Stack>
+        </AdminContentShell>
       )}
 
       <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
