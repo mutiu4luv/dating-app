@@ -571,12 +571,12 @@ const Members = () => {
                         },
                       }}
                       onClick={
-                        status?.isMerged && status?.subscriptionActive
+                        status?.canChat
                           ? () => handleChat(member._id)
                           : () => handleMerge(member._id)
                       }
                     >
-                      {status?.isMerged && status?.subscriptionActive
+                      {status?.canChat
                         ? status?.hasChattedBefore
                           ? "Open Chat"
                           : "Chat"
