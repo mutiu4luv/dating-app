@@ -21,6 +21,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import UpgradeIcon from "@mui/icons-material/WorkspacePremium"; // ★ UPGRADE ICON
+import LockResetIcon from "@mui/icons-material/LockReset";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../components/api/Api";
 
@@ -123,6 +124,10 @@ const Navbar = () => {
         navigate("/profile");
         break;
 
+      case "Change Password":
+        navigate("/change-password");
+        break;
+
       case "Upgrade":
         navigate(upgradeLink);
         break;
@@ -168,6 +173,21 @@ const Navbar = () => {
                   <ChatIcon />
                 </Badge>
               </IconButton>
+
+              <Button
+                color="inherit"
+                startIcon={<LockResetIcon />}
+                onClick={() => handleMenuClick("Change Password")}
+                sx={{
+                  display: { xs: "none", md: "inline-flex" },
+                  textTransform: "none",
+                  fontWeight: 800,
+                  color: "#2d0052",
+                  ml: 1,
+                }}
+              >
+                Change Password
+              </Button>
 
               <Button
                 color="inherit"
@@ -236,6 +256,11 @@ const Navbar = () => {
 
                 <MenuItem onClick={() => handleMenuClick("Profile")}>
                   <PersonIcon sx={{ mr: 1, color: "#2d0052" }} /> Profile
+                </MenuItem>
+
+                <MenuItem onClick={() => handleMenuClick("Change Password")}>
+                  <LockResetIcon sx={{ mr: 1, color: "#2d0052" }} /> Change
+                  Password
                 </MenuItem>
 
                 {/* ⭐ NEW UPGRADE MENU ITEM */}

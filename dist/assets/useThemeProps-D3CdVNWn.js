@@ -1,0 +1,1 @@
+import{aB as o,ai as m,aC as u}from"./index-DKi2KLDj.js";const n=o();function p({props:t,name:a,defaultTheme:r,themeId:s}){let e=m(r);return s&&(e=e[s]||e),u({theme:e,name:a,props:t})}export{n as s,p as u};

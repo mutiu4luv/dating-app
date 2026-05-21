@@ -486,6 +486,17 @@ const Members = () => {
                 const score = Number(member.compatibilityScore || 0);
                 const onlineStatus = userStatuses[member._id] || member;
                 const isOnline = Boolean(onlineStatus?.isOnline || member.isOnline);
+                const freeLimitReached = Boolean(
+                  status?.freeTierChatLimitReached
+                );
+                const activityLabel = isOnline
+                  ? "Online now - best time to connect"
+                  : `${getLastSeenLabel(onlineStatus)} - review profile`;
+                const promptLabel = status?.canChat
+                  ? "Chat access ready"
+                  : freeLimitReached
+                  ? "Free chats used - upgrade to continue"
+                  : "View profile before you merge";
 
                 return (
                   <Box
@@ -579,9 +590,7 @@ const Members = () => {
                         noWrap
                       >
                         {member.relationshipType || "Relationship goal"} -{" "}
-                        {isOnline
-                          ? "Online now"
-                          : getLastSeenLabel(onlineStatus)}
+                        {isOnline ? "Online now" : getLastSeenLabel(onlineStatus)}
                       </Typography>
 
                       <Stack
@@ -591,10 +600,10 @@ const Members = () => {
                         sx={{ overflow: "hidden", flexWrap: "nowrap" }}
                       >
                         <Chip
-                          label={isOnline ? "Best to chat now" : "Check activity"}
+                          label={activityLabel}
                           size="small"
                           sx={{
-                            maxWidth: 124,
+                            maxWidth: 170,
                             height: 24,
                             borderRadius: 1,
                             bgcolor: isOnline ? "#dcfce7" : "#eef2ff",
@@ -607,8 +616,25 @@ const Members = () => {
                             },
                           }}
                         />
+                        <Chip
+                          label={promptLabel}
+                          size="small"
+                          sx={{
+                            maxWidth: 190,
+                            height: 24,
+                            borderRadius: 1,
+                            bgcolor: freeLimitReached ? "#fff1f2" : "#f7eefb",
+                            color: freeLimitReached ? "#be123c" : "#6f2a86",
+                            fontWeight: 900,
+                            "& .MuiChip-label": {
+                              px: 0.75,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            },
+                          }}
+                        />
                         {(member.compatibilityReasons || [])
-                          .slice(0, 1)
+                          .slice(0, freeLimitReached ? 0 : 1)
                           .map((reason) => (
                             <Chip
                               key={`${member._id}-${reason}`}
@@ -665,10 +691,16 @@ const Members = () => {
                           onClick={
                             status?.canChat
                               ? () => handleChat(member._id)
+                              : freeLimitReached
+                              ? () => navigate(`/merge/${userId}/upgrade`)
                               : () => handleMerge(member._id)
                           }
                         >
-                          {status?.canChat ? "Chat" : "Merge"}
+                          {status?.canChat
+                            ? "Chat"
+                            : freeLimitReached
+                            ? "Upgrade"
+                            : "Merge"}
                         </Button>
                       </Stack>
                     </Box>
