@@ -20,6 +20,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import ImageIcon from "@mui/icons-material/Image";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useNavigate } from "react-router-dom";
@@ -150,8 +151,22 @@ const Members = () => {
           ? res.data
           : res.data.members || res.data.matches || [];
 
+        const suggestedRes = await axiosInstance.get(
+          `${import.meta.env.VITE_BASE_URL}/api/user/suggested/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const suggestions = Array.isArray(suggestedRes.data?.suggestions)
+          ? suggestedRes.data.suggestions
+          : [];
+
+        const membersById = new Map();
+        [...data, ...suggestions].forEach((member) => {
+          if (member?._id) membersById.set(member._id, member);
+        });
+        const statusMembers = [...membersById.values()];
+
         const onlineStatuses = await Promise.all(
-          data.map(async (member) => {
+          statusMembers.map(async (member) => {
             try {
               const res = await axiosInstance.get(
                 `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
@@ -175,8 +190,9 @@ const Members = () => {
 
         const sorted = sortByOnlineStatus(data, statusObj);
 
+        const mergeStatusMembers = [...membersById.values()];
         const statuses = await Promise.all(
-          sorted.map(async (member) => {
+          mergeStatusMembers.map(async (member) => {
             try {
               const statusRes = await axiosInstance.get(
                 `${
@@ -194,14 +210,6 @@ const Members = () => {
         statuses.forEach(({ memberId, status }) => {
           statusMap[memberId] = status;
         });
-
-        const suggestedRes = await axiosInstance.get(
-          `${import.meta.env.VITE_BASE_URL}/api/user/suggested/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const suggestions = Array.isArray(suggestedRes.data?.suggestions)
-          ? suggestedRes.data.suggestions
-          : [];
 
         setMergeStatuses(statusMap);
         setMembers(sorted);
@@ -378,7 +386,7 @@ const Members = () => {
                 </Box>
               </Stack>
               <Chip
-                label={`${suggestedMembers.length} strong matches`}
+                label={`${Math.min(suggestedMembers.length, 18)} suggestions shown`}
                 size="small"
                 sx={{
                   bgcolor: "rgba(217,164,240,0.16)",
@@ -397,7 +405,8 @@ const Members = () => {
                 gridTemplateColumns: {
                   xs: "none",
                   md: "repeat(2, minmax(0, 1fr))",
-                  lg: "repeat(4, minmax(0, 1fr))",
+                  lg: "repeat(3, minmax(0, 1fr))",
+                  xl: "repeat(4, minmax(0, 1fr))",
                 },
                 gap: 1.5,
                 overflowX: { xs: "auto", md: "visible" },
@@ -410,10 +419,11 @@ const Members = () => {
                 },
               }}
             >
-              {suggestedMembers.slice(0, 4).map((member) => {
+              {suggestedMembers.slice(0, 18).map((member) => {
                 const status = mergeStatuses[member._id];
                 const score = Number(member.compatibilityScore || 0);
                 const onlineStatus = userStatuses[member._id] || member;
+                const isOnline = Boolean(onlineStatus?.isOnline || member.isOnline);
 
                 return (
                   <Box
@@ -480,7 +490,7 @@ const Members = () => {
                           fontSize={13}
                           whiteSpace="nowrap"
                         >
-                          {score}%
+                          {score}% match
                         </Typography>
                       </Stack>
 
@@ -507,7 +517,7 @@ const Members = () => {
                         noWrap
                       >
                         {member.relationshipType || "Relationship goal"} -{" "}
-                        {onlineStatus?.isOnline
+                        {isOnline
                           ? "Online now"
                           : getLastSeenLabel(onlineStatus)}
                       </Typography>
@@ -516,10 +526,27 @@ const Members = () => {
                         direction="row"
                         spacing={0.75}
                         mt={1}
-                        sx={{ overflow: "hidden" }}
+                        sx={{ overflow: "hidden", flexWrap: "nowrap" }}
                       >
+                        <Chip
+                          label={isOnline ? "Best to chat now" : "Check activity"}
+                          size="small"
+                          sx={{
+                            maxWidth: 124,
+                            height: 24,
+                            borderRadius: 1,
+                            bgcolor: isOnline ? "#dcfce7" : "#eef2ff",
+                            color: isOnline ? "#166534" : "#3730a3",
+                            fontWeight: 900,
+                            "& .MuiChip-label": {
+                              px: 0.75,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            },
+                          }}
+                        />
                         {(member.compatibilityReasons || [])
-                          .slice(0, 2)
+                          .slice(0, 1)
                           .map((reason) => (
                             <Chip
                               key={`${member._id}-${reason}`}
@@ -542,26 +569,46 @@ const Members = () => {
                           ))}
                       </Stack>
 
-                      <Button
-                        fullWidth
-                        size="small"
-                        variant="contained"
-                        sx={{
-                          mt: 1.1,
-                          bgcolor: "#171827",
-                          borderRadius: 1.25,
-                          textTransform: "none",
-                          fontWeight: 850,
-                          "&:hover": { bgcolor: "#8b3ba8" },
-                        }}
-                        onClick={
-                          status?.canChat
-                            ? () => handleChat(member._id)
-                            : () => handleMerge(member._id)
-                        }
-                      >
-                        {status?.canChat ? "Chat" : "View Merge"}
-                      </Button>
+                      <Stack direction="row" spacing={0.75} mt={1.1}>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          startIcon={<PersonSearchIcon />}
+                          sx={{
+                            borderColor: "#8b3ba8",
+                            color: "#6f2a86",
+                            borderRadius: 1.25,
+                            textTransform: "none",
+                            fontWeight: 850,
+                            minWidth: 0,
+                            "& .MuiButton-startIcon": { mr: 0.4 },
+                          }}
+                          onClick={() => navigate(`/member-profile/${member._id}`)}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          fullWidth
+                          size="small"
+                          variant="contained"
+                          sx={{
+                            bgcolor: "#171827",
+                            borderRadius: 1.25,
+                            textTransform: "none",
+                            fontWeight: 850,
+                            minWidth: 0,
+                            "&:hover": { bgcolor: "#8b3ba8" },
+                          }}
+                          onClick={
+                            status?.canChat
+                              ? () => handleChat(member._id)
+                              : () => handleMerge(member._id)
+                          }
+                        >
+                          {status?.canChat ? "Chat" : "Merge"}
+                        </Button>
+                      </Stack>
                     </Box>
                   </Box>
                 );

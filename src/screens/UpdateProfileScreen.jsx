@@ -6,15 +6,11 @@ import {
   Typography,
   Paper,
   MenuItem,
-  InputAdornment,
-  IconButton,
   Avatar,
   CircularProgress,
   Stack,
 } from "@mui/material";
 import FavoriteIcon from "@mui/icons-material/Favorite";
-import Visibility from "@mui/icons-material/Visibility";
-import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import axios from "axios";
 import imageCompression from "browser-image-compression";
 import { useNavigate } from "react-router-dom";
@@ -41,7 +37,6 @@ const relationshipTypes = [
 ];
 
 const UpdateProfileScreen = () => {
-  const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({});
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
@@ -93,8 +88,6 @@ const UpdateProfileScreen = () => {
     }
   };
 
-  const handleShowPassword = () => setShowPassword((show) => !show);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -102,8 +95,24 @@ const UpdateProfileScreen = () => {
 
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([key, value]) => {
-        formData.append(key, value);
+      const allowedFields = [
+        "name",
+        "age",
+        "gender",
+        "location",
+        "occupation",
+        "description",
+        "maritalStatus",
+        "relationshipType",
+        "username",
+        "email",
+        "phoneNumber",
+      ];
+
+      allowedFields.forEach((key) => {
+        if (form[key] !== undefined && form[key] !== null) {
+          formData.append(key, form[key]);
+        }
       });
       if (photoFile) formData.append("photo", photoFile);
 
@@ -119,6 +128,9 @@ const UpdateProfileScreen = () => {
       );
 
       setMessage("Profile updated successfully.");
+      if (res.data?.photo) {
+        setPhotoPreview(res.data.photo);
+      }
       navigate(`/members/${userId}`);
     } catch (err) {
       console.error(err);
@@ -296,24 +308,6 @@ const UpdateProfileScreen = () => {
               onChange={handleChange}
               fullWidth
               required
-            />
-            <TextField
-              label="Password"
-              name="password"
-              type={showPassword ? "text" : "password"}
-              value={form.password || ""}
-              onChange={handleChange}
-              fullWidth
-              required
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={handleShowPassword} edge="end">
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
             />
             <Button
               type="submit"

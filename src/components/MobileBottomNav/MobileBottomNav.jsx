@@ -24,6 +24,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import SchoolIcon from "@mui/icons-material/School";
 import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import ContactSupportIcon from "@mui/icons-material/ContactSupport";
+import LockResetIcon from "@mui/icons-material/LockReset";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getStoredIsAdmin } from "../../utility/authState";
 
@@ -51,6 +52,11 @@ const moreItems = [
     label: "Learning Hub",
     path: "/coming-soon/learning-hub",
     icon: <SchoolIcon />,
+  },
+  {
+    label: "Change Password",
+    path: "/change-password",
+    icon: <LockResetIcon />,
   },
   {
     label: "Dating Safety Tips",
@@ -161,6 +167,7 @@ const MobileBottomNav = () => {
       if (item.value === "more") {
         return (
           location.pathname === "/profile" ||
+          location.pathname === "/change-password" ||
           location.pathname.startsWith("/coming-soon/")
         );
       }

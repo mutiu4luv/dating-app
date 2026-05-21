@@ -28,6 +28,8 @@ import { getStoredIsAdmin } from "./utility/authState";
 import GlobalMessageNotifications from "./components/GlobalMessageNotifications";
 import NotificationEnablePrompt from "./components/NotificationEnablePrompt";
 import ComingSoon from "./screens/ComingSoon";
+import ChangePasswordScreen from "./screens/ChangePasswordScreen";
+import MemberProfilePreview from "./screens/MemberProfilePreview";
 
 const AdminRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -71,6 +73,15 @@ function App() {
           />
 
           <Route
+            path="/member-profile/:memberId"
+            element={
+              <ProtectedRoute>
+                <MemberProfilePreview />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin"
             element={
               <AdminRoute>
@@ -99,6 +110,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <UpdateProfileScreen />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/change-password"
+            element={
+              <ProtectedRoute>
+                <ChangePasswordScreen />
               </ProtectedRoute>
             }
           />
