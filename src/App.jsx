@@ -1,35 +1,49 @@
+import { lazy, Suspense, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import LandingPage from "./landingPage/LandingPage";
-import Login from "./screens/Login";
-import Members from "./screens/MembersScreen";
 import ProtectedRoute from "./components/protectedRoute/ProtectedRoute";
-import Chat from "./screens/chat/Chat";
-import MergeScreen from "./screens/mergeScreen/MergeScreen";
-import { useEffect } from "react";
-import PaymentSuccess from "./components/payment/PaymentScreen";
-import MessagesScreen from "./screens/messages/MessagesScreen";
-import UpdateProfileScreen from "./screens/UpdateProfileScreen";
-import OtpScreen from "./screens/OtpScreen";
-import ForgotPassword from "./screens/forgotPasswordScreen/ForgotPassword";
-import ResetPassword from "./screens/forgotPasswordScreen/ResetPasswordScreen";
-import CompleteRegistration from "./screens/completeRegistration/CompleteRegistration";
-import AdminScreen from "./screens/adminScreen/AdminScreen";
-import Unauthorized from "./components/Unauthorized";
-import DisclaimerScreen from "./screens/DisclaimerScreen/Disclaimer";
-import PrivacyPolicy from "./screens/PrivacyPolicyScreen/PrivacyPolicy";
-import TermsAndConditions from "./screens/Terms&condition/Terms&condition";
-import Signup from "./screens/Signup";
-import SafetyTips from "./screens/safetyTips/SafetyTips";
-import ContactUs from "./components/CONTACTuS/ContactUs";
-import AboutUs from "./components/ABOUT-US/AboutUs";
 import MobileBottomNav from "./components/MobileBottomNav/MobileBottomNav";
 import AgeGate from "./components/AgeGate/AgeGate";
 import { getStoredIsAdmin } from "./utility/authState";
 import GlobalMessageNotifications from "./components/GlobalMessageNotifications";
 import NotificationEnablePrompt from "./components/NotificationEnablePrompt";
-import ComingSoon from "./screens/ComingSoon";
-import ChangePasswordScreen from "./screens/ChangePasswordScreen";
-import MemberProfilePreview from "./screens/MemberProfilePreview";
+
+const LandingPage = lazy(() => import("./landingPage/LandingPage"));
+const Login = lazy(() => import("./screens/Login"));
+const Members = lazy(() => import("./screens/MembersScreen"));
+const MemberProfilePreview = lazy(() => import("./screens/MemberProfilePreview"));
+const Chat = lazy(() => import("./screens/chat/Chat"));
+const MergeScreen = lazy(() => import("./screens/mergeScreen/MergeScreen"));
+const PaymentSuccess = lazy(() => import("./components/payment/PaymentScreen"));
+const MessagesScreen = lazy(() => import("./screens/messages/MessagesScreen"));
+const UpdateProfileScreen = lazy(() => import("./screens/UpdateProfileScreen"));
+const ForgotPassword = lazy(() => import("./screens/forgotPasswordScreen/ForgotPassword"));
+const ResetPassword = lazy(() => import("./screens/forgotPasswordScreen/ResetPasswordScreen"));
+const AdminScreen = lazy(() => import("./screens/adminScreen/AdminScreen"));
+const Unauthorized = lazy(() => import("./components/Unauthorized"));
+const DisclaimerScreen = lazy(() => import("./screens/DisclaimerScreen/Disclaimer"));
+const PrivacyPolicy = lazy(() => import("./screens/PrivacyPolicyScreen/PrivacyPolicy"));
+const TermsAndConditions = lazy(() => import("./screens/Terms&condition/Terms&condition"));
+const Signup = lazy(() => import("./screens/Signup"));
+const SafetyTips = lazy(() => import("./screens/safetyTips/SafetyTips"));
+const ContactUs = lazy(() => import("./components/CONTACTuS/ContactUs"));
+const AboutUs = lazy(() => import("./components/ABOUT-US/AboutUs"));
+const ComingSoon = lazy(() => import("./screens/ComingSoon"));
+const ChangePasswordScreen = lazy(() => import("./screens/ChangePasswordScreen"));
+
+const RouteFallback = () => (
+  <div
+    style={{
+      minHeight: "60vh",
+      display: "grid",
+      placeItems: "center",
+      background: "#181c2b",
+      color: "#fff",
+      fontWeight: 800,
+    }}
+  >
+    Loading page...
+  </div>
+);
 
 const AdminRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -60,8 +74,9 @@ function App() {
       <GlobalMessageNotifications />
       <NotificationEnablePrompt />
       <div className="app-shell">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
 
           <Route
             path="/members/:matchId"
@@ -161,7 +176,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-        </Routes>
+          </Routes>
+        </Suspense>
       </div>
       <MobileBottomNav />
     </>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import axiosInstance from "..//utility/axiosInstance";
 import {
   Box,
@@ -21,6 +21,8 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import ImageIcon from "@mui/icons-material/Image";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useNavigate } from "react-router-dom";
@@ -92,6 +94,7 @@ const Members = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hasPaid, setHasPaid] = useState(false);
+  const suggestionsRef = useRef(null);
 
   // const userId = localStorage.getItem("userId") || getCurrentUserId();
   const userId = useMemo(() => {
@@ -282,6 +285,15 @@ const Members = () => {
 
   const handleMerge = (member2) => navigate(`/merge/${userId}/${member2}`);
   const handleChat = (member2) => navigate(`/chat/${userId}/${member2}`);
+  const scrollSuggestions = (direction) => {
+    const container = suggestionsRef.current;
+    if (!container) return;
+
+    container.scrollBy({
+      left: direction * Math.min(container.clientWidth * 0.9, 720),
+      behavior: "smooth",
+    });
+  };
 
   const handleSearch = (e) => {
     const term = e.target.value.toLowerCase();
@@ -386,7 +398,7 @@ const Members = () => {
                 </Box>
               </Stack>
               <Chip
-                label={`${Math.min(suggestedMembers.length, 18)} suggestions shown`}
+                label={`${Math.min(suggestedMembers.length, 24)} suggestions shown`}
                 size="small"
                 sx={{
                   bgcolor: "rgba(217,164,240,0.16)",
@@ -399,27 +411,77 @@ const Members = () => {
 
             <Box
               sx={{
-                display: "grid",
-                gridAutoFlow: { xs: "column", md: "row" },
-                gridAutoColumns: { xs: "minmax(260px, 82vw)", sm: "310px" },
-                gridTemplateColumns: {
-                  xs: "none",
-                  md: "repeat(2, minmax(0, 1fr))",
-                  lg: "repeat(3, minmax(0, 1fr))",
-                  xl: "repeat(4, minmax(0, 1fr))",
-                },
-                gap: 1.5,
-                overflowX: { xs: "auto", md: "visible" },
-                pb: { xs: 0.5, md: 0 },
-                scrollSnapType: { xs: "x mandatory", md: "none" },
-                "&::-webkit-scrollbar": { height: 8 },
-                "&::-webkit-scrollbar-thumb": {
-                  background: "rgba(217,164,240,0.42)",
-                  borderRadius: 99,
-                },
+                position: "relative",
               }}
             >
-              {suggestedMembers.slice(0, 18).map((member) => {
+              <Button
+                onClick={() => scrollSuggestions(-1)}
+                aria-label="Previous suggestions"
+                sx={{
+                  position: "absolute",
+                  left: { xs: -8, sm: -12 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  minWidth: 42,
+                  width: 42,
+                  height: 42,
+                  borderRadius: "50%",
+                  zIndex: 2,
+                  color: "#fff",
+                  bgcolor: "rgba(23,24,39,0.88)",
+                  boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+                  "&:hover": { bgcolor: "#8b3ba8" },
+                }}
+              >
+                <ChevronLeftIcon />
+              </Button>
+              <Button
+                onClick={() => scrollSuggestions(1)}
+                aria-label="Next suggestions"
+                sx={{
+                  position: "absolute",
+                  right: { xs: -8, sm: -12 },
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  minWidth: 42,
+                  width: 42,
+                  height: 42,
+                  borderRadius: "50%",
+                  zIndex: 2,
+                  color: "#fff",
+                  bgcolor: "rgba(23,24,39,0.88)",
+                  boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+                  "&:hover": { bgcolor: "#8b3ba8" },
+                }}
+              >
+                <ChevronRightIcon />
+              </Button>
+
+              <Box
+                ref={suggestionsRef}
+                sx={{
+                  display: "grid",
+                  gridAutoFlow: "column",
+                  gridAutoColumns: {
+                    xs: "minmax(260px, 82vw)",
+                    sm: "310px",
+                    md: "330px",
+                  },
+                  gap: 1.5,
+                  overflowX: "auto",
+                  px: { xs: 0.5, sm: 1 },
+                  pb: 1,
+                  scrollSnapType: "x mandatory",
+                  scrollBehavior: "smooth",
+                  scrollbarWidth: "thin",
+                  "&::-webkit-scrollbar": { height: 8 },
+                  "&::-webkit-scrollbar-thumb": {
+                    background: "rgba(217,164,240,0.42)",
+                    borderRadius: 99,
+                  },
+                }}
+              >
+              {suggestedMembers.slice(0, 24).map((member) => {
                 const status = mergeStatuses[member._id];
                 const score = Number(member.compatibilityScore || 0);
                 const onlineStatus = userStatuses[member._id] || member;
@@ -613,6 +675,7 @@ const Members = () => {
                   </Box>
                 );
               })}
+              </Box>
             </Box>
           </Box>
         )}
