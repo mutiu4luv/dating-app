@@ -25,6 +25,7 @@ import AboutUs from "./components/ABOUT-US/AboutUs";
 import MobileBottomNav from "./components/MobileBottomNav/MobileBottomNav";
 import AgeGate from "./components/AgeGate/AgeGate";
 import { getStoredIsAdmin } from "./utility/authState";
+import GlobalMessageNotifications from "./components/GlobalMessageNotifications";
 
 const AdminRoute = ({ children }) => {
   const token = localStorage.getItem("token");
@@ -52,6 +53,7 @@ function App() {
   return (
     <>
       <AgeGate />
+      <GlobalMessageNotifications />
       <div className="app-shell">
         <Routes>
           <Route path="/" element={<LandingPage />} />

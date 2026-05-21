@@ -15,10 +15,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
-import {
-  requestNotificationPermission,
-  showMessageNotification,
-} from "../../utility/notifications";
+import { requestNotificationPermission } from "../../utility/notifications";
 
 const Chat = () => {
   const { member1, member2 } = useParams();
@@ -91,9 +88,7 @@ const Chat = () => {
         return;
       }
 
-      if (data.receiverId === member1) {
-        showMessageNotification(data);
-      }
+      if (data.receiverId === member1) return;
     };
 
     const handlePresenceUpdate = (data) => {

@@ -22,18 +22,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import UpgradeIcon from "@mui/icons-material/WorkspacePremium"; // ★ UPGRADE ICON
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import io from "socket.io-client";
 import api from "../../components/api/Api";
-import {
-  requestNotificationPermission,
-  showMessageNotification,
-} from "../../utility/notifications";
-
-const socket = io(
-  import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_BASE_URL ||
-    "http://localhost:7000"
-);
 
 const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -72,36 +61,22 @@ const Navbar = () => {
 
     if (userId) {
       fetchUnreadMessages();
-      socket.emit("register_user", userId);
-      socket.emit("join_room", userId);
     }
 
-    const askForNotifications = () => {
-      requestNotificationPermission();
-    };
-
-    window.addEventListener("click", askForNotifications, { once: true });
-    window.addEventListener("touchstart", askForNotifications, { once: true });
-
-    const handleReceiveMessage = (data) => {
-      if (data.receiverId === userId) {
-        setUnreadCount((prev) => prev + 1);
-        showMessageNotification(data);
-      }
+    const handleIncomingMessage = (event) => {
+      if (event.detail?.receiverId === userId) setUnreadCount((prev) => prev + 1);
     };
 
     const handleUnreadReset = () => {
       fetchUnreadMessages();
     };
 
-    socket.on("receive_message", handleReceiveMessage);
+    window.addEventListener("incomingMessage", handleIncomingMessage);
     window.addEventListener("unreadReset", handleUnreadReset);
 
     return () => {
-      socket.off("receive_message", handleReceiveMessage);
+      window.removeEventListener("incomingMessage", handleIncomingMessage);
       window.removeEventListener("unreadReset", handleUnreadReset);
-      window.removeEventListener("click", askForNotifications);
-      window.removeEventListener("touchstart", askForNotifications);
     };
   }, [userId]);
 
