@@ -81,7 +81,10 @@ const monthValue = (value) => {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}`;
 };
 
 const safeIncludes = (value, query) =>
@@ -222,7 +225,8 @@ const AdminScreen = () => {
   const monitoredSubscribers = useMemo(() => {
     if (selectedMonth === "all") return subscribers;
     return subscribers.filter((sub) => {
-      const sourceDate = sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
+      const sourceDate =
+        sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
       return monthValue(sourceDate) === selectedMonth;
     });
   }, [subscribers, selectedMonth]);
@@ -312,25 +316,23 @@ const AdminScreen = () => {
       safeIncludes(user.location, searchQuery)
   );
 
-  const filteredSubscribers = subscribers.filter(
-    (sub) => {
-      const sourceDate =
-        sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
-      const matchesMonth =
-        selectedMonth === "all" || monthValue(sourceDate) === selectedMonth;
-      const matchesSearch =
-        safeIncludes(sub.name, searchQuery) ||
-        safeIncludes(sub.username, searchQuery) ||
-        safeIncludes(sub.email, searchQuery) ||
-        safeIncludes(sub.phoneNumber, searchQuery) ||
-        safeIncludes(sub.location, searchQuery) ||
-        safeIncludes(sub.occupation, searchQuery) ||
-        safeIncludes(sub.relationshipType, searchQuery) ||
-        safeIncludes(sub.subscriptionTier, searchQuery);
+  const filteredSubscribers = subscribers.filter((sub) => {
+    const sourceDate =
+      sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
+    const matchesMonth =
+      selectedMonth === "all" || monthValue(sourceDate) === selectedMonth;
+    const matchesSearch =
+      safeIncludes(sub.name, searchQuery) ||
+      safeIncludes(sub.username, searchQuery) ||
+      safeIncludes(sub.email, searchQuery) ||
+      safeIncludes(sub.phoneNumber, searchQuery) ||
+      safeIncludes(sub.location, searchQuery) ||
+      safeIncludes(sub.occupation, searchQuery) ||
+      safeIncludes(sub.relationshipType, searchQuery) ||
+      safeIncludes(sub.subscriptionTier, searchQuery);
 
-      return matchesMonth && matchesSearch;
-    }
-  );
+    return matchesMonth && matchesSearch;
+  });
 
   const activeRows =
     selectedTab === "subscribers" ? filteredSubscribers : filteredUsers;
@@ -611,7 +613,10 @@ const AdminScreen = () => {
                 <IconButton color="primary" onClick={() => openEditModal(sub)}>
                   <EditIcon />
                 </IconButton>
-                <IconButton color="error" onClick={() => setDeleteUserId(sub._id)}>
+                <IconButton
+                  color="error"
+                  onClick={() => setDeleteUserId(sub._id)}
+                >
                   <DeleteIcon />
                 </IconButton>
               </TableCell>
@@ -771,416 +776,482 @@ const AdminScreen = () => {
           {renderSidebar()}
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
-          {selectedTab === "dashboard" && (
-            <>
-          <Grid container spacing={2.5} mb={3}>
-            <Grid item xs={12} sm={6} lg={3}>
-              <StatCard
-                label="Total Users"
-                value={users.length}
-                helper={`${activeUsers} truly online now`}
-                accent="#f3e8ff"
-                icon={<GroupIcon />}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} lg={3}>
-              <StatCard
-                label="All-Time Subscribers"
-                value={subscribers.length}
-                helper={`${activeSubscribers} active, ${expiredSubscribers} expired`}
-                accent="#fdf2f8"
-                icon={<PremiumIcon />}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} lg={3}>
-              <StatCard
-                label="Admins"
-                value={adminUsers}
-                helper="Accounts with admin access"
-                accent="#e0f2fe"
-                icon={<PersonAddIcon />}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} lg={3}>
-              <StatCard
-                label="Conversion"
-                value={`${
-                  users.length
-                    ? Math.round((subscribers.length / users.length) * 100)
-                    : 0
-                }%`}
-                helper="Ever paid vs total users"
-                accent="#dcfce7"
-                icon={<TrendingUpIcon />}
-              />
-            </Grid>
-          </Grid>
+            {selectedTab === "dashboard" && (
+              <>
+                <Grid container spacing={2.5} mb={3}>
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <StatCard
+                      label="Total Users"
+                      value={users.length}
+                      helper={`${activeUsers} truly online now`}
+                      accent="#f3e8ff"
+                      icon={<GroupIcon />}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <StatCard
+                      label="All-Time Subscribers"
+                      value={subscribers.length}
+                      helper={`${activeSubscribers} active, ${expiredSubscribers} expired`}
+                      accent="#fdf2f8"
+                      icon={<PremiumIcon />}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <StatCard
+                      label="Admins"
+                      value={adminUsers}
+                      helper="Accounts with admin access"
+                      accent="#e0f2fe"
+                      icon={<PersonAddIcon />}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6} lg={3}>
+                    <StatCard
+                      label="Conversion"
+                      value={`${
+                        users.length
+                          ? Math.round(
+                              (subscribers.length / users.length) * 100
+                            )
+                          : 0
+                      }%`}
+                      helper="Ever paid vs total users"
+                      accent="#dcfce7"
+                      icon={<TrendingUpIcon />}
+                    />
+                  </Grid>
+                </Grid>
 
-          <Grid container spacing={2.5} mb={3}>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                label="Selected Month Users"
-                value={monitoredUsers.length}
-                helper={
-                  selectedMonth === "all"
-                    ? "Across every month"
-                    : "New accounts in selected month"
-                }
-                accent="#dbeafe"
-                icon={<GroupIcon />}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                label="Selected Month Paid"
-                value={monitoredSubscribers.length}
-                helper="People who paid in selected month"
-                accent="#f3e8ff"
-                icon={<PremiumIcon />}
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <StatCard
-                label="Selected Month Online"
-                value={monitoredUsers.filter(isReallyOnline).length}
-                helper="Online now from users created in that month"
-                accent="#dcfce7"
-                icon={<ChatIcon />}
-              />
-            </Grid>
-          </Grid>
+                <Grid container spacing={2.5} mb={3}>
+                  <Grid item xs={12} sm={4}>
+                    <StatCard
+                      label="Selected Month Users"
+                      value={monitoredUsers.length}
+                      helper={
+                        selectedMonth === "all"
+                          ? "Across every month"
+                          : "New accounts in selected month"
+                      }
+                      accent="#dbeafe"
+                      icon={<GroupIcon />}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <StatCard
+                      label="Selected Month Paid"
+                      value={monitoredSubscribers.length}
+                      helper="People who paid in selected month"
+                      accent="#f3e8ff"
+                      icon={<PremiumIcon />}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <StatCard
+                      label="Selected Month Online"
+                      value={monitoredUsers.filter(isReallyOnline).length}
+                      helper="Online now from users created in that month"
+                      accent="#dcfce7"
+                      icon={<ChatIcon />}
+                    />
+                  </Grid>
+                </Grid>
 
-          <Card
-            elevation={0}
-            sx={{
-              borderRadius: 2,
-              mb: 3,
-              border: "1px solid rgba(45,0,82,0.08)",
-            }}
-          >
-            <CardContent>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
-                spacing={1}
-                mb={2}
-              >
-                <Box>
-                  <Typography fontWeight={950} fontSize={19}>
-                    Monthly Activity
-                  </Typography>
-                  <Typography color="#6b4679" fontSize={13}>
-                    Compares new accounts, people who paid, and users currently online.
-                    Online is grouped by the month each user registered.
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <Chip size="small" label="New Accounts" sx={{ bgcolor: "#dbeafe" }} />
-                  <Chip
-                    size="small"
-                    label="Paid Users"
-                    sx={{ bgcolor: "#f3e8ff" }}
-                  />
-                  <Chip size="small" label="Online Now" sx={{ bgcolor: "#dcfce7" }} />
-                </Stack>
-              </Stack>
-              <Box
-                sx={{
-                  height: { xs: 300, md: 260 },
-                  display: "flex",
-                  alignItems: "end",
-                  gap: { xs: 1, sm: 2 },
-                  overflowX: "auto",
-                  pb: 1,
-                  borderBottom: "1px solid #eadcf0",
-                }}
-              >
-                {monthlyActivity.length === 0 ? (
-                  <Box
-                    width="100%"
-                    height="100%"
-                    display="grid"
-                    sx={{ placeItems: "center" }}
-                  >
-                    <Typography color="#6b4679">No activity yet.</Typography>
-                  </Box>
-                ) : (
-                  monthlyActivity.map((item) => (
+                <Card
+                  elevation={0}
+                  sx={{
+                    borderRadius: 2,
+                    mb: 3,
+                    border: "1px solid rgba(45,0,82,0.08)",
+                  }}
+                >
+                  <CardContent>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      justifyContent="space-between"
+                      spacing={1}
+                      mb={2}
+                    >
+                      <Box>
+                        <Typography fontWeight={950} fontSize={19}>
+                          Monthly Activity
+                        </Typography>
+                        <Typography color="#6b4679" fontSize={13}>
+                          Compares new accounts, people who paid, and users
+                          currently online. Online is grouped by the month each
+                          user registered.
+                        </Typography>
+                      </Box>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        useFlexGap
+                      >
+                        <Chip
+                          size="small"
+                          label="New Accounts"
+                          sx={{ bgcolor: "#dbeafe" }}
+                        />
+                        <Chip
+                          size="small"
+                          label="Paid Users"
+                          sx={{ bgcolor: "#f3e8ff" }}
+                        />
+                        <Chip
+                          size="small"
+                          label="Online Now"
+                          sx={{ bgcolor: "#dcfce7" }}
+                        />
+                      </Stack>
+                    </Stack>
                     <Box
-                      key={item.label}
                       sx={{
-                        minWidth: { xs: 86, sm: 110 },
-                        flex: 1,
+                        height: { xs: 300, md: 260 },
                         display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "end",
-                        height: "100%",
+                        alignItems: "end",
+                        gap: { xs: 1, sm: 2 },
+                        overflowX: "auto",
+                        pb: 1,
+                        borderBottom: "1px solid #eadcf0",
                       }}
                     >
-                      <Stack direction="row" alignItems="end" spacing={0.8} sx={{ height: 205 }}>
-                        {[
-                          { key: "users", label: "Users", color: "#60a5fa" },
-                          { key: "subscribers", label: "Paid", color: "#D9A4F0" },
-                          { key: "online", label: "Online", color: "#22c55e" },
-                        ].map((bar) => (
+                      {monthlyActivity.length === 0 ? (
+                        <Box
+                          width="100%"
+                          height="100%"
+                          display="grid"
+                          sx={{ placeItems: "center" }}
+                        >
+                          <Typography color="#6b4679">
+                            No activity yet.
+                          </Typography>
+                        </Box>
+                      ) : (
+                        monthlyActivity.map((item) => (
                           <Box
-                            key={bar.key}
-                            title={`${bar.label}: ${item[bar.key]}`}
+                            key={item.label}
                             sx={{
+                              minWidth: { xs: 86, sm: 110 },
+                              flex: 1,
                               display: "flex",
                               flexDirection: "column",
                               alignItems: "center",
                               justifyContent: "end",
-                              gap: 0.4,
+                              height: "100%",
                             }}
                           >
-                            <Typography fontSize={11} fontWeight={900} color="#2d0052">
-                              {item[bar.key]}
+                            <Stack
+                              direction="row"
+                              alignItems="end"
+                              spacing={0.8}
+                              sx={{ height: 205 }}
+                            >
+                              {[
+                                {
+                                  key: "users",
+                                  label: "Users",
+                                  color: "#60a5fa",
+                                },
+                                {
+                                  key: "subscribers",
+                                  label: "Paid",
+                                  color: "#D9A4F0",
+                                },
+                                {
+                                  key: "online",
+                                  label: "Online",
+                                  color: "#22c55e",
+                                },
+                              ].map((bar) => (
+                                <Box
+                                  key={bar.key}
+                                  title={`${bar.label}: ${item[bar.key]}`}
+                                  sx={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "center",
+                                    justifyContent: "end",
+                                    gap: 0.4,
+                                  }}
+                                >
+                                  <Typography
+                                    fontSize={11}
+                                    fontWeight={900}
+                                    color="#2d0052"
+                                  >
+                                    {item[bar.key]}
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      width: { xs: 14, sm: 18 },
+                                      height: `${Math.max(
+                                        item[bar.key] ? 10 : 3,
+                                        (item[bar.key] / maxActivityCount) * 165
+                                      )}px`,
+                                      bgcolor: bar.color,
+                                      borderRadius: "6px 6px 0 0",
+                                    }}
+                                  />
+                                </Box>
+                              ))}
+                            </Stack>
+                            <Typography
+                              mt={1}
+                              fontWeight={900}
+                              color="#2d0052"
+                              fontSize={13}
+                            >
+                              {item.users} users / {item.subscribers} paid
                             </Typography>
-                            <Box
-                              sx={{
-                                width: { xs: 14, sm: 18 },
-                                height: `${Math.max(
-                                  item[bar.key] ? 10 : 3,
-                                  (item[bar.key] / maxActivityCount) * 165
-                                )}px`,
-                                bgcolor: bar.color,
-                                borderRadius: "6px 6px 0 0",
-                              }}
-                            />
+                            <Typography
+                              color="#6b4679"
+                              fontSize={12}
+                              textAlign="center"
+                            >
+                              {item.label}
+                            </Typography>
                           </Box>
-                        ))}
-                      </Stack>
-                      <Typography mt={1} fontWeight={900} color="#2d0052" fontSize={13}>
-                        {item.users} users / {item.subscribers} paid
-                      </Typography>
-                      <Typography color="#6b4679" fontSize={12} textAlign="center">
-                        {item.label}
-                      </Typography>
+                        ))
+                      )}
                     </Box>
-                  ))
-                )}
-              </Box>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
 
-          <Grid container spacing={2.5} mb={3}>
-            <Grid item xs={12} lg={8}>
-              <Card elevation={0} sx={{ borderRadius: 2, height: "100%" }}>
-                <CardContent>
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    justifyContent="space-between"
-                    spacing={1}
-                    mb={2}
-                  >
-                    <Box>
-                      <Typography fontWeight={900} fontSize={18}>
-                        Subscribers By Month
-                      </Typography>
-                      <Typography color="#6b4679" fontSize={13}>
-                        People who have paid at least once, grouped by month.
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={`${subscribers.length} all-time`}
-                      sx={{
-                        bgcolor: "#f3e8ff",
-                        color: "#2d0052",
-                        fontWeight: 900,
-                      }}
-                    />
-                  </Stack>
-                  <Box
-                    sx={{
-                      height: 260,
-                      display: "flex",
-                      alignItems: "end",
-                      gap: { xs: 1, sm: 2 },
-                      borderBottom: "1px solid #e9d5ff",
-                      pt: 2,
-                    }}
-                  >
-                    {monthlySubscribers.length === 0 ? (
-                      <Box
-                        width="100%"
-                        height="100%"
-                        display="grid"
-                        sx={{ placeItems: "center" }}
-                      >
-                        <Typography color="#6b4679">
-                          No active subscribers yet.
-                        </Typography>
-                      </Box>
-                    ) : (
-                      monthlySubscribers.map((item) => (
-                        <Box
-                          key={item.label}
-                          sx={{
-                            flex: 1,
-                            minWidth: 42,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "end",
-                            height: "100%",
-                          }}
+                <Grid container spacing={2.5} mb={3}>
+                  <Grid item xs={12} lg={8}>
+                    <Card
+                      elevation={0}
+                      sx={{ borderRadius: 2, height: "100%" }}
+                    >
+                      <CardContent>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          justifyContent="space-between"
+                          spacing={1}
+                          mb={2}
                         >
-                          <Typography fontWeight={900} color="#2d0052">
-                            {item.count}
-                          </Typography>
-                          <Box
+                          <Box>
+                            <Typography fontWeight={900} fontSize={18}>
+                              Subscribers By Month
+                            </Typography>
+                            <Typography color="#6b4679" fontSize={13}>
+                              People who have paid at least once, grouped by
+                              month.
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label={`${subscribers.length} all-time`}
                             sx={{
-                              width: "100%",
-                              maxWidth: 58,
-                              height: `${Math.max(
-                                14,
-                                (item.count / maxMonthlyCount) * 190
-                              )}px`,
-                              borderRadius: "8px 8px 0 0",
-                              bgcolor: "#D9A4F0",
+                              bgcolor: "#f3e8ff",
+                              color: "#2d0052",
+                              fontWeight: 900,
                             }}
                           />
-                          <Typography
-                            mt={1}
-                            color="#6b4679"
-                            fontSize={12}
-                            textAlign="center"
-                          >
-                            {item.label}
-                          </Typography>
-                        </Box>
-                      ))
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            <Grid item xs={12} lg={4}>
-              <Card elevation={0} sx={{ borderRadius: 2, height: "100%" }}>
-                <CardContent>
-                  <Typography fontWeight={900} fontSize={18} mb={2}>
-                    Subscription Tier Mix
-                  </Typography>
-                  {["Basic", "Standard", "Premium"].map((tier) => {
-                    const count = tierCounts[tier] || 0;
-                    const percent = subscribers.length
-                      ? Math.round((count / subscribers.length) * 100)
-                      : 0;
-                    return (
-                      <Box key={tier} mb={2.5}>
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography fontWeight={800}>{tier}</Typography>
-                          <Typography color="#6b4679">
-                            {count} ({percent}%)
-                          </Typography>
                         </Stack>
                         <Box
                           sx={{
-                            height: 10,
-                            bgcolor: "#f3e8ff",
-                            borderRadius: 99,
-                            overflow: "hidden",
-                            mt: 0.8,
+                            height: 260,
+                            display: "flex",
+                            alignItems: "end",
+                            gap: { xs: 1, sm: 2 },
+                            borderBottom: "1px solid #e9d5ff",
+                            pt: 2,
                           }}
                         >
-                          <Box
-                            sx={{
-                              width: `${percent}%`,
-                              height: "100%",
-                              bgcolor: "#D9A4F0",
-                            }}
-                          />
+                          {monthlySubscribers.length === 0 ? (
+                            <Box
+                              width="100%"
+                              height="100%"
+                              display="grid"
+                              sx={{ placeItems: "center" }}
+                            >
+                              <Typography color="#6b4679">
+                                No active subscribers yet.
+                              </Typography>
+                            </Box>
+                          ) : (
+                            monthlySubscribers.map((item) => (
+                              <Box
+                                key={item.label}
+                                sx={{
+                                  flex: 1,
+                                  minWidth: 42,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  justifyContent: "end",
+                                  height: "100%",
+                                }}
+                              >
+                                <Typography fontWeight={900} color="#2d0052">
+                                  {item.count}
+                                </Typography>
+                                <Box
+                                  sx={{
+                                    width: "100%",
+                                    maxWidth: 58,
+                                    height: `${Math.max(
+                                      14,
+                                      (item.count / maxMonthlyCount) * 190
+                                    )}px`,
+                                    borderRadius: "8px 8px 0 0",
+                                    bgcolor: "#D9A4F0",
+                                  }}
+                                />
+                                <Typography
+                                  mt={1}
+                                  color="#6b4679"
+                                  fontSize={12}
+                                  textAlign="center"
+                                >
+                                  {item.label}
+                                </Typography>
+                              </Box>
+                            ))
+                          )}
                         </Box>
-                      </Box>
-                    );
-                  })}
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-            </>
-          )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
 
-          {selectedTab !== "dashboard" && (
-          <Paper elevation={0} sx={{ borderRadius: 2, overflow: "hidden" }}>
-            <Box
-              p={{ xs: 1.5, md: 2 }}
-              display="flex"
-              flexDirection={{ xs: "column", md: "row" }}
-              gap={2}
-              justifyContent="space-between"
-              alignItems={{ xs: "stretch", md: "center" }}
-              sx={{ borderBottom: "1px solid #eadcf0" }}
-            >
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{
-                  bgcolor: "#f8f3fb",
-                  borderRadius: 2,
-                  p: 0.5,
-                }}
-              >
-                {navItems
-                  .filter((item) => item.value !== "dashboard")
-                  .map((item) => (
-                  <Button
-                    key={item.value}
-                    onClick={() => setSelectedTab(item.value)}
-                    variant={selectedTab === item.value ? "contained" : "text"}
+                  <Grid item xs={12} lg={4}>
+                    <Card
+                      elevation={0}
+                      sx={{ borderRadius: 2, height: "100%" }}
+                    >
+                      <CardContent>
+                        <Typography fontWeight={900} fontSize={18} mb={2}>
+                          Subscription Tier Mix
+                        </Typography>
+                        {["Basic", "Standard", "Premium"].map((tier) => {
+                          const count = tierCounts[tier] || 0;
+                          const percent = subscribers.length
+                            ? Math.round((count / subscribers.length) * 100)
+                            : 0;
+                          return (
+                            <Box key={tier} mb={2.5}>
+                              <Stack
+                                direction="row"
+                                justifyContent="space-between"
+                              >
+                                <Typography fontWeight={800}>{tier}</Typography>
+                                <Typography color="#6b4679">
+                                  {count} ({percent}%)
+                                </Typography>
+                              </Stack>
+                              <Box
+                                sx={{
+                                  height: 10,
+                                  bgcolor: "#f3e8ff",
+                                  borderRadius: 99,
+                                  overflow: "hidden",
+                                  mt: 0.8,
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: `${percent}%`,
+                                    height: "100%",
+                                    bgcolor: "#D9A4F0",
+                                  }}
+                                />
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                </Grid>
+              </>
+            )}
+
+            {selectedTab !== "dashboard" && (
+              <Paper elevation={0} sx={{ borderRadius: 2, overflow: "hidden" }}>
+                <Box
+                  p={{ xs: 1.5, md: 2 }}
+                  display="flex"
+                  flexDirection={{ xs: "column", md: "row" }}
+                  gap={2}
+                  justifyContent="space-between"
+                  alignItems={{ xs: "stretch", md: "center" }}
+                  sx={{ borderBottom: "1px solid #eadcf0" }}
+                >
+                  <Stack
+                    direction="row"
+                    spacing={1}
                     sx={{
-                      textTransform: "none",
-                      borderRadius: 1.5,
-                      fontWeight: 900,
-                      bgcolor:
-                        selectedTab === item.value ? "#2d0052" : "transparent",
-                      color: selectedTab === item.value ? "#fff" : "#6b4679",
-                      "&:hover": {
-                        bgcolor:
-                          selectedTab === item.value ? "#2d0052" : "#fff",
-                      },
+                      bgcolor: "#f8f3fb",
+                      borderRadius: 2,
+                      p: 0.5,
                     }}
                   >
-                    {item.label}
-                  </Button>
-                ))}
-              </Stack>
+                    {navItems
+                      .filter((item) => item.value !== "dashboard")
+                      .map((item) => (
+                        <Button
+                          key={item.value}
+                          onClick={() => setSelectedTab(item.value)}
+                          variant={
+                            selectedTab === item.value ? "contained" : "text"
+                          }
+                          sx={{
+                            textTransform: "none",
+                            borderRadius: 1.5,
+                            fontWeight: 900,
+                            bgcolor:
+                              selectedTab === item.value
+                                ? "#2d0052"
+                                : "transparent",
+                            color:
+                              selectedTab === item.value ? "#fff" : "#6b4679",
+                            "&:hover": {
+                              bgcolor:
+                                selectedTab === item.value ? "#2d0052" : "#fff",
+                            },
+                          }}
+                        >
+                          {item.label}
+                        </Button>
+                      ))}
+                  </Stack>
 
-              <TextField
-                size="small"
-                placeholder="Search name, email, phone, location..."
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                sx={{ minWidth: { xs: "100%", md: 360 } }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Box>
+                  <TextField
+                    size="small"
+                    placeholder="Search name, email, phone, location..."
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    sx={{ minWidth: { xs: "100%", md: 360 } }}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Box>
 
-            <Box sx={{ overflowX: "auto" }}>
-              {selectedTab === "subscribers"
-                ? renderSubscriberTable()
-                : renderUsersTable()}
-            </Box>
+                <Box sx={{ overflowX: "auto" }}>
+                  {selectedTab === "subscribers"
+                    ? renderSubscriberTable()
+                    : renderUsersTable()}
+                </Box>
 
-            <Box display="flex" justifyContent="center" p={2}>
-              <Pagination
-                count={Math.max(1, Math.ceil(activeRows.length / rowsPerPage))}
-                page={page}
-                onChange={(_, value) => setPage(value)}
-                color="secondary"
-              />
-            </Box>
-          </Paper>
-          )}
+                <Box display="flex" justifyContent="center" p={2}>
+                  <Pagination
+                    count={Math.max(
+                      1,
+                      Math.ceil(activeRows.length / rowsPerPage)
+                    )}
+                    page={page}
+                    onChange={(_, value) => setPage(value)}
+                    color="secondary"
+                  />
+                </Box>
+              </Paper>
+            )}
           </Box>
         </Stack>
       )}
@@ -1229,7 +1300,10 @@ const AdminScreen = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={Boolean(deleteUserId)} onClose={() => setDeleteUserId(null)}>
+      <Dialog
+        open={Boolean(deleteUserId)}
+        onClose={() => setDeleteUserId(null)}
+      >
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogActions>
           <Button onClick={() => setDeleteUserId(null)}>Cancel</Button>
