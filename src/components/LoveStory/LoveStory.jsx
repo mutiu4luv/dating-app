@@ -19,11 +19,11 @@ import david from "../../assets/images/david.jpeg";
 import mutiu from "../../assets/images/mutiu.jpeg";
 
 const testimonies = [
-  {
-    image: david,
-    name: "David & Favour",
-    text: "We met in the most unexpected way — and now we're inseparable.",
-  },
+  // {
+  //   image: david,
+  //   name: "David & Favour",
+  //   text: "We met in the most unexpected way — and now we're inseparable.",
+  // },
   {
     image: ezinne,
     name: "Ugochukwu & Ezinne",

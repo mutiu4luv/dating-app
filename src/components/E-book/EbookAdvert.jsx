@@ -153,7 +153,7 @@ const EbookAdvert = () => {
 
         <Grid container spacing={4} justifyContent="center">
           {/* Online Book Section */}
-          <Grid item xs={12} md={6}>
+          {/* <Grid item xs={12} md={6}>
             <Box
               sx={{
                 height: "100%",
@@ -211,7 +211,7 @@ const EbookAdvert = () => {
                 Read Online
               </Button>
             </Box>
-          </Grid>
+          </Grid> */}
 
           {/* Refer & Earn Section */}
           <Grid item xs={12} md={6}>
