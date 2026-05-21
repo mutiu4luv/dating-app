@@ -224,6 +224,7 @@ import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getStoredIsAdmin, storeAuthUser } from "../utility/authState";
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -236,7 +237,9 @@ const Login = () => {
     const token = localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
     if (token && userId) {
-      navigate(`/members/${userId}`, { replace: true });
+      navigate(getStoredIsAdmin() ? "/admin" : `/members/${userId}`, {
+        replace: true,
+      });
     }
   }, [navigate]);
 
@@ -261,23 +264,7 @@ const Login = () => {
       );
 
       const { token, user } = res.data;
-      const userId = user?._id;
-      const isAdmin = Boolean(user?.isAdmin); // Ensure boolean
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("userId", userId);
-      localStorage.setItem("username", user.username);
-      localStorage.setItem("email", user.email);
-      localStorage.setItem("hasPaid", JSON.stringify(user.hasPaid));
-      localStorage.setItem("isAdmin", JSON.stringify(isAdmin));
-
-      localStorage.setItem(
-        `hasPaid_${userId}`,
-        JSON.stringify({
-          status: user.hasPaid,
-          paidAt: Date.now(),
-        })
-      );
+      const { userId, isAdmin } = storeAuthUser({ token, user });
 
       console.log("Login success:", { userId, isAdmin });
       window.dispatchEvent(new CustomEvent("authChanged"));

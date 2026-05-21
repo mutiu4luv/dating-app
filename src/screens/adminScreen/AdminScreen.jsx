@@ -38,15 +38,19 @@ import {
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
 import {
+  ArrowBack as ArrowBackIcon,
   Chat as ChatIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   Group as GroupIcon,
+  Home as HomeIcon,
   PersonAdd as PersonAddIcon,
+  Refresh as RefreshIcon,
   Search as SearchIcon,
   TrendingUp as TrendingUpIcon,
   WorkspacePremium as PremiumIcon,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import api from "../../components/api/Api";
 
 const tiers = ["Free", "Basic", "Standard", "Premium"];
@@ -70,6 +74,13 @@ const monthKey = (value) =>
     year: "numeric",
     month: "short",
   });
+
+const monthValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+};
 
 const safeIncludes = (value, query) =>
   String(value || "")
@@ -120,6 +131,7 @@ const StatCard = ({ label, value, icon, accent, helper }) => (
 );
 
 const AdminScreen = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
   const [selectedTab, setSelectedTab] = useState("overview");
@@ -136,6 +148,7 @@ const AdminScreen = () => {
     severity: "success",
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState("all");
   const [page, setPage] = useState(1);
 
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -176,10 +189,43 @@ const AdminScreen = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [selectedTab, searchQuery]);
+  }, [selectedTab, searchQuery, selectedMonth]);
+
+  const monthOptions = useMemo(() => {
+    const options = new Map();
+    [...users, ...subscribers].forEach((item) => {
+      const sourceDate =
+        item.createdAt || item.updatedAt || item.subscriptionExpiresAt;
+      const value = monthValue(sourceDate);
+      if (value) options.set(value, monthKey(sourceDate));
+    });
+
+    return Array.from(options.entries())
+      .map(([value, label]) => ({ value, label }))
+      .sort((a, b) => b.value.localeCompare(a.value));
+  }, [users, subscribers]);
+
+  const monitoredUsers = useMemo(() => {
+    if (selectedMonth === "all") return users;
+    return users.filter((user) => monthValue(user.createdAt) === selectedMonth);
+  }, [users, selectedMonth]);
+
+  const monitoredSubscribers = useMemo(() => {
+    if (selectedMonth === "all") return subscribers;
+    return subscribers.filter((sub) => {
+      const sourceDate = sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
+      return monthValue(sourceDate) === selectedMonth;
+    });
+  }, [subscribers, selectedMonth]);
 
   const activeUsers = users.filter((user) => user.isOnline).length;
   const adminUsers = users.filter((user) => user.isAdmin).length;
+  const activeSubscribers = subscribers.filter(
+    (sub) => sub.subscriptionActive
+  ).length;
+  const expiredSubscribers = subscribers.filter(
+    (sub) => sub.subscriptionStatus === "Expired"
+  ).length;
 
   const tierCounts = useMemo(() => {
     return subscribers.reduce(
@@ -204,9 +250,48 @@ const AdminScreen = () => {
       .slice(-6);
   }, [subscribers]);
 
+  const monthlyActivity = useMemo(() => {
+    const monthMap = new Map();
+
+    users.forEach((user) => {
+      const key = monthKey(user.createdAt);
+      const current = monthMap.get(key) || {
+        label: key,
+        users: 0,
+        subscribers: 0,
+        online: 0,
+      };
+      current.users += 1;
+      if (user.isOnline) current.online += 1;
+      monthMap.set(key, current);
+    });
+
+    subscribers.forEach((sub) => {
+      const key = monthKey(sub.createdAt || sub.updatedAt);
+      const current = monthMap.get(key) || {
+        label: key,
+        users: 0,
+        subscribers: 0,
+        online: 0,
+      };
+      current.subscribers += 1;
+      monthMap.set(key, current);
+    });
+
+    return Array.from(monthMap.values()).slice(-6);
+  }, [users, subscribers]);
+
   const maxMonthlyCount = Math.max(
     1,
     ...monthlySubscribers.map((item) => item.count)
+  );
+  const maxActivityCount = Math.max(
+    1,
+    ...monthlyActivity.flatMap((item) => [
+      item.users,
+      item.subscribers,
+      item.online,
+    ])
   );
 
   const filteredUsers = users.filter(
@@ -219,15 +304,23 @@ const AdminScreen = () => {
   );
 
   const filteredSubscribers = subscribers.filter(
-    (sub) =>
-      safeIncludes(sub.name, searchQuery) ||
-      safeIncludes(sub.username, searchQuery) ||
-      safeIncludes(sub.email, searchQuery) ||
-      safeIncludes(sub.phoneNumber, searchQuery) ||
-      safeIncludes(sub.location, searchQuery) ||
-      safeIncludes(sub.occupation, searchQuery) ||
-      safeIncludes(sub.relationshipType, searchQuery) ||
-      safeIncludes(sub.subscriptionTier, searchQuery)
+    (sub) => {
+      const sourceDate =
+        sub.createdAt || sub.updatedAt || sub.subscriptionExpiresAt;
+      const matchesMonth =
+        selectedMonth === "all" || monthValue(sourceDate) === selectedMonth;
+      const matchesSearch =
+        safeIncludes(sub.name, searchQuery) ||
+        safeIncludes(sub.username, searchQuery) ||
+        safeIncludes(sub.email, searchQuery) ||
+        safeIncludes(sub.phoneNumber, searchQuery) ||
+        safeIncludes(sub.location, searchQuery) ||
+        safeIncludes(sub.occupation, searchQuery) ||
+        safeIncludes(sub.relationshipType, searchQuery) ||
+        safeIncludes(sub.subscriptionTier, searchQuery);
+
+      return matchesMonth && matchesSearch;
+    }
   );
 
   const activeRows =
@@ -332,8 +425,9 @@ const AdminScreen = () => {
             <TableCell>Occupation</TableCell>
             <TableCell>Relationship</TableCell>
             <TableCell>Tier</TableCell>
+            <TableCell>Subscription</TableCell>
             <TableCell>Expires</TableCell>
-            <TableCell>Status</TableCell>
+            <TableCell>Online</TableCell>
             <TableCell align="right">Actions</TableCell>
           </TableRow>
         </TableHead>
@@ -354,6 +448,17 @@ const AdminScreen = () => {
                   size="small"
                   label={sub.subscriptionTier || "-"}
                   sx={{ bgcolor: "#f3e8ff", color: "#2d0052", fontWeight: 800 }}
+                />
+              </TableCell>
+              <TableCell>
+                <Chip
+                  size="small"
+                  label={sub.subscriptionStatus || "Paid before"}
+                  sx={{
+                    bgcolor: sub.subscriptionActive ? "#dcfce7" : "#fee2e2",
+                    color: sub.subscriptionActive ? "#166534" : "#991b1b",
+                    fontWeight: 800,
+                  }}
                 />
               </TableCell>
               <TableCell>{formatDate(sub.subscriptionExpiresAt)}</TableCell>
@@ -453,19 +558,64 @@ const AdminScreen = () => {
             Monitor users, subscriptions, activity, and account access.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          onClick={fetchAdminData}
-          sx={{
-            bgcolor: "#D9A4F0",
-            color: "#2d0052",
-            fontWeight: 900,
-            borderRadius: 2,
-            "&:hover": { bgcolor: "#c886e7" },
-          }}
-        >
-          Refresh
-        </Button>
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <FormControl size="small" sx={{ minWidth: { xs: 160, sm: 190 } }}>
+            <InputLabel>Monitor Month</InputLabel>
+            <Select
+              value={selectedMonth}
+              label="Monitor Month"
+              onChange={(event) => setSelectedMonth(event.target.value)}
+              sx={{ bgcolor: "#fff", borderRadius: 2 }}
+            >
+              <MenuItem value="all">All months</MenuItem>
+              {monthOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(-1)}
+            sx={{
+              borderColor: "#2d0052",
+              color: "#2d0052",
+              fontWeight: 900,
+              borderRadius: 2,
+            }}
+          >
+            Back
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<HomeIcon />}
+            onClick={() => navigate("/")}
+            sx={{
+              borderColor: "#2d0052",
+              color: "#2d0052",
+              fontWeight: 900,
+              borderRadius: 2,
+            }}
+          >
+            Landing
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<RefreshIcon />}
+            onClick={fetchAdminData}
+            sx={{
+              bgcolor: "#D9A4F0",
+              color: "#2d0052",
+              fontWeight: 900,
+              borderRadius: 2,
+              "&:hover": { bgcolor: "#c886e7" },
+            }}
+          >
+            Refresh
+          </Button>
+        </Stack>
       </Stack>
 
       {loading ? (
@@ -486,9 +636,9 @@ const AdminScreen = () => {
             </Grid>
             <Grid item xs={12} sm={6} lg={3}>
               <StatCard
-                label="Active Subscribers"
+                label="All-Time Subscribers"
                 value={subscribers.length}
-                helper="Paid and not expired"
+                helper={`${activeSubscribers} active, ${expiredSubscribers} expired`}
                 accent="#fdf2f8"
                 icon={<PremiumIcon />}
               />
@@ -505,13 +655,157 @@ const AdminScreen = () => {
             <Grid item xs={12} sm={6} lg={3}>
               <StatCard
                 label="Conversion"
-                value={`${users.length ? Math.round((subscribers.length / users.length) * 100) : 0}%`}
-                helper="Subscribers vs total users"
+                value={`${
+                  users.length
+                    ? Math.round((subscribers.length / users.length) * 100)
+                    : 0
+                }%`}
+                helper="Ever paid vs total users"
                 accent="#dcfce7"
                 icon={<TrendingUpIcon />}
               />
             </Grid>
           </Grid>
+
+          <Grid container spacing={2.5} mb={3}>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                label="Selected Month Users"
+                value={monitoredUsers.length}
+                helper={
+                  selectedMonth === "all"
+                    ? "Across every month"
+                    : "New accounts in selected month"
+                }
+                accent="#dbeafe"
+                icon={<GroupIcon />}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                label="Selected Month Paid"
+                value={monitoredSubscribers.length}
+                helper="People who paid in selected month"
+                accent="#f3e8ff"
+                icon={<PremiumIcon />}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <StatCard
+                label="Selected Month Online"
+                value={monitoredUsers.filter((user) => user.isOnline).length}
+                helper="Currently online from that group"
+                accent="#dcfce7"
+                icon={<ChatIcon />}
+              />
+            </Grid>
+          </Grid>
+
+          <Card
+            elevation={0}
+            sx={{
+              borderRadius: 2,
+              mb: 3,
+              border: "1px solid rgba(45,0,82,0.08)",
+            }}
+          >
+            <CardContent>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                justifyContent="space-between"
+                spacing={1}
+                mb={2}
+              >
+                <Box>
+                  <Typography fontWeight={950} fontSize={19}>
+                    Monthly Activity
+                  </Typography>
+                  <Typography color="#6b4679" fontSize={13}>
+                    New users, paid users, and online users by month.
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  <Chip size="small" label="Users" sx={{ bgcolor: "#dbeafe" }} />
+                  <Chip
+                    size="small"
+                    label="Subscribers"
+                    sx={{ bgcolor: "#f3e8ff" }}
+                  />
+                  <Chip size="small" label="Online" sx={{ bgcolor: "#dcfce7" }} />
+                </Stack>
+              </Stack>
+              <Box
+                sx={{
+                  height: { xs: 300, md: 260 },
+                  display: "flex",
+                  alignItems: "end",
+                  gap: { xs: 1, sm: 2 },
+                  overflowX: "auto",
+                  pb: 1,
+                  borderBottom: "1px solid #eadcf0",
+                }}
+              >
+                {monthlyActivity.length === 0 ? (
+                  <Box
+                    width="100%"
+                    height="100%"
+                    display="grid"
+                    sx={{ placeItems: "center" }}
+                  >
+                    <Typography color="#6b4679">No activity yet.</Typography>
+                  </Box>
+                ) : (
+                  monthlyActivity.map((item) => (
+                    <Box
+                      key={item.label}
+                      sx={{
+                        minWidth: { xs: 86, sm: 110 },
+                        flex: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "end",
+                        height: "100%",
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="end"
+                        spacing={0.6}
+                        sx={{ height: 205 }}
+                      >
+                        {[
+                          { key: "users", color: "#60a5fa" },
+                          { key: "subscribers", color: "#D9A4F0" },
+                          { key: "online", color: "#22c55e" },
+                        ].map((bar) => (
+                          <Box
+                            key={bar.key}
+                            title={`${bar.key}: ${item[bar.key]}`}
+                            sx={{
+                              width: { xs: 14, sm: 18 },
+                              height: `${Math.max(
+                                item[bar.key] ? 10 : 3,
+                                (item[bar.key] / maxActivityCount) * 185
+                              )}px`,
+                              bgcolor: bar.color,
+                              borderRadius: "6px 6px 0 0",
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                      <Typography mt={1} fontWeight={900} color="#2d0052">
+                        {item.users + item.subscribers + item.online}
+                      </Typography>
+                      <Typography color="#6b4679" fontSize={12} textAlign="center">
+                        {item.label}
+                      </Typography>
+                    </Box>
+                  ))
+                )}
+              </Box>
+            </CardContent>
+          </Card>
 
           <Grid container spacing={2.5} mb={3}>
             <Grid item xs={12} lg={8}>
@@ -525,15 +819,19 @@ const AdminScreen = () => {
                   >
                     <Box>
                       <Typography fontWeight={900} fontSize={18}>
-                        Monthly Subscribers
+                        Subscribers By Month
                       </Typography>
                       <Typography color="#6b4679" fontSize={13}>
-                        Active subscribers grouped by signup month.
+                        People who have paid at least once, grouped by month.
                       </Typography>
                     </Box>
                     <Chip
-                      label={`${subscribers.length} active`}
-                      sx={{ bgcolor: "#f3e8ff", color: "#2d0052", fontWeight: 900 }}
+                      label={`${subscribers.length} all-time`}
+                      sx={{
+                        bgcolor: "#f3e8ff",
+                        color: "#2d0052",
+                        fontWeight: 900,
+                      }}
                     />
                   </Stack>
                   <Box

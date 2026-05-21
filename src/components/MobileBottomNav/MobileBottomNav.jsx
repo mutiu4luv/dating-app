@@ -12,6 +12,7 @@ import ChatIcon from "@mui/icons-material/Chat";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import PersonIcon from "@mui/icons-material/Person";
 import { useLocation, useNavigate } from "react-router-dom";
+import { getStoredIsAdmin } from "../../utility/authState";
 
 const hiddenPaths = [
   "/login",
@@ -35,7 +36,7 @@ const MobileBottomNav = () => {
   const [authState, setAuthState] = useState({
     token: localStorage.getItem("token"),
     userId: localStorage.getItem("userId"),
-    isAdmin: localStorage.getItem("isAdmin") === "true",
+    isAdmin: getStoredIsAdmin(),
   });
 
   useEffect(() => {
@@ -43,7 +44,7 @@ const MobileBottomNav = () => {
       setAuthState({
         token: localStorage.getItem("token"),
         userId: localStorage.getItem("userId"),
-        isAdmin: localStorage.getItem("isAdmin") === "true",
+        isAdmin: getStoredIsAdmin(),
       });
     };
 

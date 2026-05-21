@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import axiosInstance from "..//utility/axiosInstance";
 import {
   Box,
-  Grid,
   Card,
   CardContent,
   CardMedia,
@@ -17,23 +16,72 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import ImageIcon from "@mui/icons-material/Image";
 import Navbar from "../components/Navbar/Navbar";
 import Footer from "../components/Footer/Footer";
 import { useNavigate } from "react-router-dom";
 import ClipLoader from "react-spinners/ClipLoader";
+import io from "socket.io-client";
 
 const getCurrentUserId = () => localStorage.getItem("userId");
 const MAX_DESCRIPTION_LINES = 2;
-const CARD_HEIGHT = 480;
-const CARD_CONTENT_HEIGHT = 190;
+const CARD_HEIGHT = 486;
+const CARD_CONTENT_HEIGHT = 206;
 const CARDS_PER_PAGE = 8;
+
+const getLastSeenDate = (lastSeen) => {
+  if (!lastSeen) return null;
+
+  const rawDate =
+    typeof lastSeen === "string"
+      ? lastSeen
+      : lastSeen.date || lastSeen.exact || lastSeen.value || null;
+
+  if (!rawDate) return null;
+
+  const parsedDate = new Date(rawDate);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const sortByOnlineStatus = (items, statuses) =>
+  [...items].sort((a, b) => {
+    const aStatus = statuses[a._id] || {};
+    const bStatus = statuses[b._id] || {};
+
+    if (Boolean(aStatus.isOnline) !== Boolean(bStatus.isOnline)) {
+      return aStatus.isOnline ? -1 : 1;
+    }
+
+    const aLastSeen = getLastSeenDate(aStatus.lastSeen)?.getTime() || 0;
+    const bLastSeen = getLastSeenDate(bStatus.lastSeen)?.getTime() || 0;
+
+    if (aLastSeen !== bLastSeen) {
+      return bLastSeen - aLastSeen;
+    }
+
+    return (a.name || "").localeCompare(b.name || "");
+  });
+
+const getLastSeenLabel = (status) => {
+  if (status?.isOnline) return "Online now";
+
+  const lastSeenDate = getLastSeenDate(status?.lastSeen);
+  if (!lastSeenDate) return "Not active recently";
+
+  const elapsedMs = Date.now() - lastSeenDate.getTime();
+  const elapsedHours = elapsedMs / (1000 * 60 * 60);
+  const elapsedDays = elapsedHours / 24;
+
+  if (elapsedHours <= 48) return "Recently online";
+  if (elapsedDays <= 14) return "Active this week";
+  return "Away for a while";
+};
 
 const Members = () => {
   const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState({});
   const [mergeStatuses, setMergeStatuses] = useState({});
   const [userStatuses, setUserStatuses] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,11 +169,7 @@ const Members = () => {
         });
         setUserStatuses(statusObj);
 
-        const sorted = [...data].sort((a, b) => {
-          const aOnline = statusObj[a._id]?.isOnline ? -1 : 1;
-          const bOnline = statusObj[b._id]?.isOnline ? -1 : 1;
-          return aOnline - bOnline;
-        });
+        const sorted = sortByOnlineStatus(data, statusObj);
 
         const statuses = await Promise.all(
           sorted.map(async (member) => {
@@ -178,9 +222,40 @@ const Members = () => {
     if (userId) fetchMembers();
   }, [userId]);
 
-  const handleExpandClick = (member2) => {
-    setExpanded((prev) => ({ ...prev, [member2]: !prev[member2] }));
-  };
+  useEffect(() => {
+    if (!userId) return undefined;
+
+    const socket = io(import.meta.env.VITE_BASE_URL, {
+      transports: ["websocket"],
+    });
+
+    socket.emit("register_user", userId);
+
+    const handlePresenceUpdate = ({ userId: changedUserId, isOnline, lastSeen }) => {
+      setUserStatuses((prev) => {
+        const next = {
+          ...prev,
+          [changedUserId]: {
+            ...(prev[changedUserId] || {}),
+            isOnline,
+            lastSeen,
+          },
+        };
+
+        setMembers((current) => sortByOnlineStatus(current, next));
+        setFilteredMembers((current) => sortByOnlineStatus(current, next));
+
+        return next;
+      });
+    };
+
+    socket.on("presence_update", handlePresenceUpdate);
+
+    return () => {
+      socket.off("presence_update", handlePresenceUpdate);
+      socket.disconnect();
+    };
+  }, [userId]);
 
   const handleMerge = (member2) => navigate(`/merge/${userId}/${member2}`);
   const handleChat = (member2) => navigate(`/chat/${userId}/${member2}`);
@@ -195,7 +270,7 @@ const Members = () => {
         m.location?.toLowerCase().includes(term)
     );
 
-    setFilteredMembers(filtered);
+    setFilteredMembers(sortByOnlineStatus(filtered, userStatuses));
     setCurrentPage(1);
   };
 
@@ -271,140 +346,229 @@ const Members = () => {
           />
         </Box>
 
-        <Grid container spacing={3} justifyContent="center">
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "minmax(0, min(100%, 340px))",
+              sm: "repeat(2, minmax(0, 260px))",
+              md: "repeat(3, minmax(0, 240px))",
+              lg: "repeat(4, minmax(0, 240px))",
+            },
+            gap: { xs: 2.5, sm: 3 },
+            justifyContent: "center",
+            alignItems: "stretch",
+          }}
+        >
           {paginatedMembers.map((member) => {
-            const isExpanded = expanded[member._id];
-            const isLong = member.description?.length > 100;
             const status = mergeStatuses[member._id];
             const onlineStatus = userStatuses[member._id];
 
             return (
-              <Grid item xs={6} sm={4} md={3} lg={3} key={member._id}>
-                <Card
-                  sx={{
-                    borderRadius: 5,
-                    boxShadow: "0 8px 32px rgba(31, 38, 135, 0.25)",
-                    background: "rgba(255,255,255,0.08)",
-                    backdropFilter: "blur(8px)",
-                    border: "1.5px solid rgba(236,72,153,0.18)",
-                    maxWidth: 240,
-                    height: isExpanded ? "auto" : `${CARD_HEIGHT}px`,
-                    p: 0,
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    image={member.photo}
-                    alt={member.name}
-                    sx={{
-                      height: 210,
-                      objectFit: "cover",
-                      borderRadius: "18px 18px 0 0",
-                      borderBottom: "2px solid #D9A4F0",
-                    }}
-                  />
+              <Card
+                key={member._id}
+                sx={{
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  boxShadow: "0 18px 44px rgba(5, 8, 20, 0.32)",
+                  background: "rgba(255,255,255,0.96)",
+                  border: "1px solid rgba(217,164,240,0.35)",
+                  width: "100%",
+                  minWidth: 0,
+                  height: `${CARD_HEIGHT}px`,
+                  p: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  transition:
+                    "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 24px 54px rgba(5, 8, 20, 0.42)",
+                    borderColor: "rgba(217,164,240,0.72)",
+                  },
+                }}
+              >
+                  <Box sx={{ position: "relative" }}>
+                    {member.photo ? (
+                      <CardMedia
+                        component="img"
+                        image={member.photo}
+                        alt={member.name}
+                        sx={{
+                          height: 214,
+                          objectFit: "cover",
+                          borderBottom: "1px solid rgba(17,24,39,0.08)",
+                        }}
+                      />
+                    ) : (
+                      <Box
+                        sx={{
+                          height: 214,
+                          borderBottom: "1px solid rgba(17,24,39,0.08)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background:
+                            "linear-gradient(145deg, #f7eefb, #eef2ff)",
+                        }}
+                        aria-label={`${member.name || "Member"} has no profile image`}
+                      >
+                        <ImageIcon sx={{ color: "#9d63b7", fontSize: 58 }} />
+                      </Box>
+                    )}
+
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        background:
+                          "linear-gradient(180deg, rgba(0,0,0,0.02) 42%, rgba(5,8,20,0.46) 100%)",
+                        pointerEvents: "none",
+                      }}
+                    />
+
+                    <Tooltip
+                      title={
+                        onlineStatus?.lastSeen?.exact ||
+                        getLastSeenLabel(onlineStatus)
+                      }
+                    >
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          top: 12,
+                          right: 12,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.75,
+                          px: 1.1,
+                          py: 0.55,
+                          borderRadius: 1.25,
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: onlineStatus?.isOnline
+                            ? "rgba(20, 132, 73, 0.95)"
+                            : "rgba(17, 24, 39, 0.86)",
+                          border: "1px solid rgba(255,255,255,0.38)",
+                          boxShadow: "0 10px 22px rgba(0,0,0,0.24)",
+                          backdropFilter: "blur(10px)",
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 9,
+                            height: 9,
+                            borderRadius: "50%",
+                            backgroundColor: onlineStatus?.isOnline
+                              ? "#4ade80"
+                              : "#9ca3af",
+                            boxShadow: onlineStatus?.isOnline
+                              ? "0 0 0 3px rgba(74,222,128,0.25)"
+                              : "none",
+                          }}
+                        />
+                        {onlineStatus?.isOnline ? "Online" : "Offline"}
+                      </Box>
+                    </Tooltip>
+                  </Box>
                   <CardContent
                     sx={{
                       display: "flex",
                       flexDirection: "column",
-                      alignItems: "center",
-                      height: isExpanded ? "auto" : `${CARD_CONTENT_HEIGHT}px`,
-                      p: 2,
+                      alignItems: "stretch",
+                      height: `${CARD_CONTENT_HEIGHT}px`,
+                      p: 1.75,
+                      background:
+                        "linear-gradient(180deg, #ffffff 0%, #fbf7fd 100%)",
                     }}
                   >
                     <Typography
                       variant="h6"
-                      color="#D9A4F0"
-                      fontWeight="bold"
+                      color="#171827"
+                      fontWeight={800}
                       gutterBottom
                       align="center"
+                      noWrap
+                      sx={{ fontSize: "1rem", lineHeight: 1.2, mb: 0.75 }}
                     >
                       {member.name}
                     </Typography>
                     <Stack
                       direction="row"
                       alignItems="center"
+                      justifyContent="center"
                       spacing={1}
                       mb={1}
                     >
-                      <LocationOnIcon sx={{ color: "#D9A4F0", fontSize: 20 }} />
-                      <Typography variant="body2" color="#b993d6">
-                        {member.location}
+                      <LocationOnIcon sx={{ color: "#8b3ba8", fontSize: 18 }} />
+                      <Typography
+                        variant="body2"
+                        color="#5b5f72"
+                        noWrap
+                        sx={{ maxWidth: 160, fontWeight: 600 }}
+                      >
+                        {member.location || "Location not set"}
                       </Typography>
                     </Stack>
 
-                    <Tooltip title={onlineStatus?.lastSeen?.exact || "Unknown"}>
+                    <Tooltip
+                      title={
+                        onlineStatus?.lastSeen?.exact ||
+                        getLastSeenLabel(onlineStatus)
+                      }
+                    >
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: "bold",
-                          fontSize: 14,
-                          background: onlineStatus?.isOnline
-                            ? "linear-gradient(to right, #32CD32, #7CFC00)"
-                            : "none",
-                          WebkitBackgroundClip: onlineStatus?.isOnline
-                            ? "text"
-                            : "none",
-                          WebkitTextFillColor: onlineStatus?.isOnline
-                            ? "transparent"
-                            : "#facc15",
-                          opacity: 0.85,
+                          fontWeight: 700,
+                          fontSize: 12,
+                          color: onlineStatus?.isOnline ? "#16834f" : "#6b7280",
                           cursor: "help",
+                          mb: 1.25,
+                          textAlign: "center",
                         }}
                       >
-                        {/* {onlineStatus?.isOnline
-                          ? "🟢 Online"
-                          : `Last seen: ${
-                              onlineStatus?.lastSeen?.relative || "Unknown"
-                            }`} */}
+                        {getLastSeenLabel(onlineStatus)}
                       </Typography>
                     </Tooltip>
 
                     <Box sx={{ width: "100%", mb: 2 }}>
                       <Typography
                         variant="body2"
-                        color="#D9A4F0"
+                        color="#4b5563"
                         align="center"
                         sx={{
-                          fontStyle: "italic",
-                          opacity: 0.85,
                           display: "-webkit-box",
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
-                          WebkitLineClamp: isExpanded
-                            ? "unset"
-                            : MAX_DESCRIPTION_LINES,
+                          WebkitLineClamp: MAX_DESCRIPTION_LINES,
                           textOverflow: "ellipsis",
-                          whiteSpace: isExpanded ? "normal" : "initial",
-                          maxHeight: isExpanded ? "none" : "4.6em",
+                          whiteSpace: "initial",
+                          maxHeight: "4.6em",
+                          fontSize: "0.83rem",
+                          lineHeight: 1.45,
                         }}
                       >
-                        {member.description}
+                        {member.description || "No profile description yet."}
                       </Typography>
-                      {isLong && (
-                        <Button
-                          size="small"
-                          sx={{
-                            color: "#D9A4F0",
-                            textTransform: "none",
-                            mt: 1,
-                          }}
-                          onClick={() => handleExpandClick(member._id)}
-                        >
-                          {isExpanded ? "Less" : "More"}
-                        </Button>
-                      )}
                     </Box>
                     <Button
                       variant="contained"
                       sx={{
-                        background:
-                          "linear-gradient(90deg, #D9A4F0 60%, #b993d6 100%)",
+                        mt: "auto",
+                        background: "#171827",
                         color: "#fff",
-                        fontWeight: "bold",
-                        borderRadius: 3,
-                        boxShadow: "0 2px 8px rgba(236,72,153,0.15)",
+                        fontWeight: 800,
+                        borderRadius: 1.5,
+                        boxShadow: "0 10px 22px rgba(23,24,39,0.2)",
                         minWidth: 80,
+                        py: 1,
+                        textTransform: "none",
+                        "&:hover": {
+                          background: "#8b3ba8",
+                          boxShadow: "0 12px 24px rgba(139,59,168,0.26)",
+                        },
                       }}
                       onClick={
                         status?.isMerged && status?.subscriptionActive
@@ -419,11 +583,10 @@ const Members = () => {
                         : "Merge"}
                     </Button>
                   </CardContent>
-                </Card>
-              </Grid>
+              </Card>
             );
           })}
-        </Grid>
+        </Box>
 
         <Box mt={4} display="flex" justifyContent="center">
           <Pagination

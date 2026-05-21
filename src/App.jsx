@@ -24,6 +24,22 @@ import ContactUs from "./components/CONTACTuS/ContactUs";
 import AboutUs from "./components/ABOUT-US/AboutUs";
 import MobileBottomNav from "./components/MobileBottomNav/MobileBottomNav";
 import AgeGate from "./components/AgeGate/AgeGate";
+import { getStoredIsAdmin } from "./utility/authState";
+
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem("token");
+
+  if (!token) {
+    localStorage.clear();
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!getStoredIsAdmin()) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  return children;
+};
 
 function App() {
   useEffect(() => {
@@ -49,15 +65,12 @@ function App() {
             }
           />
 
-          {/* Admin Route - Reads isAdmin fresh from localStorage */}
           <Route
             path="/admin"
             element={
-              localStorage.getItem("isAdmin") === "true" ? (
+              <AdminRoute>
                 <AdminScreen />
-              ) : (
-                <Navigate to="/unauthorized" />
-              )
+              </AdminRoute>
             }
           />
 
