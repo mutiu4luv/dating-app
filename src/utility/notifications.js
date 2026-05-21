@@ -22,13 +22,18 @@ export const showMessageNotification = async (message) => {
     tag: `message-${message.senderId}-${message._id || Date.now()}`,
     badge: "/vite.svg",
     icon: "/vite.svg",
+    vibrate: [120, 60, 120],
     data: message,
   };
 
   if ("serviceWorker" in navigator) {
-    const registration = await navigator.serviceWorker.ready.catch(() => null);
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(() => resolve(null), 1200)),
+    ]).catch(() => null);
+
     if (registration?.showNotification) {
-      registration.showNotification("New message", options);
+      await registration.showNotification("New message", options);
       return;
     }
   }

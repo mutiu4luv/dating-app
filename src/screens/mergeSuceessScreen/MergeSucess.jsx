@@ -26,12 +26,12 @@ const MergeScreen = () => {
   const { member1, member2 } = useParams();
 
   const subscriptionPlans = {
-    basic: { label: "Basic - ₦2,000 (5 merges for one month)", amount: 2000 },
+    basic: { label: "Basic - ₦2,000 (20 merges per month)", amount: 2000 },
     standard: {
-      label: "Standard - ₦5,000 (10 merges for one month)",
+      label: "Standard - ₦5,000 (30 merges per month)",
       amount: 5000,
     },
-    premium: { label: "Premium - ₦10,000 (unlimited)", amount: 10000 },
+    premium: { label: "Premium - ₦10,000 (unlimited monthly merges)", amount: 10000 },
   };
 
   // ✅ SAFELY validate token once on mount

@@ -35,6 +35,20 @@ const Chat = () => {
   const imageInputRef = useRef(null);
   const token = localStorage.getItem("token");
 
+  useEffect(() => {
+    const askForNotifications = () => {
+      requestNotificationPermission();
+    };
+
+    window.addEventListener("click", askForNotifications, { once: true });
+    window.addEventListener("touchstart", askForNotifications, { once: true });
+
+    return () => {
+      window.removeEventListener("click", askForNotifications);
+      window.removeEventListener("touchstart", askForNotifications);
+    };
+  }, []);
+
   // Prevent chatting with self
   useEffect(() => {
     if (member1 === member2) {

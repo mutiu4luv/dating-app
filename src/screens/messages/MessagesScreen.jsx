@@ -22,6 +22,7 @@ import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
+import { requestNotificationPermission } from "../../utility/notifications";
 
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
@@ -87,10 +88,38 @@ const MessagesScreen = () => {
       );
     };
 
+    const handleReceiveMessage = (data) => {
+      if (data.receiverId === userId) {
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.matchId === data.senderId
+              ? {
+                  ...conversation,
+                  lastMessage: data.content || "Photo",
+                  timestamp: data.createdAt || new Date().toISOString(),
+                  unreadCount: (conversation.unreadCount || 0) + 1,
+                  unread: true,
+                }
+              : conversation
+          )
+        );
+      }
+    };
+
+    const askForNotifications = () => {
+      requestNotificationPermission();
+    };
+
     socket.on("presence_update", handlePresenceUpdate);
+    socket.on("receive_message", handleReceiveMessage);
+    window.addEventListener("click", askForNotifications, { once: true });
+    window.addEventListener("touchstart", askForNotifications, { once: true });
 
     return () => {
       socket.off("presence_update", handlePresenceUpdate);
+      socket.off("receive_message", handleReceiveMessage);
+      window.removeEventListener("click", askForNotifications);
+      window.removeEventListener("touchstart", askForNotifications);
       socket.disconnect();
     };
   }, [userId]);
