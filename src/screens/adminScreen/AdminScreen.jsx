@@ -143,7 +143,7 @@ const AdminScreen = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
-  const [selectedTab, setSelectedTab] = useState("overview");
+  const [selectedTab, setSelectedTab] = useState("dashboard");
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteUserId, setDeleteUserId] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -421,7 +421,13 @@ const AdminScreen = () => {
 
   const navItems = [
     {
-      value: "overview",
+      value: "dashboard",
+      label: "Dashboard",
+      helper: "Stats and charts",
+      icon: <DashboardIcon />,
+    },
+    {
+      value: "users",
       label: "All Users",
       helper: `${users.length} accounts`,
       icon: <PeopleAltIcon />,
@@ -765,6 +771,8 @@ const AdminScreen = () => {
           {renderSidebar()}
 
           <Box sx={{ minWidth: 0, flex: 1 }}>
+          {selectedTab === "dashboard" && (
+            <>
           <Grid container spacing={2.5} mb={3}>
             <Grid item xs={12} sm={6} lg={3}>
               <StatCard
@@ -1093,7 +1101,10 @@ const AdminScreen = () => {
               </Card>
             </Grid>
           </Grid>
+            </>
+          )}
 
+          {selectedTab !== "dashboard" && (
           <Paper elevation={0} sx={{ borderRadius: 2, overflow: "hidden" }}>
             <Box
               p={{ xs: 1.5, md: 2 }}
@@ -1113,7 +1124,9 @@ const AdminScreen = () => {
                   p: 0.5,
                 }}
               >
-                {navItems.map((item) => (
+                {navItems
+                  .filter((item) => item.value !== "dashboard")
+                  .map((item) => (
                   <Button
                     key={item.value}
                     onClick={() => setSelectedTab(item.value)}
@@ -1167,6 +1180,7 @@ const AdminScreen = () => {
               />
             </Box>
           </Paper>
+          )}
           </Box>
         </Stack>
       )}
