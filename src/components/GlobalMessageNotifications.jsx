@@ -50,6 +50,11 @@ const GlobalMessageNotifications = () => {
     window.addEventListener("click", askForNotifications, { once: true });
     window.addEventListener("touchstart", askForNotifications, { once: true });
     socket.on("receive_message", handleReceiveMessage);
+    const heartbeatId = window.setInterval(() => {
+      const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("token");
+      if (userId && token) socket.emit("heartbeat", userId);
+    }, 45000);
 
     return () => {
       window.removeEventListener("authChanged", syncSocketUser);
@@ -57,6 +62,7 @@ const GlobalMessageNotifications = () => {
       window.removeEventListener("click", askForNotifications);
       window.removeEventListener("touchstart", askForNotifications);
       socket.off("receive_message", handleReceiveMessage);
+      window.clearInterval(heartbeatId);
     };
   }, []);
 

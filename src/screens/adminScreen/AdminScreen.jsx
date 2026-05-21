@@ -30,8 +30,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
-  Tab,
   TextField,
   Typography,
   useMediaQuery,
@@ -39,14 +37,18 @@ import {
 import MuiAlert from "@mui/material/Alert";
 import {
   ArrowBack as ArrowBackIcon,
+  BarChart as BarChartIcon,
   Chat as ChatIcon,
+  Dashboard as DashboardIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
   Group as GroupIcon,
   Home as HomeIcon,
+  PeopleAlt as PeopleAltIcon,
   PersonAdd as PersonAddIcon,
   Refresh as RefreshIcon,
   Search as SearchIcon,
+  Subscriptions as SubscriptionsIcon,
   TrendingUp as TrendingUpIcon,
   WorkspacePremium as PremiumIcon,
 } from "@mui/icons-material";
@@ -86,6 +88,13 @@ const safeIncludes = (value, query) =>
   String(value || "")
     .toLowerCase()
     .includes(query.toLowerCase());
+
+const isReallyOnline = (user) => {
+  if (!user?.isOnline || !user?.lastSeen) return false;
+  const lastSeenTime = new Date(user.lastSeen).getTime();
+  if (Number.isNaN(lastSeenTime)) return false;
+  return Date.now() - lastSeenTime < 2 * 60 * 1000;
+};
 
 const StatCard = ({ label, value, icon, accent, helper }) => (
   <Card
@@ -218,7 +227,7 @@ const AdminScreen = () => {
     });
   }, [subscribers, selectedMonth]);
 
-  const activeUsers = users.filter((user) => user.isOnline).length;
+  const activeUsers = users.filter(isReallyOnline).length;
   const adminUsers = users.filter((user) => user.isAdmin).length;
   const activeSubscribers = subscribers.filter(
     (sub) => sub.subscriptionActive
@@ -262,7 +271,7 @@ const AdminScreen = () => {
         online: 0,
       };
       current.users += 1;
-      if (user.isOnline) current.online += 1;
+      if (isReallyOnline(user)) current.online += 1;
       monthMap.set(key, current);
     });
 
@@ -410,6 +419,135 @@ const AdminScreen = () => {
     />
   );
 
+  const navItems = [
+    {
+      value: "overview",
+      label: "All Users",
+      helper: `${users.length} accounts`,
+      icon: <PeopleAltIcon />,
+    },
+    {
+      value: "subscribers",
+      label: "Subscriptions",
+      helper: `${subscribers.length} paid before`,
+      icon: <SubscriptionsIcon />,
+    },
+  ];
+
+  const renderSidebar = () => (
+    <Paper
+      elevation={0}
+      sx={{
+        width: { xs: "100%", md: 248 },
+        flexShrink: 0,
+        borderRadius: 2,
+        border: "1px solid rgba(45,0,82,0.08)",
+        bgcolor: "#fff",
+        p: 1.5,
+        position: { md: "sticky" },
+        top: { md: 24 },
+        alignSelf: { md: "flex-start" },
+      }}
+    >
+      <Stack spacing={1}>
+        <Stack direction="row" spacing={1.2} alignItems="center" px={1} py={1}>
+          <Box
+            sx={{
+              width: 38,
+              height: 38,
+              borderRadius: 2,
+              display: "grid",
+              placeItems: "center",
+              bgcolor: "#f3e8ff",
+              color: "#2d0052",
+            }}
+          >
+            <DashboardIcon />
+          </Box>
+          <Box>
+            <Typography fontWeight={950} color="#2d0052">
+              Admin Panel
+            </Typography>
+            <Typography fontSize={12} color="#6b4679">
+              Monitor activity
+            </Typography>
+          </Box>
+        </Stack>
+
+        {navItems.map((item) => {
+          const active = selectedTab === item.value;
+          return (
+            <Button
+              key={item.value}
+              fullWidth
+              onClick={() => setSelectedTab(item.value)}
+              startIcon={item.icon}
+              sx={{
+                justifyContent: "flex-start",
+                textTransform: "none",
+                borderRadius: 1.5,
+                px: 1.4,
+                py: 1.2,
+                bgcolor: active ? "#2d0052" : "transparent",
+                color: active ? "#fff" : "#2d0052",
+                "&:hover": {
+                  bgcolor: active ? "#2d0052" : "#f8f3fb",
+                },
+              }}
+            >
+              <Box textAlign="left">
+                <Typography fontWeight={900} fontSize={14}>
+                  {item.label}
+                </Typography>
+                <Typography
+                  fontSize={11}
+                  sx={{ color: active ? "rgba(255,255,255,0.72)" : "#7c6f86" }}
+                >
+                  {item.helper}
+                </Typography>
+              </Box>
+            </Button>
+          );
+        })}
+
+        <Box sx={{ borderTop: "1px solid #eadcf0", mt: 1, pt: 1.5 }}>
+          <Typography
+            px={1}
+            mb={1}
+            fontSize={12}
+            fontWeight={900}
+            color="#6b4679"
+            textTransform="uppercase"
+          >
+            Quick View
+          </Typography>
+          <Stack direction={{ xs: "row", md: "column" }} spacing={1}>
+            <Chip
+              icon={<ChatIcon />}
+              label={`${activeUsers} online now`}
+              sx={{
+                justifyContent: "flex-start",
+                bgcolor: "#dcfce7",
+                color: "#166534",
+                fontWeight: 900,
+              }}
+            />
+            <Chip
+              icon={<BarChartIcon />}
+              label={`${activeSubscribers} active plans`}
+              sx={{
+                justifyContent: "flex-start",
+                bgcolor: "#f3e8ff",
+                color: "#2d0052",
+                fontWeight: 900,
+              }}
+            />
+          </Stack>
+        </Box>
+      </Stack>
+    </Paper>
+  );
+
   const renderSubscriberTable = () => (
     <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2 }}>
       <Table size={isMobile ? "small" : "medium"}>
@@ -462,7 +600,7 @@ const AdminScreen = () => {
                 />
               </TableCell>
               <TableCell>{formatDate(sub.subscriptionExpiresAt)}</TableCell>
-              <TableCell>{renderStatusChip(sub.isOnline)}</TableCell>
+              <TableCell>{renderStatusChip(isReallyOnline(sub))}</TableCell>
               <TableCell align="right">
                 <IconButton color="primary" onClick={() => openEditModal(sub)}>
                   <EditIcon />
@@ -514,7 +652,7 @@ const AdminScreen = () => {
               <TableCell>{user.location || "-"}</TableCell>
               <TableCell>{user.subscriptionTier || "-"}</TableCell>
               <TableCell>{user.isAdmin ? "Yes" : "No"}</TableCell>
-              <TableCell>{renderStatusChip(user.isOnline)}</TableCell>
+              <TableCell>{renderStatusChip(isReallyOnline(user))}</TableCell>
               <TableCell align="right">
                 <IconButton color="primary" onClick={() => openEditModal(user)}>
                   <EditIcon />
@@ -623,13 +761,16 @@ const AdminScreen = () => {
           <CircularProgress color="secondary" />
         </Box>
       ) : (
-        <>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2.5}>
+          {renderSidebar()}
+
+          <Box sx={{ minWidth: 0, flex: 1 }}>
           <Grid container spacing={2.5} mb={3}>
             <Grid item xs={12} sm={6} lg={3}>
               <StatCard
                 label="Total Users"
                 value={users.length}
-                helper={`${activeUsers} currently online`}
+                helper={`${activeUsers} truly online now`}
                 accent="#f3e8ff"
                 icon={<GroupIcon />}
               />
@@ -693,8 +834,8 @@ const AdminScreen = () => {
             <Grid item xs={12} sm={4}>
               <StatCard
                 label="Selected Month Online"
-                value={monitoredUsers.filter((user) => user.isOnline).length}
-                helper="Currently online from that group"
+                value={monitoredUsers.filter(isReallyOnline).length}
+                helper="Online now from users created in that month"
                 accent="#dcfce7"
                 icon={<ChatIcon />}
               />
@@ -721,17 +862,18 @@ const AdminScreen = () => {
                     Monthly Activity
                   </Typography>
                   <Typography color="#6b4679" fontSize={13}>
-                    New users, paid users, and online users by month.
+                    Compares new accounts, people who paid, and users currently online.
+                    Online is grouped by the month each user registered.
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  <Chip size="small" label="Users" sx={{ bgcolor: "#dbeafe" }} />
+                  <Chip size="small" label="New Accounts" sx={{ bgcolor: "#dbeafe" }} />
                   <Chip
                     size="small"
-                    label="Subscribers"
+                    label="Paid Users"
                     sx={{ bgcolor: "#f3e8ff" }}
                   />
-                  <Chip size="small" label="Online" sx={{ bgcolor: "#dcfce7" }} />
+                  <Chip size="small" label="Online Now" sx={{ bgcolor: "#dcfce7" }} />
                 </Stack>
               </Stack>
               <Box
@@ -768,34 +910,42 @@ const AdminScreen = () => {
                         height: "100%",
                       }}
                     >
-                      <Stack
-                        direction="row"
-                        alignItems="end"
-                        spacing={0.6}
-                        sx={{ height: 205 }}
-                      >
+                      <Stack direction="row" alignItems="end" spacing={0.8} sx={{ height: 205 }}>
                         {[
-                          { key: "users", color: "#60a5fa" },
-                          { key: "subscribers", color: "#D9A4F0" },
-                          { key: "online", color: "#22c55e" },
+                          { key: "users", label: "Users", color: "#60a5fa" },
+                          { key: "subscribers", label: "Paid", color: "#D9A4F0" },
+                          { key: "online", label: "Online", color: "#22c55e" },
                         ].map((bar) => (
                           <Box
                             key={bar.key}
-                            title={`${bar.key}: ${item[bar.key]}`}
+                            title={`${bar.label}: ${item[bar.key]}`}
                             sx={{
-                              width: { xs: 14, sm: 18 },
-                              height: `${Math.max(
-                                item[bar.key] ? 10 : 3,
-                                (item[bar.key] / maxActivityCount) * 185
-                              )}px`,
-                              bgcolor: bar.color,
-                              borderRadius: "6px 6px 0 0",
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              justifyContent: "end",
+                              gap: 0.4,
                             }}
-                          />
+                          >
+                            <Typography fontSize={11} fontWeight={900} color="#2d0052">
+                              {item[bar.key]}
+                            </Typography>
+                            <Box
+                              sx={{
+                                width: { xs: 14, sm: 18 },
+                                height: `${Math.max(
+                                  item[bar.key] ? 10 : 3,
+                                  (item[bar.key] / maxActivityCount) * 165
+                                )}px`,
+                                bgcolor: bar.color,
+                                borderRadius: "6px 6px 0 0",
+                              }}
+                            />
+                          </Box>
                         ))}
                       </Stack>
-                      <Typography mt={1} fontWeight={900} color="#2d0052">
-                        {item.users + item.subscribers + item.online}
+                      <Typography mt={1} fontWeight={900} color="#2d0052" fontSize={13}>
+                        {item.users} users / {item.subscribers} paid
                       </Typography>
                       <Typography color="#6b4679" fontSize={12} textAlign="center">
                         {item.label}
@@ -954,23 +1104,37 @@ const AdminScreen = () => {
               alignItems={{ xs: "stretch", md: "center" }}
               sx={{ borderBottom: "1px solid #eadcf0" }}
             >
-              <Tabs
-                value={selectedTab}
-                onChange={(_, value) => setSelectedTab(value)}
-                variant={isMobile ? "fullWidth" : "standard"}
+              <Stack
+                direction="row"
+                spacing={1}
                 sx={{
-                  "& .MuiTab-root": {
-                    textTransform: "none",
-                    fontWeight: 900,
-                    color: "#6b4679",
-                  },
-                  "& .Mui-selected": { color: "#2d0052" },
-                  "& .MuiTabs-indicator": { bgcolor: "#D9A4F0" },
+                  bgcolor: "#f8f3fb",
+                  borderRadius: 2,
+                  p: 0.5,
                 }}
               >
-                <Tab value="overview" label="All Users" />
-                <Tab value="subscribers" label="Subscribed Users" />
-              </Tabs>
+                {navItems.map((item) => (
+                  <Button
+                    key={item.value}
+                    onClick={() => setSelectedTab(item.value)}
+                    variant={selectedTab === item.value ? "contained" : "text"}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 1.5,
+                      fontWeight: 900,
+                      bgcolor:
+                        selectedTab === item.value ? "#2d0052" : "transparent",
+                      color: selectedTab === item.value ? "#fff" : "#6b4679",
+                      "&:hover": {
+                        bgcolor:
+                          selectedTab === item.value ? "#2d0052" : "#fff",
+                      },
+                    }}
+                  >
+                    {item.label}
+                  </Button>
+                ))}
+              </Stack>
 
               <TextField
                 size="small"
@@ -1003,7 +1167,8 @@ const AdminScreen = () => {
               />
             </Box>
           </Paper>
-        </>
+          </Box>
+        </Stack>
       )}
 
       <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
