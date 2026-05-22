@@ -436,14 +436,16 @@ const relationshipTypes = [
   "Female friends ",
   "Chat mate ",
   "Friends with Benefits  ",
-  "Sex chat  ",
+  // "Sex chat  ",
   // "Gay",
   // "Lasbian",
-  "Sugar Daddy",
-  "Sugar Mommy",
+  // "Sugar Daddy",
+  // "Sugar Mommy",
   "Casual Relationship",
   "Long-term Relationship",
   "Open Relationship",
+  "Open For Possibilities",
+  "Causal Dating",
 ];
 
 const Signup = () => {
