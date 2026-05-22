@@ -1,118 +1,161 @@
-import React from "react";
+import React, { useState } from "react";
 import {
+  Alert,
   Box,
+  Button,
   Container,
-  Typography,
   IconButton,
-  Stack,
-  Link,
   Paper,
+  Stack,
+  TextField,
+  Typography,
 } from "@mui/material";
-import { Facebook, LinkedIn, WhatsApp, Email } from "@mui/icons-material";
-import { FaTiktok } from "react-icons/fa";
+import { WhatsApp } from "@mui/icons-material";
+import api from "../api/Api";
+
+const whatsappNumber = "2347040356844";
 
 const ContactUs = () => {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phoneNumber: "",
+    contactUs: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  const handleChange = (event) => {
+    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setMessage("");
+    setError("");
+    setLoading(true);
+
+    try {
+      await api.post("/contact", form);
+      setMessage("Your message has been sent. Admin will review it shortly.");
+      setForm({ name: "", email: "", phoneNumber: "", contactUs: "" });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Unable to send your message. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper
-        elevation={8}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        py: 8,
+        px: 1.5,
+        background:
+          "linear-gradient(135deg, #181c2b 0%, #2d0052 48%, #D9A4F0 100%)",
+      }}
+    >
+      <Container maxWidth="sm">
+        <Paper
+          elevation={14}
+          sx={{
+            p: { xs: 2.5, sm: 4 },
+            borderRadius: 2,
+            border: "1px solid rgba(255,255,255,0.28)",
+          }}
+        >
+          <Typography variant="h4" fontWeight={950} color="#2d0052" mb={1}>
+            Contact Us
+          </Typography>
+          <Typography color="#6b4679" mb={3}>
+            Send your complaint or support request. You can also reach us
+            directly on WhatsApp.
+          </Typography>
+
+          <Stack component="form" spacing={2} onSubmit={handleSubmit}>
+            <TextField
+              name="name"
+              label="Name"
+              value={form.name}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              name="email"
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              name="phoneNumber"
+              label="Phone Number"
+              value={form.phoneNumber}
+              onChange={handleChange}
+              required
+              fullWidth
+            />
+            <TextField
+              name="contactUs"
+              label="Contact Us"
+              value={form.contactUs}
+              onChange={handleChange}
+              required
+              multiline
+              minRows={5}
+              fullWidth
+            />
+
+            {message && <Alert severity="success">{message}</Alert>}
+            {error && <Alert severity="error">{error}</Alert>}
+
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={loading}
+              sx={{
+                py: 1.2,
+                bgcolor: "#2d0052",
+                fontWeight: 900,
+                textTransform: "none",
+                "&:hover": { bgcolor: "#4b087c" },
+              }}
+            >
+              {loading ? "Sending..." : "Send Message"}
+            </Button>
+          </Stack>
+        </Paper>
+      </Container>
+
+      <IconButton
+        href={`https://wa.me/${whatsappNumber}`}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Contact us on WhatsApp"
         sx={{
-          p: 4,
-          borderRadius: 4,
-          background: "linear-gradient(135deg, #fdf6f9 0%, #D9A4F0 100%)",
-          color: "#232946",
+          position: "fixed",
+          right: 18,
+          bottom: { xs: 92, sm: 24 },
+          zIndex: 1700,
+          width: 58,
+          height: 58,
+          bgcolor: "#25D366",
+          color: "#fff",
+          boxShadow: "0 16px 36px rgba(0,0,0,0.28)",
+          "&:hover": { bgcolor: "#1ebe5d" },
         }}
       >
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          gutterBottom
-          color="#a78bfa"
-          textAlign="center"
-        >
-          Contact Us
-        </Typography>
-        <Typography variant="body1" textAlign="center" sx={{ mb: 3 }}>
-          We'd love to hear from you! Reach out to us on any of our platforms
-          below, or send us an email. Our team is always ready to help you find
-          love and stay safe online.
-        </Typography>
-        <Stack
-          direction="row"
-          justifyContent="center"
-          spacing={3}
-          sx={{ mb: 2 }}
-        >
-          <IconButton
-            href="https://www.facebook.com/share/19ZNVaxr8S/"
-            target="_blank"
-            sx={{ color: "#4267B2" }}
-            aria-label="Facebook"
-          >
-            <Facebook fontSize="large" />
-          </IconButton>
-          <IconButton
-            href="https://wa.me/2347050605491"
-            target="_blank"
-            sx={{ color: "#25D366" }}
-            aria-label="WhatsApp"
-          >
-            <WhatsApp fontSize="large" />
-          </IconButton>
-          <IconButton
-            href="https://www.linkedin.com/company/find-yourr-match/"
-            target="_blank"
-            sx={{ color: "#0A66C2" }}
-            aria-label="LinkedIn"
-          >
-            <LinkedIn fontSize="large" />
-          </IconButton>
-          <IconButton
-            href="https://tiktok.com/@findyourmatch01"
-            target="_blank"
-            sx={{ color: "#000" }}
-            aria-label="TikTok"
-          >
-            <FaTiktok size={32} />
-          </IconButton>
-          <IconButton
-            href="mailto:support@lovedating.com"
-            sx={{ color: "#a78bfa" }}
-            aria-label="Email"
-          >
-            <Email fontSize="large" />
-          </IconButton>
-        </Stack>
-        <Box textAlign="center" sx={{ mt: 2 }}>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            <strong>Email:</strong>{" "}
-            <Link
-              href="mailto:support@lovedating.com"
-              underline="hover"
-              color="inherit"
-            >
-              support@lovedating.com
-            </Link>
-          </Typography>
-          <Typography variant="body2">
-            <strong>WhatsApp:</strong>{" "}
-            <Link
-              href="https://wa.me/2347050605491"
-              underline="hover"
-              color="inherit"
-              target="_blank"
-            >
-              +234 705 060 5491
-            </Link>
-          </Typography>
-        </Box>
-        <Box textAlign="center" sx={{ mt: 3 }}>
-          <Typography variant="body2" color="text.secondary">
-            Lagos, Nigeria (HQ)
-          </Typography>
-        </Box>
-      </Paper>
-    </Container>
+        <WhatsApp fontSize="large" />
+      </IconButton>
+    </Box>
   );
 };
 

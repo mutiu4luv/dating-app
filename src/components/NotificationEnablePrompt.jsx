@@ -15,9 +15,8 @@ const NotificationEnablePrompt = () => {
         return;
       }
 
-      const dismissed = localStorage.getItem("notificationPromptDismissed");
       setBlocked(Notification.permission === "denied");
-      setVisible(Notification.permission !== "granted" && dismissed !== "true");
+      setVisible(Notification.permission !== "granted");
     };
 
     checkPermission();
@@ -37,7 +36,6 @@ const NotificationEnablePrompt = () => {
   };
 
   const handleLater = () => {
-    localStorage.setItem("notificationPromptDismissed", "true");
     setVisible(false);
   };
 

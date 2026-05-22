@@ -47,6 +47,7 @@ import {
   Home as HomeIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
+  ContactSupport as ContactSupportIcon,
   Logout as LogoutIcon,
   PeopleAlt as PeopleAltIcon,
   PersonAdd as PersonAddIcon,
@@ -194,6 +195,7 @@ const AdminScreen = () => {
   const [users, setUsers] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
   const [chatActivity, setChatActivity] = useState([]);
+  const [contactMessages, setContactMessages] = useState([]);
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteUserId, setDeleteUserId] = useState(null);
@@ -228,15 +230,17 @@ const AdminScreen = () => {
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [usersRes, subscribersRes, chatRes] = await Promise.all([
+      const [usersRes, subscribersRes, chatRes, contactRes] = await Promise.all([
         api.get(`${BASE_URL}/api/user/`, authHeaders),
         api.get(`${BASE_URL}/api/subscription`, authHeaders),
         api.get(`${BASE_URL}/api/chat/admin/activity`, authHeaders),
+        api.get(`${BASE_URL}/api/contact`, authHeaders),
       ]);
 
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
       setSubscribers(subscribersRes.data?.data || []);
       setChatActivity(chatRes.data?.data || []);
+      setContactMessages(contactRes.data?.data || []);
     } catch (err) {
       console.error("Admin fetch failed:", err);
       setToast({
@@ -404,6 +408,12 @@ const AdminScreen = () => {
     );
   });
 
+  const filteredContactMessages = contactMessages.filter((item) =>
+    [item.name, item.email, item.phoneNumber, item.contactUs]
+      .filter(Boolean)
+      .some((value) => safeIncludes(value, searchQuery))
+  );
+
   const activeRows =
     selectedTab === "subscribers"
       ? filteredSubscribers
@@ -418,8 +428,16 @@ const AdminScreen = () => {
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
+  const paginatedContactRows = filteredContactMessages.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
   const currentRowCount =
-    selectedTab === "chats" ? filteredChatActivity.length : activeRows.length;
+    selectedTab === "chats"
+      ? filteredChatActivity.length
+      : selectedTab === "contacts"
+      ? filteredContactMessages.length
+      : activeRows.length;
 
   const openEditModal = (user) => {
     setSelectedUser(user);
@@ -562,6 +580,12 @@ const AdminScreen = () => {
       label: "Users That Chat",
       helper: `${chatActivity.length} conversations`,
       icon: <BarChartIcon />,
+    },
+    {
+      value: "contacts",
+      label: "Contact Messages",
+      helper: `${contactMessages.length} complaints`,
+      icon: <ContactSupportIcon />,
     },
   ];
 
@@ -1015,6 +1039,41 @@ const AdminScreen = () => {
               </TableRow>
             );
           })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+
+  const renderContactMessagesTable = () => (
+    <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2 }}>
+      <Table size={isMobile ? "small" : "medium"}>
+        <TableHead>
+          <TableRow sx={{ bgcolor: "#f8f3fb" }}>
+            <TableCell>Name</TableCell>
+            <TableCell>Email</TableCell>
+            <TableCell>Phone</TableCell>
+            <TableCell>Complaint</TableCell>
+            <TableCell>Date / Time</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {paginatedContactRows.map((item) => (
+            <TableRow key={item._id} hover>
+              <TableCell>
+                <Typography fontWeight={900} color="#2d0052">
+                  {item.name}
+                </Typography>
+              </TableCell>
+              <TableCell>{item.email}</TableCell>
+              <TableCell>{item.phoneNumber}</TableCell>
+              <TableCell sx={{ maxWidth: 420 }}>
+                <Typography sx={{ whiteSpace: "pre-line" }}>
+                  {item.contactUs}
+                </Typography>
+              </TableCell>
+              <TableCell>{formatDateTime(item.createdAt)}</TableCell>
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
     </TableContainer>
@@ -1575,6 +1634,8 @@ const AdminScreen = () => {
                 <Box sx={{ overflowX: "auto" }}>
                   {selectedTab === "chats"
                     ? renderChatActivityTable()
+                    : selectedTab === "contacts"
+                    ? renderContactMessagesTable()
                     : selectedTab === "subscribers"
                     ? renderSubscriberTable()
                     : renderUsersTable()}

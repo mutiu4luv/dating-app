@@ -65,7 +65,7 @@ const moreItems = [
   },
   {
     label: "Contact Us",
-    path: "/coming-soon/contact-us",
+    path: "/contact",
     icon: <ContactSupportIcon />,
   },
 ];
@@ -168,6 +168,7 @@ const MobileBottomNav = () => {
         return (
           location.pathname === "/profile" ||
           location.pathname === "/change-password" ||
+          location.pathname === "/contact" ||
           location.pathname.startsWith("/coming-soon/")
         );
       }

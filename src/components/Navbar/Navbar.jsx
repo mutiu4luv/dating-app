@@ -22,6 +22,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import LoginIcon from "@mui/icons-material/Login";
 import UpgradeIcon from "@mui/icons-material/WorkspacePremium"; // ★ UPGRADE ICON
 import LockResetIcon from "@mui/icons-material/LockReset";
+import ContactSupportIcon from "@mui/icons-material/ContactSupport";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../components/api/Api";
 
@@ -127,6 +128,10 @@ const Navbar = () => {
 
       case "Change Password":
         navigate("/change-password");
+        break;
+
+      case "Contact Us":
+        navigate("/contact");
         break;
 
       case "Upgrade":
@@ -247,6 +252,11 @@ const Navbar = () => {
                 <MenuItem onClick={() => handleMenuClick("Change Password")}>
                   <LockResetIcon sx={{ mr: 1, color: "#2d0052" }} /> Change
                   Password
+                </MenuItem>
+
+                <MenuItem onClick={() => handleMenuClick("Contact Us")}>
+                  <ContactSupportIcon sx={{ mr: 1, color: "#2d0052" }} />
+                  Contact Us
                 </MenuItem>
 
                 {/* ⭐ NEW UPGRADE MENU ITEM */}

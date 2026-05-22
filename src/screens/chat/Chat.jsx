@@ -291,8 +291,7 @@ const Chat = () => {
       // Save to UI
       setMessages((prev) => [...prev, res.data]);
 
-      // Broadcast
-      socketInstance.emit("send_message", res.data);
+      // Backend broadcasts the saved message to the receiver and room.
     } catch (err) {
       console.log(
         "🔥 ERROR SENDING MESSAGE:",
