@@ -33,10 +33,13 @@ export const showMessageNotification = async (message) => {
     ]).catch(() => null);
 
     if (registration?.showNotification) {
-      await registration.showNotification("New message", options);
+      await registration.showNotification("New unread message", {
+        ...options,
+        requireInteraction: true,
+      });
       return;
     }
   }
 
-  new Notification("New message", options);
+  new Notification("New unread message", options);
 };

@@ -47,18 +47,30 @@ const GlobalMessageNotifications = () => {
     syncSocketUser();
     window.addEventListener("authChanged", syncSocketUser);
     window.addEventListener("storage", syncSocketUser);
+    window.addEventListener("focus", syncSocketUser);
+    window.addEventListener("online", syncSocketUser);
+    document.addEventListener("visibilitychange", syncSocketUser);
     window.addEventListener("click", askForNotifications, { once: true });
     window.addEventListener("touchstart", askForNotifications, { once: true });
     socket.on("receive_message", handleReceiveMessage);
-    const heartbeatId = window.setInterval(() => {
+
+    const sendHeartbeat = () => {
       const userId = localStorage.getItem("userId");
       const token = localStorage.getItem("token");
-      if (userId && token) socket.emit("heartbeat", userId);
-    }, 45000);
+      if (userId && token && navigator.onLine !== false) {
+        socket.emit("heartbeat", userId);
+      }
+    };
+
+    sendHeartbeat();
+    const heartbeatId = window.setInterval(sendHeartbeat, 20000);
 
     return () => {
       window.removeEventListener("authChanged", syncSocketUser);
       window.removeEventListener("storage", syncSocketUser);
+      window.removeEventListener("focus", syncSocketUser);
+      window.removeEventListener("online", syncSocketUser);
+      document.removeEventListener("visibilitychange", syncSocketUser);
       window.removeEventListener("click", askForNotifications);
       window.removeEventListener("touchstart", askForNotifications);
       socket.off("receive_message", handleReceiveMessage);

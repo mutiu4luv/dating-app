@@ -66,7 +66,7 @@ const NotificationEnablePrompt = () => {
               </Typography>
               <Typography fontSize={13} color="#6b4679" mt={0.4}>
                 Turn on browser notifications so new unread messages can pop up
-                while you are online.
+                whenever your phone data is on and this browser can receive them.
               </Typography>
             </Box>
           </Box>

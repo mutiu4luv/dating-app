@@ -111,7 +111,7 @@ const isReallyOnline = (user) => {
   if (!user?.isOnline || !user?.lastSeen) return false;
   const lastSeenTime = new Date(user.lastSeen).getTime();
   if (Number.isNaN(lastSeenTime)) return false;
-  return Date.now() - lastSeenTime < 2 * 60 * 1000;
+  return Date.now() - lastSeenTime < 5 * 60 * 1000;
 };
 
 const StatCard = ({ label, value, icon, accent, helper }) => (
@@ -211,6 +211,9 @@ const AdminScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState("all");
   const [page, setPage] = useState(1);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [conversationMessages, setConversationMessages] = useState([]);
+  const [conversationLoading, setConversationLoading] = useState(false);
 
   const isMobile = useMediaQuery("(max-width:768px)");
   const BASE_URL = import.meta.env.VITE_BASE_URL;
@@ -483,6 +486,29 @@ const AdminScreen = () => {
     } catch (err) {
       console.error("Delete failed:", err);
       setToast({ open: true, message: "Delete failed", severity: "error" });
+    }
+  };
+
+  const openConversation = async (chat) => {
+    setSelectedConversation(chat);
+    setConversationMessages([]);
+    setConversationLoading(true);
+
+    try {
+      const res = await api.get(
+        `${BASE_URL}/api/chat/admin/conversation/${chat.room}`,
+        authHeaders
+      );
+      setConversationMessages(res.data?.data || []);
+    } catch (err) {
+      console.error("Conversation fetch failed:", err);
+      setToast({
+        open: true,
+        message: "Failed to load conversation messages",
+        severity: "error",
+      });
+    } finally {
+      setConversationLoading(false);
     }
   };
 
@@ -916,7 +942,12 @@ const AdminScreen = () => {
               .join(" <-> ");
 
             return (
-              <TableRow key={chat.room} hover>
+              <TableRow
+                key={chat.room}
+                hover
+                onClick={() => openConversation(chat)}
+                sx={{ cursor: "pointer" }}
+              >
                 <TableCell>
                   <Stack spacing={1}>
                     <Typography fontWeight={900} color="#2d0052">
@@ -1612,6 +1643,111 @@ const AdminScreen = () => {
             Delete
           </Button>
         </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(selectedConversation)}
+        onClose={() => setSelectedConversation(null)}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Box>
+              <Typography fontWeight={950}>Conversation Messages</Typography>
+              <Typography variant="caption" color="#6b7280">
+                {selectedConversation?.participants
+                  ?.map((member) => member.name || member.username || "User")
+                  .join(" <-> ") || "Selected chat"}
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setSelectedConversation(null)}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers sx={{ bgcolor: "#f8f3fb" }}>
+          {conversationLoading ? (
+            <Box display="flex" justifyContent="center" py={5}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <Stack spacing={1.5}>
+              {conversationMessages.length === 0 && (
+                <Typography textAlign="center" color="#6b7280" py={4}>
+                  No messages found for this conversation.
+                </Typography>
+              )}
+
+              {conversationMessages.map((message) => {
+                const sender =
+                  typeof message.senderId === "object" ? message.senderId : null;
+                const receiver =
+                  typeof message.receiverId === "object"
+                    ? message.receiverId
+                    : null;
+
+                return (
+                  <Paper
+                    key={message._id}
+                    elevation={0}
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      border: "1px solid #eadcf0",
+                      bgcolor: "#fff",
+                    }}
+                  >
+                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                      <Avatar src={sender?.photo || ""}>
+                        {sender?.name?.[0] || sender?.username?.[0] || "U"}
+                      </Avatar>
+                      <Box flex={1} minWidth={0}>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          justifyContent="space-between"
+                          spacing={0.5}
+                        >
+                          <Typography fontWeight={900} color="#2d0052">
+                            {sender?.name || sender?.username || "Sender"}
+                          </Typography>
+                          <Typography variant="caption" color="#6b7280">
+                            {formatDateTime(message.createdAt)}
+                          </Typography>
+                        </Stack>
+                        <Typography variant="caption" color="#6b4679">
+                          To: {receiver?.name || receiver?.username || "Receiver"}
+                        </Typography>
+                        {message.imageUrl && (
+                          <Box
+                            component="img"
+                            src={message.imageUrl}
+                            alt="Chat upload"
+                            sx={{
+                              display: "block",
+                              mt: 1,
+                              width: "100%",
+                              maxWidth: 360,
+                              maxHeight: 260,
+                              objectFit: "contain",
+                              borderRadius: 1.5,
+                              bgcolor: "#111827",
+                            }}
+                          />
+                        )}
+                        {message.content && (
+                          <Typography mt={1} color="#1f2937" sx={{ whiteSpace: "pre-line" }}>
+                            {message.content}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+                  </Paper>
+                );
+              })}
+            </Stack>
+          )}
+        </DialogContent>
       </Dialog>
 
       <Snackbar

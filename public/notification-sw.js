@@ -9,7 +9,12 @@ self.addEventListener("notificationclick", (event) => {
           ? `/chat/${data.receiverId}/${data.senderId}`
           : "/";
       const client = clients.find((item) => "focus" in item);
-      if (client) return client.focus();
+      if (client) {
+        if ("navigate" in client) {
+          return client.navigate(targetUrl).then((item) => item.focus());
+        }
+        return client.focus();
+      }
       if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
       return undefined;
     })

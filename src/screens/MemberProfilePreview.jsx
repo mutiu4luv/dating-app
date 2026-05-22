@@ -201,7 +201,10 @@ const MemberProfilePreview = () => {
               sx={{
                 position: "relative",
                 minHeight: { xs: 360, md: "auto" },
-                bgcolor: "#f4e8fb",
+                bgcolor: "#171827",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               {member.photo ? (
@@ -209,7 +212,14 @@ const MemberProfilePreview = () => {
                   component="img"
                   src={member.photo}
                   alt={member.name}
-                  sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    maxHeight: { xs: 460, md: 620 },
+                    objectFit: "contain",
+                    imageRendering: "auto",
+                    bgcolor: "#171827",
+                  }}
                 />
               ) : (
                 <Box
