@@ -390,9 +390,9 @@ import {
   Box,
   Button,
   Typography,
-  CircularProgress,
   Paper,
   Grid,
+  LinearProgress,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -609,23 +609,19 @@ const MergeScreen = () => {
     }
   };
 
-  // LOADING
-  if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="60vh"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
     <>
       <Navbar />
+
+      {loading && (
+        <LinearProgress
+          sx={{
+            "& .MuiLinearProgress-bar": {
+              background: "linear-gradient(90deg, #ec4899, #8b3ba8)",
+            },
+          }}
+        />
+      )}
 
       <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>
         {isUpgradeOnly ? "Upgrade Subscription" : "Merge with Your Match"}
@@ -641,6 +637,8 @@ const MergeScreen = () => {
         <Typography textAlign="center" mb={2}>
           {canChat
             ? "You can chat with this match."
+            : loading
+            ? "Preparing your merge options. You can review the plans now."
             : "Continue Free to merge and chat with this match, or upgrade for more monthly access."}
         </Typography>
 
@@ -657,6 +655,7 @@ const MergeScreen = () => {
               size="large"
               sx={{ px: 6, py: 1.5, fontWeight: "bold" }}
               onClick={() => navigate(`/chat/${member1}/${member2}`)}
+              disabled={loading}
             >
               Open Chat
             </Button>
@@ -697,10 +696,15 @@ const MergeScreen = () => {
 
                   <Button
                     fullWidth
+                    disabled={loading}
                     variant={key === "Free" ? "outlined" : "contained"}
                     onClick={() => handlePlanClick(key)}
                   >
-                    {key === "Free" ? "Continue Free" : "Upgrade"}
+                    {loading
+                      ? "Checking..."
+                      : key === "Free"
+                      ? "Continue Free"
+                      : "Upgrade"}
                   </Button>
                 </Paper>
               </Grid>

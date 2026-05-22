@@ -71,6 +71,7 @@ const Chat = () => {
   const [editingMessage, setEditingMessage] = useState(null);
   const messagesEndRef = useRef();
   const imageInputRef = useRef(null);
+  const swipeRef = useRef({ messageId: null, x: 0, y: 0 });
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -326,6 +327,28 @@ const Chat = () => {
     closeActionMenu();
   };
 
+  const handleSwipeStart = (event, msg) => {
+    const touch = event.touches?.[0];
+    if (!touch || msg.deletedForEveryone) return;
+    swipeRef.current = {
+      messageId: msg._id,
+      x: touch.clientX,
+      y: touch.clientY,
+    };
+  };
+
+  const handleSwipeEnd = (event, msg) => {
+    const touch = event.changedTouches?.[0];
+    const start = swipeRef.current;
+    if (!touch || start.messageId !== msg._id || msg.deletedForEveryone) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) >= 56 && Math.abs(deltaY) <= 42) {
+      beginReply(msg);
+    }
+  };
+
   const beginEdit = (msg) => {
     setEditingMessage(msg);
     setReplyingTo(null);
@@ -448,14 +471,23 @@ const Chat = () => {
         <List>
           {messages.map((msg) => {
             const isMine = getSenderId(msg) === member1;
+            const isReplyTarget = replyingTo?._id === msg._id;
 
             return (
               <ListItem
                 key={msg._id}
+                onTouchStart={(event) => handleSwipeStart(event, msg)}
+                onTouchEnd={(event) => handleSwipeEnd(event, msg)}
                 sx={{
                   justifyContent: isMine ? "flex-end" : "flex-start",
                   alignItems: "flex-start",
                   gap: 0.5,
+                  touchAction: "pan-y",
+                  transition: "background 160ms ease",
+                  bgcolor: isReplyTarget
+                    ? "rgba(144,202,249,0.12)"
+                    : "transparent",
+                  borderRadius: 2,
                 }}
               >
                 {isMine && !msg.deletedForEveryone && (
@@ -531,6 +563,12 @@ const Chat = () => {
                     p: 1.5,
                     borderRadius: "12px",
                     maxWidth: "75%",
+                    border: isReplyTarget
+                      ? "2px solid #90caf9"
+                      : "2px solid transparent",
+                    boxShadow: isReplyTarget
+                      ? "0 0 0 3px rgba(144,202,249,0.18)"
+                      : "none",
                   }}
                 />
 
@@ -601,6 +639,11 @@ const Chat = () => {
                   ? editingMessage.content
                   : getReplyText(replyingTo)}
               </Typography>
+              {!editingMessage && (
+                <Typography fontSize={11} color="#90caf9">
+                  Swipe any message left or right to reply faster.
+                </Typography>
+              )}
             </Box>
             <IconButton
               size="small"

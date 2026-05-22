@@ -20,6 +20,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import { useNavigate, useParams } from "react-router-dom";
 import axiosInstance from "../utility/axiosInstance";
+import { cloudinaryImage } from "../utility/cloudinaryImage";
 
 const getLastSeenLabel = (member) => {
   if (member?.isOnline) return "Online now";
@@ -210,7 +211,10 @@ const MemberProfilePreview = () => {
               {member.photo ? (
                 <Box
                   component="img"
-                  src={member.photo}
+                  src={cloudinaryImage(member.photo, {
+                    width: 1400,
+                    crop: "fit",
+                  })}
                   alt={member.name}
                   sx={{
                     width: "100%",
@@ -273,7 +277,7 @@ const MemberProfilePreview = () => {
                 <Box>
                   <Stack direction="row" spacing={1.5} alignItems="center">
                     <Avatar
-                      src={member.photo || ""}
+                      src={cloudinaryImage(member.photo, { width: 180 }) || ""}
                       sx={{ width: 58, height: 58, bgcolor: "#8b3ba8" }}
                     >
                       {member.name?.[0] || "U"}

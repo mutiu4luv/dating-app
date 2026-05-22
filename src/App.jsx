@@ -11,8 +11,10 @@ const LandingPage = lazy(() => import("./landingPage/LandingPage"));
 const Login = lazy(() => import("./screens/Login"));
 const Members = lazy(() => import("./screens/MembersScreen"));
 const MemberProfilePreview = lazy(() => import("./screens/MemberProfilePreview"));
-const Chat = lazy(() => import("./screens/chat/Chat"));
-const MergeScreen = lazy(() => import("./screens/mergeScreen/MergeScreen"));
+const loadChat = () => import("./screens/chat/Chat");
+const loadMergeScreen = () => import("./screens/mergeScreen/MergeScreen");
+const Chat = lazy(loadChat);
+const MergeScreen = lazy(loadMergeScreen);
 const PaymentSuccess = lazy(() => import("./components/payment/PaymentScreen"));
 const MessagesScreen = lazy(() => import("./screens/messages/MessagesScreen"));
 const UpdateProfileScreen = lazy(() => import("./screens/UpdateProfileScreen"));
@@ -66,6 +68,25 @@ function App() {
     if (!token) {
       localStorage.clear(); // Clear everything if no token
     }
+  }, []);
+
+  useEffect(() => {
+    if (!localStorage.getItem("token")) return undefined;
+
+    const preloadImportantScreens = () => {
+      loadChat();
+      loadMergeScreen();
+    };
+
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(preloadImportantScreens, {
+        timeout: 2500,
+      });
+      return () => window.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = window.setTimeout(preloadImportantScreens, 900);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (

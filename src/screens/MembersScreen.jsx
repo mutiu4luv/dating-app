@@ -28,6 +28,7 @@ import Footer from "../components/Footer/Footer";
 import { useNavigate } from "react-router-dom";
 import ClipLoader from "react-spinners/ClipLoader";
 import io from "socket.io-client";
+import { cloudinaryImage } from "../utility/cloudinaryImage";
 
 const getCurrentUserId = () => localStorage.getItem("userId");
 const MAX_DESCRIPTION_LINES = 2;
@@ -529,7 +530,11 @@ const Members = () => {
                       {member.photo ? (
                         <Box
                           component="img"
-                          src={member.photo}
+                          src={cloudinaryImage(member.photo, {
+                            width: 520,
+                            height: 620,
+                            crop: "fill",
+                          })}
                           alt={member.name}
                           sx={{
                             width: "100%",
@@ -776,7 +781,11 @@ const Members = () => {
                     {member.photo ? (
                       <CardMedia
                         component="img"
-                        image={member.photo}
+                        image={cloudinaryImage(member.photo, {
+                          width: 700,
+                          height: 700,
+                          crop: "fill",
+                        })}
                         alt={member.name}
                         sx={{
                           height: 214,
