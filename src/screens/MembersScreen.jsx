@@ -852,7 +852,9 @@ const Members = () => {
                               : "none",
                           }}
                         />
-                        {onlineStatus?.isOnline ? "Online" : "Offline"}
+                        {onlineStatus?.isOnline
+                          ? "Online now"
+                          : getLastSeenLabel(onlineStatus)}
                       </Box>
                     </Tooltip>
                   </Box>

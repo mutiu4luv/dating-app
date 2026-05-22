@@ -65,7 +65,8 @@ const Navbar = () => {
     }
 
     const handleIncomingMessage = (event) => {
-      if (event.detail?.receiverId === userId) setUnreadCount((prev) => prev + 1);
+      if (event.detail?.receiverId === userId)
+        setUnreadCount((prev) => prev + 1);
     };
 
     const handleUnreadReset = () => {
@@ -173,21 +174,6 @@ const Navbar = () => {
                   <ChatIcon />
                 </Badge>
               </IconButton>
-
-              <Button
-                color="inherit"
-                startIcon={<LockResetIcon />}
-                onClick={() => handleMenuClick("Change Password")}
-                sx={{
-                  display: { xs: "none", md: "inline-flex" },
-                  textTransform: "none",
-                  fontWeight: 800,
-                  color: "#2d0052",
-                  ml: 1,
-                }}
-              >
-                Change Password
-              </Button>
 
               <Button
                 color="inherit"

@@ -9,14 +9,50 @@ import {
   List,
   ListItem,
   ListItemText,
+  Menu,
+  MenuItem,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import ReplyIcon from "@mui/icons-material/Reply";
 import { useParams, useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
 import { requestNotificationPermission } from "../../utility/notifications";
+
+const getSenderId = (message) =>
+  typeof message.senderId === "object" ? message.senderId?._id : message.senderId;
+
+const getActivityLabel = (user) => {
+  if (user?.isOnline) return "Online now";
+  if (!user?.lastSeen) return "Activity not available";
+
+  const lastSeen = new Date(user.lastSeen);
+  if (Number.isNaN(lastSeen.getTime())) return "Activity not available";
+
+  const hours = (Date.now() - lastSeen.getTime()) / (1000 * 60 * 60);
+  if (hours <= 24) return "Active today";
+  if (hours <= 48) return "Recently online";
+  if (hours <= 24 * 7) return "Active this week";
+  return "Away for a while";
+};
+
+const getReplyText = (message) => {
+  if (!message) return "";
+  if (message.deletedForEveryone) return "This message was deleted";
+  return message.content || (message.imageUrl ? "Photo" : "Message");
+};
+
+const canEditMessage = (message, currentUserId) => {
+  if (!message?.content || message.deletedForEveryone) return false;
+  if (getSenderId(message) !== currentUserId) return false;
+
+  const sentAt = new Date(message.createdAt).getTime();
+  if (Number.isNaN(sentAt)) return false;
+  return Date.now() - sentAt <= 20 * 60 * 1000;
+};
 
 const Chat = () => {
   const { member1, member2 } = useParams();
@@ -29,6 +65,10 @@ const Chat = () => {
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
   const [receiver, setReceiver] = useState(null);
+  const [actionAnchor, setActionAnchor] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [editingMessage, setEditingMessage] = useState(null);
   const messagesEndRef = useRef();
   const imageInputRef = useRef(null);
   const token = localStorage.getItem("token");
@@ -92,6 +132,25 @@ const Chat = () => {
       if (data.receiverId === member1) return;
     };
 
+    const handleMessageEdited = (updatedMessage) => {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item._id === updatedMessage._id ? { ...item, ...updatedMessage } : item
+        )
+      );
+    };
+
+    const handleMessageDeleted = ({ message, messageId, mode }) => {
+      setMessages((prev) => {
+        if (mode === "me") {
+          return prev.filter((item) => item._id !== messageId);
+        }
+        return prev.map((item) =>
+          item._id === message._id ? { ...item, ...message } : item
+        );
+      });
+    };
+
     const handlePresenceUpdate = (data) => {
       if (data.userId === member2) {
         setReceiver((prev) =>
@@ -107,10 +166,14 @@ const Chat = () => {
     };
 
     socketInstance.on("receive_message", handleReceive);
+    socketInstance.on("message_edited", handleMessageEdited);
+    socketInstance.on("message_deleted", handleMessageDeleted);
     socketInstance.on("presence_update", handlePresenceUpdate);
 
     return () => {
       socketInstance.off("receive_message", handleReceive);
+      socketInstance.off("message_edited", handleMessageEdited);
+      socketInstance.off("message_deleted", handleMessageDeleted);
       socketInstance.off("presence_update", handlePresenceUpdate);
     };
   }, [socketInstance, room, member1, member2]);
@@ -199,6 +262,17 @@ const Chat = () => {
     formData.append("receiverId", member2);
     formData.append("content", message);
     formData.append("room", room);
+    if (replyingTo) {
+      formData.append(
+        "replyTo",
+        JSON.stringify({
+          messageId: replyingTo._id,
+          senderId: getSenderId(replyingTo),
+          content: replyingTo.content || "",
+          imageUrl: replyingTo.imageUrl || "",
+        })
+      );
+    }
     if (selectedImage) {
       formData.append("image", selectedImage);
     }
@@ -236,8 +310,78 @@ const Chat = () => {
     }
 
     setMessage("");
+    setReplyingTo(null);
     setSelectedImage(null);
     if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
+  const closeActionMenu = () => {
+    setActionAnchor(null);
+    setSelectedMessage(null);
+  };
+
+  const beginReply = (msg) => {
+    setReplyingTo(msg);
+    setEditingMessage(null);
+    closeActionMenu();
+  };
+
+  const beginEdit = (msg) => {
+    setEditingMessage(msg);
+    setReplyingTo(null);
+    setMessage(msg.content || "");
+    closeActionMenu();
+  };
+
+  const editMessage = async () => {
+    if (!editingMessage || !message.trim()) return;
+
+    try {
+      const res = await axios.put(
+        `${import.meta.env.VITE_BASE_URL}/api/chat/message/${editingMessage._id}`,
+        { content: message },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessages((prev) =>
+        prev.map((item) => (item._id === res.data._id ? res.data : item))
+      );
+      socketInstance?.emit("message_edited", res.data);
+      setEditingMessage(null);
+      setMessage("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Unable to edit this message.");
+    }
+  };
+
+  const deleteMessage = async (mode) => {
+    if (!selectedMessage) return;
+
+    try {
+      const res = await axios.delete(
+        `${import.meta.env.VITE_BASE_URL}/api/chat/message/${selectedMessage._id}`,
+        {
+          data: { mode },
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.data.mode === "me") {
+        setMessages((prev) =>
+          prev.filter((item) => item._id !== res.data.messageId)
+        );
+      } else {
+        setMessages((prev) =>
+          prev.map((item) =>
+            item._id === res.data.message._id ? res.data.message : item
+          )
+        );
+        socketInstance?.emit("message_deleted", res.data);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Unable to delete this message.");
+    } finally {
+      closeActionMenu();
+    }
   };
 
   return (
@@ -285,7 +429,7 @@ const Chat = () => {
               mt: 0.5,
             }}
           >
-            {receiver?.isOnline ? "Online" : "Offline"}
+            {getActivityLabel(receiver)}
           </Typography>
         </Box>
       </Box>
@@ -302,44 +446,109 @@ const Chat = () => {
         }}
       >
         <List>
-          {messages.map((msg, i) => (
-            <ListItem
-              key={i}
-              sx={{
-                justifyContent:
-                  msg.senderId === member1 ? "flex-end" : "flex-start",
-              }}
-            >
-              <ListItemText
-                primary={
-                  <Box>
-                    {msg.imageUrl && (
-                      <Box
-                        component="img"
-                        src={msg.imageUrl}
-                        alt="Chat upload"
-                        sx={{
-                          width: "100%",
-                          maxHeight: 260,
-                          objectFit: "cover",
-                          borderRadius: 2,
-                          mb: msg.content ? 1 : 0,
-                        }}
-                      />
-                    )}
-                    {msg.content && <Typography>{msg.content}</Typography>}
-                  </Box>
-                }
+          {messages.map((msg) => {
+            const isMine = getSenderId(msg) === member1;
+
+            return (
+              <ListItem
+                key={msg._id}
                 sx={{
-                  background: msg.senderId === member1 ? "#2979ff" : "#424242",
-                  color: "#fff",
-                  p: 1.5,
-                  borderRadius: "12px",
-                  maxWidth: "75%",
+                  justifyContent: isMine ? "flex-end" : "flex-start",
+                  alignItems: "flex-start",
+                  gap: 0.5,
                 }}
-              />
-            </ListItem>
-          ))}
+              >
+                {isMine && !msg.deletedForEveryone && (
+                  <IconButton
+                    size="small"
+                    onClick={(event) => {
+                      setActionAnchor(event.currentTarget);
+                      setSelectedMessage(msg);
+                    }}
+                    sx={{ color: "#cbd5e1", mt: 0.5 }}
+                  >
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
+                )}
+
+                <ListItemText
+                  primary={
+                    <Box>
+                      {msg.replyTo?.messageId && (
+                        <Box
+                          sx={{
+                            borderLeft: "3px solid #f8c7ff",
+                            bgcolor: "rgba(255,255,255,0.14)",
+                            borderRadius: 1,
+                            px: 1,
+                            py: 0.75,
+                            mb: 1,
+                          }}
+                        >
+                          <Typography fontSize={11} fontWeight={900}>
+                            Replying to message
+                          </Typography>
+                          <Typography fontSize={12} noWrap>
+                            {msg.replyTo.content ||
+                              (msg.replyTo.imageUrl ? "Photo" : "Message")}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {msg.deletedForEveryone ? (
+                        <Typography fontStyle="italic" color="rgba(255,255,255,0.75)">
+                          This message was deleted
+                        </Typography>
+                      ) : (
+                        <>
+                          {msg.imageUrl && (
+                            <Box
+                              component="img"
+                              src={msg.imageUrl}
+                              alt="Chat upload"
+                              sx={{
+                                width: "100%",
+                                maxHeight: 260,
+                                objectFit: "cover",
+                                borderRadius: 2,
+                                mb: msg.content ? 1 : 0,
+                              }}
+                            />
+                          )}
+                          {msg.content && <Typography>{msg.content}</Typography>}
+                          {msg.editedAt && (
+                            <Typography fontSize={10} color="rgba(255,255,255,0.7)" mt={0.5}>
+                              Edited
+                            </Typography>
+                          )}
+                        </>
+                      )}
+                    </Box>
+                  }
+                  sx={{
+                    background: isMine ? "#2979ff" : "#424242",
+                    color: "#fff",
+                    p: 1.5,
+                    borderRadius: "12px",
+                    maxWidth: "75%",
+                  }}
+                />
+
+                {!isMine && !msg.deletedForEveryone && (
+                  <IconButton
+                    size="small"
+                    onClick={(event) => {
+                      setActionAnchor(event.currentTarget);
+                      setSelectedMessage(msg);
+                    }}
+                    sx={{ color: "#cbd5e1", mt: 0.5 }}
+                  >
+                    <MoreVertIcon fontSize="small" />
+                  </IconButton>
+                )}
+              </ListItem>
+            );
+          })}
           <div ref={messagesEndRef} />
         </List>
       </Paper>
@@ -369,6 +578,45 @@ const Chat = () => {
         </Box>
       )}
 
+      {(replyingTo || editingMessage) && (
+        <Box
+          mx={2}
+          mb={1}
+          p={1.25}
+          sx={{
+            borderLeft: "4px solid #90caf9",
+            bgcolor: "#202a36",
+            borderRadius: 1.5,
+            color: "#fff",
+          }}
+        >
+          <Box display="flex" alignItems="center" gap={1}>
+            <ReplyIcon fontSize="small" />
+            <Box flex={1} minWidth={0}>
+              <Typography fontSize={12} fontWeight={900}>
+                {editingMessage ? "Editing message" : "Replying to message"}
+              </Typography>
+              <Typography fontSize={12} noWrap color="#cbd5e1">
+                {editingMessage
+                  ? editingMessage.content
+                  : getReplyText(replyingTo)}
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              color="inherit"
+              onClick={() => {
+                setReplyingTo(null);
+                setEditingMessage(null);
+                setMessage("");
+              }}
+            >
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        </Box>
+      )}
+
       <Box display="flex" gap={1} px={2} pb={2}>
         <input
           ref={imageInputRef}
@@ -390,7 +638,11 @@ const Chat = () => {
           placeholder="Type a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            if (editingMessage) editMessage();
+            else sendMessage();
+          }}
           sx={{
             input: { color: "#fff" },
             "& .MuiOutlinedInput-root": {
@@ -400,12 +652,39 @@ const Chat = () => {
         />
         <Button
           variant="contained"
-          onClick={sendMessage}
-          disabled={sending || (!message.trim() && !selectedImage)}
+          onClick={editingMessage ? editMessage : sendMessage}
+          disabled={
+            sending ||
+            (editingMessage ? !message.trim() : !message.trim() && !selectedImage)
+          }
         >
-          {sending ? "Sending" : "Send"}
+          {sending ? "Sending" : editingMessage ? "Save" : "Send"}
         </Button>
       </Box>
+
+      <Menu
+        anchorEl={actionAnchor}
+        open={Boolean(actionAnchor)}
+        onClose={closeActionMenu}
+      >
+        {selectedMessage && !selectedMessage.deletedForEveryone && (
+          <MenuItem onClick={() => beginReply(selectedMessage)}>Reply</MenuItem>
+        )}
+        {selectedMessage &&
+          canEditMessage(selectedMessage, member1) && (
+            <MenuItem onClick={() => beginEdit(selectedMessage)}>Edit</MenuItem>
+          )}
+        {selectedMessage && (
+          <MenuItem onClick={() => deleteMessage("me")}>Delete for me</MenuItem>
+        )}
+        {selectedMessage &&
+          getSenderId(selectedMessage) === member1 &&
+          !selectedMessage.deletedForEveryone && (
+            <MenuItem onClick={() => deleteMessage("everyone")}>
+              Delete for everyone
+            </MenuItem>
+          )}
+      </Menu>
     </Box>
   );
 };

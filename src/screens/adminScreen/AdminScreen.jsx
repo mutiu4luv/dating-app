@@ -495,8 +495,16 @@ const AdminScreen = () => {
     setConversationLoading(true);
 
     try {
+      const participantIds = (chat.participants || [])
+        .map((member) => member?._id)
+        .filter(Boolean);
+      const conversationUrl =
+        participantIds.length >= 2
+          ? `${BASE_URL}/api/chat/admin/conversation/users/${participantIds[0]}/${participantIds[1]}`
+          : `${BASE_URL}/api/chat/admin/conversation/${chat.room}`;
+
       const res = await api.get(
-        `${BASE_URL}/api/chat/admin/conversation/${chat.room}`,
+        conversationUrl,
         authHeaders
       );
       setConversationMessages(res.data?.data || []);
