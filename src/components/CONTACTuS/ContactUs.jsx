@@ -10,12 +10,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { WhatsApp } from "@mui/icons-material";
+import { ArrowBack, WhatsApp } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import api from "../api/Api";
 
 const whatsappNumber = "2347040356844";
 
 const ContactUs = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -61,6 +63,21 @@ const ContactUs = () => {
       }}
     >
       <Container maxWidth="sm">
+        <Button
+          startIcon={<ArrowBack />}
+          onClick={() => navigate(-1)}
+          sx={{
+            mb: 2,
+            color: "#fff",
+            textTransform: "none",
+            fontWeight: 900,
+            bgcolor: "rgba(255,255,255,0.12)",
+            "&:hover": { bgcolor: "rgba(255,255,255,0.18)" },
+          }}
+        >
+          Back
+        </Button>
+
         <Paper
           elevation={14}
           sx={{

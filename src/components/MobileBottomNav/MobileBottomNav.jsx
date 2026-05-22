@@ -38,7 +38,6 @@ const hiddenPaths = [
   "/terms",
   "/disclaimer",
   "/safetyTips",
-  "/contact",
   "/about",
 ];
 
@@ -59,14 +58,14 @@ const moreItems = [
     icon: <LockResetIcon />,
   },
   {
-    label: "Dating Safety Tips",
-    path: "/coming-soon/dating-safety-tips",
-    icon: <HealthAndSafetyIcon />,
-  },
-  {
     label: "Contact Us",
     path: "/contact",
     icon: <ContactSupportIcon />,
+  },
+  {
+    label: "Dating Safety Tips",
+    path: "/coming-soon/dating-safety-tips",
+    icon: <HealthAndSafetyIcon />,
   },
 ];
 
@@ -185,6 +184,8 @@ const MobileBottomNav = () => {
           sx: {
             borderRadius: "18px 18px 0 0",
             pb: "env(safe-area-inset-bottom)",
+            maxHeight: "78vh",
+            overflowY: "auto",
           },
         }}
       >
