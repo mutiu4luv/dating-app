@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Avatar,
   Badge,
   Box,
-  CircularProgress,
   InputAdornment,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
   Paper,
+  Skeleton,
   Tab,
   Tabs,
   TextField,
@@ -30,9 +30,11 @@ import {
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [loadingMembers, setLoadingMembers] = useState(false);
   const [tab, setTab] = useState("conversations");
   const [searchTerm, setSearchTerm] = useState("");
+  const membersRequestedRef = useRef(false);
   const navigate = useNavigate();
 
   const userId = localStorage.getItem("userId");
@@ -43,24 +45,57 @@ const MessagesScreen = () => {
 
     const headers = { Authorization: `Bearer ${token}` };
 
-    const fetchChatHub = async () => {
-      try {
-        const [conversationRes, membersRes] = await Promise.all([
-          api.get(`/chat/conversations/${userId}`, { headers }),
-          api.get("/user/chat-directory", { headers }),
-        ]);
+    let cancelled = false;
 
-        setConversations(conversationRes.data || []);
-        setMembers(membersRes.data.members || []);
+    const fetchConversations = async () => {
+      try {
+        const conversationRes = await api.get(`/chat/conversations/${userId}`, {
+          headers,
+        });
+        if (!cancelled) setConversations(conversationRes.data || []);
       } catch (err) {
-        console.error("Failed to load chat hub:", err);
+        console.error("Failed to load conversations:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoadingConversations(false);
       }
     };
 
-    fetchChatHub();
+    fetchConversations();
+
+    return () => {
+      cancelled = true;
+    };
   }, [userId, token]);
+
+  useEffect(() => {
+    if (!userId || !token || members.length > 0 || membersRequestedRef.current) {
+      return;
+    }
+    if (tab !== "members" && conversations.length > 0) return;
+
+    let cancelled = false;
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const fetchMembers = async () => {
+      membersRequestedRef.current = true;
+      setLoadingMembers(true);
+      try {
+        const membersRes = await api.get("/user/chat-directory", { headers });
+        if (!cancelled) setMembers(membersRes.data.members || []);
+      } catch (err) {
+        console.error("Failed to load chat directory:", err);
+        membersRequestedRef.current = false;
+      } finally {
+        if (!cancelled) setLoadingMembers(false);
+      }
+    };
+
+    fetchMembers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, token, tab, conversations.length, members.length]);
 
   useEffect(() => {
     if (!userId) return;
@@ -172,16 +207,21 @@ const MessagesScreen = () => {
     </Badge>
   );
 
-  if (loading) {
-    return (
-      <Box textAlign="center" mt={8}>
-        <CircularProgress color="secondary" />
-        <Typography mt={2} color="textSecondary">
-          Loading chat...
-        </Typography>
-      </Box>
-    );
-  }
+  const renderMessageSkeletons = () => (
+    <List disablePadding>
+      {Array.from({ length: 6 }).map((_, index) => (
+        <ListItem key={index} sx={{ py: 1.4 }}>
+          <ListItemAvatar>
+            <Skeleton variant="circular" width={44} height={44} />
+          </ListItemAvatar>
+          <ListItemText
+            primary={<Skeleton width={index % 2 ? "46%" : "62%"} />}
+            secondary={<Skeleton width={index % 2 ? "70%" : "84%"} />}
+          />
+        </ListItem>
+      ))}
+    </List>
+  );
 
   return (
     <>
@@ -245,7 +285,9 @@ const MessagesScreen = () => {
 
             {tab === "conversations" ? (
               <Box sx={{ bgcolor: "#fff", p: { xs: 1, sm: 2 } }}>
-                {conversations.length === 0 ? (
+                {loadingConversations ? (
+                  renderMessageSkeletons()
+                ) : conversations.length === 0 ? (
                   <Box textAlign="center" py={6}>
                     <Typography color="#6b4679">
                       No conversations yet. Open All Users to start chatting.
@@ -347,7 +389,9 @@ const MessagesScreen = () => {
                   }}
                 />
 
-                {filteredMembers.length === 0 ? (
+                {loadingMembers ? (
+                  renderMessageSkeletons()
+                ) : filteredMembers.length === 0 ? (
                   <Box textAlign="center" py={6}>
                     <Typography color="#6b4679">
                       No users match your search.

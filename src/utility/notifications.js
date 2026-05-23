@@ -28,6 +28,8 @@ export const showMessageNotification = async (message) => {
     message.senderId?.name ||
     message.senderId?.username ||
     "Someone";
+  const senderPhoto =
+    message.senderPhoto || message.senderId?.photo || message.photo || "";
   const body =
     message.content || (message.imageUrl ? "Sent you a photo" : "New message");
 
@@ -35,7 +37,8 @@ export const showMessageNotification = async (message) => {
     body,
     tag: `message-${senderId}-${message._id || Date.now()}`,
     badge: "/vite.svg",
-    icon: "/vite.svg",
+    icon: senderPhoto || "/vite.svg",
+    image: senderPhoto || undefined,
     vibrate: [120, 60, 120],
     data: {
       ...message,
