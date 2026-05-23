@@ -3,6 +3,7 @@ import {
   Avatar,
   Badge,
   Box,
+  Button,
   InputAdornment,
   List,
   ListItem,
@@ -27,6 +28,9 @@ import {
   requestNotificationPermission,
 } from "../../utility/notifications";
 
+const conversationCacheKey = (userId) => `chatConversations_${userId}`;
+const conversationTimeoutMs = 6500;
+
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
   const [members, setMembers] = useState([]);
@@ -44,15 +48,41 @@ const MessagesScreen = () => {
     if (!userId || !token) return;
 
     const headers = { Authorization: `Bearer ${token}` };
-
     let cancelled = false;
+    const cached = sessionStorage.getItem(conversationCacheKey(userId));
+
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setConversations(parsed);
+          setLoadingConversations(false);
+        }
+      } catch {
+        sessionStorage.removeItem(conversationCacheKey(userId));
+      }
+    }
 
     const fetchConversations = async () => {
       try {
         const conversationRes = await api.get(`/chat/conversations/${userId}`, {
           headers,
+          timeout: 12000,
         });
-        if (!cancelled) setConversations(conversationRes.data || []);
+        const rows = Array.isArray(conversationRes.data)
+          ? conversationRes.data
+          : [];
+
+        if (!cancelled) {
+          setConversations(rows);
+          if (rows.length > 0) {
+            sessionStorage.setItem(
+              conversationCacheKey(userId),
+              JSON.stringify(rows)
+            );
+          }
+          setLoadingConversations(false);
+        }
       } catch (err) {
         console.error("Failed to load conversations:", err);
       } finally {
@@ -60,10 +90,15 @@ const MessagesScreen = () => {
       }
     };
 
+    const timeoutId = window.setTimeout(() => {
+      if (!cancelled) setLoadingConversations(false);
+    }, conversationTimeoutMs);
+
     fetchConversations();
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   }, [userId, token]);
 
@@ -131,19 +166,49 @@ const MessagesScreen = () => {
       const senderId = getIdValue(data.senderId);
 
       if (receiverId === userId) {
-        setConversations((prev) =>
-          prev.map((conversation) =>
+        setConversations((prev) => {
+          const timestamp = data.createdAt || new Date().toISOString();
+          const updated = prev.map((conversation) =>
             conversation.matchId === senderId
               ? {
                   ...conversation,
                   lastMessage: data.content || "Photo",
-                  timestamp: data.createdAt || new Date().toISOString(),
+                  timestamp,
                   unreadCount: (conversation.unreadCount || 0) + 1,
                   unread: true,
                 }
               : conversation
-          )
-        );
+          );
+
+          const exists = updated.some(
+            (conversation) => conversation.matchId === senderId
+          );
+          const next = exists
+            ? updated
+            : [
+                {
+                  matchId: senderId,
+                  username:
+                    data.senderId?.username || data.senderId?.name || "New chat",
+                  photo: data.senderId?.photo || "",
+                  isOnline: true,
+                  lastMessage: data.content || "Photo",
+                  timestamp,
+                  unreadCount: 1,
+                  unread: true,
+                },
+                ...updated,
+              ];
+
+          sessionStorage.setItem(
+            conversationCacheKey(userId),
+            JSON.stringify(next)
+          );
+          return next.sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+          );
+        });
+        setLoadingConversations(false);
       }
     };
 
@@ -285,13 +350,25 @@ const MessagesScreen = () => {
 
             {tab === "conversations" ? (
               <Box sx={{ bgcolor: "#fff", p: { xs: 1, sm: 2 } }}>
-                {loadingConversations ? (
+                {loadingConversations && conversations.length === 0 ? (
                   renderMessageSkeletons()
                 ) : conversations.length === 0 ? (
                   <Box textAlign="center" py={6}>
                     <Typography color="#6b4679">
-                      No conversations yet. Open All Users to start chatting.
+                      No conversations loaded yet. Open All Users to start a
+                      chat, or refresh this page if you already have messages.
                     </Typography>
+                    <Button
+                      onClick={() => window.location.reload()}
+                      sx={{
+                        mt: 1.5,
+                        color: "#2d0052",
+                        fontWeight: 900,
+                        textTransform: "none",
+                      }}
+                    >
+                      Refresh chats
+                    </Button>
                   </Box>
                 ) : (
                   <List disablePadding>
