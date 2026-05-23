@@ -3,8 +3,8 @@ import {
   Box,
   Button,
   Grid,
-  LinearProgress,
   Paper,
+  Skeleton,
   Typography,
   useMediaQuery,
   useTheme,
@@ -203,19 +203,52 @@ const MergeScreen = () => {
     }
   };
 
+  const renderPlanSkeletons = () => (
+    <Grid
+      container
+      spacing={3}
+      justifyContent="center"
+      sx={{ maxWidth: 1100, width: "100%" }}
+      aria-busy="true"
+    >
+      {Array.from({ length: 4 }).map((_, index) => (
+        <Grid item xs={12} sm={6} md={3} key={index}>
+          <Paper
+            elevation={0}
+            sx={{
+              p: 3,
+              borderRadius: 4,
+              textAlign: "center",
+              minHeight: 340,
+              border: "1px solid rgba(45,0,82,0.08)",
+              boxShadow: "0 18px 36px rgba(45,0,82,0.06)",
+            }}
+          >
+            <Skeleton
+              variant="circular"
+              width={48}
+              height={48}
+              sx={{ mx: "auto", mb: 2 }}
+            />
+            <Skeleton width="62%" height={30} sx={{ mx: "auto" }} />
+            <Skeleton width="90%" sx={{ mx: "auto", mt: 2 }} />
+            <Skeleton width="82%" sx={{ mx: "auto" }} />
+            <Skeleton width="52%" height={32} sx={{ mx: "auto", mt: 2 }} />
+            <Skeleton
+              variant="rounded"
+              width="100%"
+              height={42}
+              sx={{ borderRadius: 2, mt: 3 }}
+            />
+          </Paper>
+        </Grid>
+      ))}
+    </Grid>
+  );
+
   return (
     <>
       <Navbar />
-
-      {loading && (
-        <LinearProgress
-          sx={{
-            "& .MuiLinearProgress-bar": {
-              background: "linear-gradient(90deg, #ec4899, #8b3ba8)",
-            },
-          }}
-        />
-      )}
 
       <Typography variant="h5" fontWeight="bold" textAlign="center" mb={2}>
         {isUpgradeOnly ? "Upgrade Subscription" : "Merge with Your Match"}
@@ -228,13 +261,18 @@ const MergeScreen = () => {
         mt={4}
         px={isMobile ? 2 : 4}
       >
-        <Typography textAlign="center" mb={2}>
-          {canChat
-            ? "You can chat with this match."
-            : loading
-            ? "Checking your access in the background. The plans are ready."
-            : "Continue Free to merge and chat with this match, or upgrade for more monthly access."}
-        </Typography>
+        {loading ? (
+          <Box width="100%" maxWidth={560} mb={3}>
+            <Skeleton height={28} width="92%" sx={{ mx: "auto" }} />
+            <Skeleton height={24} width="72%" sx={{ mx: "auto" }} />
+          </Box>
+        ) : (
+          <Typography textAlign="center" mb={2}>
+            {canChat
+              ? "You can chat with this match."
+              : "Continue Free to merge and chat with this match, or upgrade for more monthly access."}
+          </Typography>
+        )}
 
         {errorMessage && (
           <Typography color="error" textAlign="center" mb={2}>
@@ -256,7 +294,9 @@ const MergeScreen = () => {
           </Box>
         )}
 
-        {!canChat && (
+        {loading ? (
+          renderPlanSkeletons()
+        ) : !canChat ? (
           <Grid
             container
             spacing={3}
@@ -300,7 +340,7 @@ const MergeScreen = () => {
               </Grid>
             ))}
           </Grid>
-        )}
+        ) : null}
       </Box>
     </>
   );
