@@ -22,7 +22,10 @@ import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
-import { requestNotificationPermission } from "../../utility/notifications";
+import {
+  getIdValue,
+  requestNotificationPermission,
+} from "../../utility/notifications";
 
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
@@ -89,10 +92,13 @@ const MessagesScreen = () => {
     };
 
     const handleReceiveMessage = (data) => {
-      if (data.receiverId === userId) {
+      const receiverId = getIdValue(data.receiverId);
+      const senderId = getIdValue(data.senderId);
+
+      if (receiverId === userId) {
         setConversations((prev) =>
           prev.map((conversation) =>
-            conversation.matchId === data.senderId
+            conversation.matchId === senderId
               ? {
                   ...conversation,
                   lastMessage: data.content || "Photo",

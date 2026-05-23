@@ -4,9 +4,13 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const data = event.notification.data || {};
+      const senderId =
+        typeof data.senderId === "object" ? data.senderId?._id : data.senderId;
+      const receiverId =
+        typeof data.receiverId === "object" ? data.receiverId?._id : data.receiverId;
       const targetUrl =
-        data.senderId && data.receiverId
-          ? `/chat/${data.receiverId}/${data.senderId}`
+        senderId && receiverId
+          ? `/chat/${receiverId}/${senderId}`
           : "/";
       const client = clients.find((item) => "focus" in item);
       if (client) {

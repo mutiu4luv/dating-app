@@ -8,7 +8,6 @@ import {
   CardMedia,
   useMediaQuery,
   keyframes,
-  Link,
   Tooltip,
   Snackbar,
   Alert,
@@ -20,12 +19,12 @@ import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
+import ShareIcon from "@mui/icons-material/Share";
 
 import ebook from "../../assets/images/ebook.jpeg";
 import ebook1 from "../../assets/images/ebook1.jpeg";
 import ebook2 from "../../assets/images/ebook2.jpeg";
 import ebook3 from "../../assets/images/ebook3.jpeg";
-import online from "../../assets/images/online.webp";
 
 // Subtle, professional pulse instead of a fast blink
 const pulse = keyframes`
@@ -42,6 +41,7 @@ const EbookAdvert = () => {
   const [imageIndex, setImageIndex] = useState(0);
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -50,14 +50,37 @@ const EbookAdvert = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const copyToClipboard = async () => {
+  const copyReferralLink = async () => {
+    await navigator.clipboard.writeText(COPY_URL);
+    setCopied(true);
+    setToastMessage("Referral link copied. Paste it anywhere you want to share.");
+    setOpen(true);
+  };
+
+  const shareReferralLink = async () => {
     try {
-      await navigator.clipboard.writeText(COPY_URL);
-      setCopied(true);
-      setOpen(true);
+      if (navigator.share) {
+        await navigator.share({
+          title: "Join me on Truematchup",
+          text: "Join Truematchup and connect with people looking for meaningful relationships.",
+          url: COPY_URL,
+        });
+        setCopied(false);
+        setToastMessage("Share options opened.");
+        return;
+      }
+
+      await copyReferralLink();
     } catch (err) {
-      setCopied(false);
-      setOpen(true);
+      if (err?.name === "AbortError") return;
+
+      try {
+        await copyReferralLink();
+      } catch {
+        setCopied(false);
+        setToastMessage("Unable to share or copy the referral link.");
+        setOpen(true);
+      }
     }
   };
 
@@ -243,9 +266,9 @@ const EbookAdvert = () => {
                 your friends join our community.
               </Typography>
 
-              <Tooltip title="Click to copy link">
+              <Tooltip title="Share to WhatsApp, Facebook, messages, or copy the link">
                 <Box
-                  onClick={copyToClipboard}
+                  onClick={shareReferralLink}
                   sx={{
                     display: "flex",
                     alignItems: "center",
@@ -261,22 +284,34 @@ const EbookAdvert = () => {
                   }}
                 >
                   <Typography fontWeight={700} color="#D9A4F0">
-                    {copied ? "Copied Success!" : "Copy Referral Link"}
+                    {copied ? "Copied Successfully" : "Share Referral Link"}
                   </Typography>
                   {copied ? (
                     <CheckIcon sx={{ color: "#D9A4F0" }} />
                   ) : (
-                    <ContentCopyIcon sx={{ color: "#D9A4F0" }} />
+                    <ShareIcon sx={{ color: "#D9A4F0" }} />
                   )}
                 </Box>
               </Tooltip>
+              <Button
+                onClick={copyReferralLink}
+                startIcon={<ContentCopyIcon />}
+                sx={{
+                  mt: 2,
+                  color: "#D9A4F0",
+                  textTransform: "none",
+                  fontWeight: 800,
+                }}
+              >
+                Copy link only
+              </Button>
             </Box>
           </Grid>
         </Grid>
 
         <Snackbar open={open} autoHideDuration={2500} onClose={handleClose}>
           <Alert severity={copied ? "success" : "error"} sx={{ width: "100%" }}>
-            {copied ? "Link copied to clipboard!" : "Failed to copy link"}
+            {toastMessage || "Referral link ready."}
           </Alert>
         </Snackbar>
       </Container>
