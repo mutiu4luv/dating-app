@@ -479,8 +479,8 @@ const Signup = () => {
     if (!file) return;
     try {
       const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.05,
-        maxWidthOrHeight: 300,
+        maxSizeMB: 0.25,
+        maxWidthOrHeight: 900,
         useWebWorker: true,
       });
       setPhotoFile(compressedFile);
@@ -489,7 +489,7 @@ const Signup = () => {
         setPhotoPreview(reader.result);
       };
       reader.readAsDataURL(compressedFile);
-    } catch (error) {
+    } catch {
       setMessage("Image compression failed. Please try another image.");
     }
   };
