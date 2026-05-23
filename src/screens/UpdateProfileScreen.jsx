@@ -36,6 +36,10 @@ const relationshipTypes = [
   "Open Relationship",
 ];
 
+const BRAND_DARK = "#2d0052";
+const BRAND_PINK = "#D9A4F0";
+const BRAND_SOFT = "#fbf5ff";
+
 const UpdateProfileScreen = () => {
   const [form, setForm] = useState({});
   const [photoPreview, setPhotoPreview] = useState("");
@@ -57,12 +61,12 @@ const UpdateProfileScreen = () => {
         );
         setForm(res.data);
         setPhotoPreview(res.data.photo);
-      } catch (error) {
+      } catch {
         setMessage("Failed to fetch profile");
       }
     };
     if (userId) fetchUser();
-  }, [userId]);
+  }, [token, userId]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -73,8 +77,8 @@ const UpdateProfileScreen = () => {
     if (!file) return;
     try {
       const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.05,
-        maxWidthOrHeight: 300,
+        maxSizeMB: 0.25,
+        maxWidthOrHeight: 900,
         useWebWorker: true,
       });
       setPhotoFile(compressedFile);
@@ -147,7 +151,7 @@ const UpdateProfileScreen = () => {
       justifyContent="center"
       sx={{
         background:
-          "linear-gradient(135deg, #f9fafb 0%, #fbc2eb 50%, #a6c1ee 100%)",
+          "linear-gradient(135deg, #fff 0%, #fbf5ff 48%, #f0ddff 100%)",
         py: 6,
         px: { xs: 1, sm: 2, md: 4 },
       }}
@@ -155,19 +159,25 @@ const UpdateProfileScreen = () => {
       <Paper
         elevation={12}
         sx={{
-          p: 4,
-          borderRadius: 5,
-          minWidth: 370,
-          maxWidth: 440,
+          p: { xs: 2.5, sm: 4 },
+          borderRadius: 4,
+          width: "100%",
+          maxWidth: 520,
           opacity: 0.98,
-          background: "rgba(255,255,255,0.10)",
-          boxShadow: "0 8px 32px 0 rgba(31,38,135,0.25)",
-          backdropFilter: "blur(8px)",
+          background: "rgba(255,255,255,0.96)",
+          border: "1px solid rgba(217,164,240,0.4)",
+          boxShadow: "0 24px 70px rgba(45,0,82,0.14)",
         }}
       >
-        <Box display="flex" alignItems="center" justifyContent="center" mb={2}>
-          <FavoriteIcon sx={{ color: "#ec4899", mr: 1, fontSize: 32 }} />
-          <Typography variant="h5" fontWeight="bold" color="#ec4899">
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          mb={2.5}
+          textAlign="center"
+        >
+          <FavoriteIcon sx={{ color: BRAND_PINK, mr: 1, fontSize: 32 }} />
+          <Typography variant="h5" fontWeight={900} color={BRAND_DARK}>
             Update Your Profile
           </Typography>
         </Box>
@@ -177,16 +187,30 @@ const UpdateProfileScreen = () => {
             <Box display="flex" flexDirection="column" alignItems="center">
               <Avatar
                 src={photoPreview}
-                sx={{ width: 72, height: 72, mb: 1, bgcolor: "#ec4899" }}
+                sx={{
+                  width: 92,
+                  height: 92,
+                  mb: 1.5,
+                  bgcolor: BRAND_PINK,
+                  color: BRAND_DARK,
+                  border: `4px solid ${BRAND_SOFT}`,
+                  boxShadow: "0 14px 36px rgba(45,0,82,0.18)",
+                }}
               />
               <Button
                 variant="outlined"
                 component="label"
                 sx={{
                   mb: 1,
-                  borderColor: "#ec4899",
-                  color: "#ec4899",
-                  fontWeight: "bold",
+                  borderColor: BRAND_PINK,
+                  color: BRAND_DARK,
+                  borderRadius: 2,
+                  fontWeight: 900,
+                  textTransform: "none",
+                  "&:hover": {
+                    borderColor: BRAND_DARK,
+                    backgroundColor: BRAND_SOFT,
+                  },
                 }}
               >
                 Change Photo
@@ -316,9 +340,18 @@ const UpdateProfileScreen = () => {
               disabled={loading}
               sx={{
                 mt: 1,
-                background: "linear-gradient(90deg, #ec4899 60%, #b993d6 100%)",
-                fontWeight: "bold",
+                background:
+                  "linear-gradient(135deg, #2d0052 0%, #8b3ba8 100%)",
+                borderRadius: 2,
+                py: 1.2,
+                boxShadow: "0 16px 36px rgba(45,0,82,0.22)",
+                fontWeight: 900,
+                textTransform: "none",
                 fontSize: 16,
+                "&:hover": {
+                  background:
+                    "linear-gradient(135deg, #230040 0%, #743091 100%)",
+                },
               }}
             >
               {loading ? (

@@ -8,10 +8,10 @@ import {
 import api from "./api/Api";
 
 const socket = io(
-  import.meta.env.VITE_BACKEND_URL ||
-    import.meta.env.VITE_BASE_URL ||
+  import.meta.env.VITE_BASE_URL ||
+    import.meta.env.VITE_BACKEND_URL ||
     "http://localhost:7000",
-  { transports: ["websocket"] }
+  { transports: ["websocket", "polling"] }
 );
 
 const GlobalMessageNotifications = () => {

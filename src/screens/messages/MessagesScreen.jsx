@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Avatar,
   Badge,
@@ -8,6 +8,7 @@ import {
   List,
   ListItem,
   ListItemAvatar,
+  ListItemButton,
   ListItemText,
   Paper,
   Skeleton,
@@ -29,16 +30,60 @@ import {
 } from "../../utility/notifications";
 
 const conversationCacheKey = (userId) => `chatConversations_${userId}`;
+const chatDirectoryCacheKey = (userId) => `chatDirectoryAllUsers_${userId}_v2`;
 const conversationTimeoutMs = 6500;
+const membersTimeoutMs = 6500;
+const membersBatchSize = 35;
+const socketUrl =
+  import.meta.env.VITE_BASE_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  "http://localhost:7000";
+
+const getLastSeenDate = (lastSeen) => {
+  if (!lastSeen) return null;
+  const rawDate =
+    typeof lastSeen === "string"
+      ? lastSeen
+      : lastSeen.date || lastSeen.exact || lastSeen.value || null;
+  if (!rawDate) return null;
+  const parsedDate = new Date(rawDate);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const getActivityLabel = (item) => {
+  if (item?.isOnline) return "Online now";
+
+  const lastSeenDate = getLastSeenDate(item?.lastSeen);
+  if (!lastSeenDate) return "Not active recently";
+
+  const elapsedHours = (Date.now() - lastSeenDate.getTime()) / (1000 * 60 * 60);
+  const elapsedDays = elapsedHours / 24;
+  if (elapsedHours <= 48) return "Recently online";
+  if (elapsedDays <= 14) return "Active this week";
+  return "Not active recently";
+};
+
+const getActivityChipSx = (item) =>
+  item?.isOnline
+    ? {
+        bgcolor: "#dcfce7",
+        color: "#166534",
+      }
+    : {
+        bgcolor: "#f3f4f6",
+        color: "#6b7280",
+      };
 
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
   const [members, setMembers] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [membersError, setMembersError] = useState("");
   const [tab, setTab] = useState("conversations");
   const [searchTerm, setSearchTerm] = useState("");
-  const membersRequestedRef = useRef(false);
+  const [visibleMembersCount, setVisibleMembersCount] =
+    useState(membersBatchSize);
   const navigate = useNavigate();
 
   const userId = localStorage.getItem("userId");
@@ -102,55 +147,126 @@ const MessagesScreen = () => {
     };
   }, [userId, token]);
 
-  useEffect(() => {
-    if (!userId || !token || members.length > 0 || membersRequestedRef.current) {
-      return;
-    }
-    if (tab !== "members" && conversations.length > 0) return;
-
-    let cancelled = false;
+  const loadAllUsers = useCallback(async () => {
+    if (!userId || !token) return;
     const headers = { Authorization: `Bearer ${token}` };
 
-    const fetchMembers = async () => {
-      membersRequestedRef.current = true;
-      setLoadingMembers(true);
-      try {
-        const membersRes = await api.get("/user/chat-directory", { headers });
-        if (!cancelled) setMembers(membersRes.data.members || []);
-      } catch (err) {
-        console.error("Failed to load chat directory:", err);
-        membersRequestedRef.current = false;
-      } finally {
-        if (!cancelled) setLoadingMembers(false);
+    setLoadingMembers(true);
+    setMembersError("");
+
+    try {
+      const allUsersRes = await api.get("/user/", {
+        headers,
+        timeout: 12000,
+      });
+      let rows = (Array.isArray(allUsersRes.data) ? allUsersRes.data : [])
+        .filter((member) => member._id !== userId)
+        .map((member) => ({
+          _id: member._id,
+          photo: member.photo,
+          name: member.name,
+          username: member.username,
+          age: member.age,
+          gender: member.gender,
+          location: member.location,
+          occupation: member.occupation,
+          relationshipType: member.relationshipType,
+          description: member.description,
+          isOnline: member.isOnline,
+          lastSeen: member.lastSeen,
+        }));
+
+      if (rows.length === 0) {
+        const fallbackRes = await api.get("/user/chat-directory", {
+          headers,
+          timeout: 12000,
+        });
+        rows = fallbackRes.data.members || [];
       }
-    };
 
-    fetchMembers();
+      const sortedRows = [...rows].sort((a, b) => {
+        if (Boolean(a.isOnline) !== Boolean(b.isOnline)) {
+          return a.isOnline ? -1 : 1;
+        }
+        return (
+          new Date(b.lastSeen || 0).getTime() -
+          new Date(a.lastSeen || 0).getTime()
+        );
+      });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, token, tab, conversations.length, members.length]);
+      setMembers(sortedRows);
+      setVisibleMembersCount(membersBatchSize);
+      if (rows.length > 0) {
+        sessionStorage.setItem(
+          chatDirectoryCacheKey(userId),
+          JSON.stringify(sortedRows)
+        );
+      } else {
+        setMembersError("No users were returned from the server.");
+      }
+    } catch (err) {
+      console.error("Failed to load all users:", err);
+      setMembersError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load all users."
+      );
+    } finally {
+      setLoadingMembers(false);
+    }
+  }, [token, userId]);
+
+  useEffect(() => {
+    if (!userId || !token || members.length > 0) return;
+
+    const cached = sessionStorage.getItem(chatDirectoryCacheKey(userId));
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMembers(parsed);
+          setVisibleMembersCount(membersBatchSize);
+          setLoadingMembers(false);
+          return;
+        }
+      } catch {
+        sessionStorage.removeItem(chatDirectoryCacheKey(userId));
+      }
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLoadingMembers(false);
+    }, membersTimeoutMs);
+
+    loadAllUsers().finally(() => window.clearTimeout(timeoutId));
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadAllUsers, members.length, token, userId]);
 
   useEffect(() => {
     if (!userId) return;
 
-    const socket = io(
-      import.meta.env.VITE_BACKEND_URL ||
-        import.meta.env.VITE_BASE_URL ||
-        "http://localhost:7000",
-      { transports: ["websocket"] }
-    );
+    const socket = io(socketUrl, { transports: ["websocket", "polling"] });
 
     socket.emit("register_user", userId);
 
     const handlePresenceUpdate = ({ userId: changedUserId, isOnline, lastSeen }) => {
       setMembers((prev) =>
-        prev.map((member) =>
-          member._id === changedUserId
-            ? { ...member, isOnline, lastSeen }
-            : member
-        )
+        prev
+          .map((member) =>
+            member._id === changedUserId
+              ? { ...member, isOnline, lastSeen }
+              : member
+          )
+          .sort((a, b) => {
+            if (Boolean(a.isOnline) !== Boolean(b.isOnline)) {
+              return a.isOnline ? -1 : 1;
+            }
+            return (
+              new Date(b.lastSeen || 0).getTime() -
+              new Date(a.lastSeen || 0).getTime()
+            );
+          })
       );
       setConversations((prev) =>
         prev.map((conversation) =>
@@ -247,6 +363,15 @@ const MessagesScreen = () => {
     );
   }, [members, searchTerm]);
 
+  const visibleMembers = useMemo(
+    () => filteredMembers.slice(0, visibleMembersCount),
+    [filteredMembers, visibleMembersCount]
+  );
+
+  useEffect(() => {
+    setVisibleMembersCount(membersBatchSize);
+  }, [searchTerm]);
+
   const handleChatOpen = (memberId) => {
     navigate(`/chat/${userId}/${memberId}`);
   };
@@ -261,6 +386,7 @@ const MessagesScreen = () => {
     >
       <Avatar
         src={photo || ""}
+        imgProps={{ loading: "lazy" }}
         sx={{
           bgcolor: "#D9A4F0",
           color: "#2d0052",
@@ -320,7 +446,12 @@ const MessagesScreen = () => {
           >
             <Tabs
               value={tab}
-              onChange={(_, value) => setTab(value)}
+              onChange={(_, value) => {
+                setTab(value);
+                if (value === "members" && members.length === 0) {
+                  loadAllUsers();
+                }
+              }}
               variant="fullWidth"
               sx={{
                 bgcolor: "#fff",
@@ -377,9 +508,8 @@ const MessagesScreen = () => {
                       const isUnread = chat.unread === true;
 
                       return (
-                        <ListItem
+                        <ListItemButton
                           key={chat.matchId}
-                          button
                           onClick={() => handleChatOpen(chat.matchId)}
                           sx={{
                             borderRadius: 2,
@@ -421,7 +551,7 @@ const MessagesScreen = () => {
                                     fontWeight: 800,
                                   }}
                                 >
-                                  {chat.isOnline ? "Online" : "Offline"}
+                                  {getActivityLabel(chat)}
                                 </Typography>
                               </Box>
                             }
@@ -436,7 +566,7 @@ const MessagesScreen = () => {
                               </Typography>
                             }
                           />
-                        </ListItem>
+                        </ListItemButton>
                       );
                     })}
                   </List>
@@ -468,6 +598,21 @@ const MessagesScreen = () => {
 
                 {loadingMembers ? (
                   renderMessageSkeletons()
+                ) : membersError ? (
+                  <Box textAlign="center" py={6}>
+                    <Typography color="#6b4679">{membersError}</Typography>
+                    <Button
+                      onClick={loadAllUsers}
+                      sx={{
+                        mt: 1.5,
+                        color: "#2d0052",
+                        fontWeight: 900,
+                        textTransform: "none",
+                      }}
+                    >
+                      Retry all users
+                    </Button>
+                  </Box>
                 ) : filteredMembers.length === 0 ? (
                   <Box textAlign="center" py={6}>
                     <Typography color="#6b4679">
@@ -475,11 +620,11 @@ const MessagesScreen = () => {
                     </Typography>
                   </Box>
                 ) : (
+                  <>
                   <List disablePadding>
-                    {filteredMembers.map((member) => (
-                      <ListItem
+                    {visibleMembers.map((member) => (
+                      <ListItemButton
                         key={member._id}
-                        button
                         onClick={() => handleChatOpen(member._id)}
                         sx={{
                           borderRadius: 2,
@@ -506,34 +651,17 @@ const MessagesScreen = () => {
                               <Typography fontWeight={800} color="#2d0052">
                                 {member.username || member.name}
                               </Typography>
-                              {member.isOnline && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    bgcolor: "#dcfce7",
-                                    color: "#166534",
-                                    px: 1,
-                                    borderRadius: 99,
-                                    fontWeight: 800,
-                                  }}
-                                >
-                                  Online
-                                </Typography>
-                              )}
-                              {!member.isOnline && (
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    bgcolor: "#f3f4f6",
-                                    color: "#6b7280",
-                                    px: 1,
-                                    borderRadius: 99,
-                                    fontWeight: 800,
-                                  }}
-                                >
-                                  Offline
-                                </Typography>
-                              )}
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  ...getActivityChipSx(member),
+                                  px: 1,
+                                  borderRadius: 99,
+                                  fontWeight: 800,
+                                }}
+                              >
+                                {getActivityLabel(member)}
+                              </Typography>
                             </Box>
                           }
                           secondary={
@@ -544,9 +672,31 @@ const MessagesScreen = () => {
                             </Typography>
                           }
                         />
-                      </ListItem>
+                      </ListItemButton>
                     ))}
                   </List>
+                  {visibleMembers.length < filteredMembers.length && (
+                    <Box display="flex" justifyContent="center" py={2}>
+                      <Button
+                        variant="outlined"
+                        onClick={() =>
+                          setVisibleMembersCount((count) =>
+                            Math.min(count + membersBatchSize, filteredMembers.length)
+                          )
+                        }
+                        sx={{
+                          borderColor: "#2d0052",
+                          color: "#2d0052",
+                          fontWeight: 900,
+                          borderRadius: 2,
+                          textTransform: "none",
+                        }}
+                      >
+                        Load more users ({filteredMembers.length - visibleMembers.length} left)
+                      </Button>
+                    </Box>
+                  )}
+                  </>
                 )}
               </Box>
             )}

@@ -99,11 +99,11 @@ const Chat = () => {
   // Initialize socket
   useEffect(() => {
     const newSocket = io(
-      import.meta.env.VITE_BACKEND_URL ||
-        import.meta.env.VITE_BASE_URL ||
+      import.meta.env.VITE_BASE_URL ||
+        import.meta.env.VITE_BACKEND_URL ||
         "http://localhost:7000",
       {
-        transports: ["websocket"],
+        transports: ["websocket", "polling"],
       }
     );
 

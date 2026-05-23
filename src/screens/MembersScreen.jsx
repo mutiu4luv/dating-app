@@ -34,6 +34,7 @@ const MAX_DESCRIPTION_LINES = 2;
 const CARD_HEIGHT = 486;
 const CARD_CONTENT_HEIGHT = 206;
 const CARDS_PER_PAGE = 8;
+const membersCacheKey = (userId) => `membersScreenCache_${userId}`;
 
 const getLastSeenDate = (lastSeen) => {
   if (!lastSeen) return null;
@@ -97,6 +98,26 @@ const Members = () => {
     let cancelled = false;
     const token = localStorage.getItem("token");
     const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
+    const cached = sessionStorage.getItem(membersCacheKey(userId));
+
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        const cachedMembers = parsed.members || [];
+        setMembers(cachedMembers);
+        setFilteredMembers(cachedMembers);
+        setSuggestedMembers(parsed.suggestedMembers || []);
+        setUserStatuses(parsed.userStatuses || {});
+        setMergeStatuses(parsed.mergeStatuses || {});
+        setHasPaid(Boolean(parsed.hasPaid));
+        setLoadingMembers(false);
+        return () => {
+          cancelled = true;
+        };
+      } catch {
+        sessionStorage.removeItem(membersCacheKey(userId));
+      }
+    }
 
     const loadMembers = async () => {
       setLoadingMembers(true);
@@ -137,6 +158,16 @@ const Members = () => {
           }
         });
         setHasPaid(localStorage.getItem("hasPaid") === "true" || paidFromStorage);
+        sessionStorage.setItem(
+          membersCacheKey(userId),
+          JSON.stringify({
+            members: sorted,
+            suggestedMembers: [],
+            userStatuses: initialStatuses,
+            mergeStatuses: {},
+            hasPaid: localStorage.getItem("hasPaid") === "true" || paidFromStorage,
+          })
+        );
 
         loadSecondaryData(data, initialStatuses, authHeaders, cancelled);
       } catch (err) {
@@ -161,7 +192,16 @@ const Members = () => {
         const suggestions = Array.isArray(suggestedRes.data?.suggestions)
           ? suggestedRes.data.suggestions
           : [];
-        setSuggestedMembers(sortByOnlineStatus(suggestions, initialStatuses));
+        const sortedSuggestions = sortByOnlineStatus(suggestions, initialStatuses);
+        setSuggestedMembers(sortedSuggestions);
+        const cached = sessionStorage.getItem(membersCacheKey(userId));
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          sessionStorage.setItem(
+            membersCacheKey(userId),
+            JSON.stringify({ ...parsed, suggestedMembers: sortedSuggestions })
+          );
+        }
 
         const membersById = new Map();
         [...baseMembers, ...suggestions].forEach((member) => {
@@ -206,9 +246,31 @@ const Members = () => {
 
       setUserStatuses((prev) => {
         const next = { ...prev, ...statusObj };
-        setMembers((current) => sortByOnlineStatus(current, next));
+        setMembers((current) => {
+          const sorted = sortByOnlineStatus(current, next);
+          const cached = sessionStorage.getItem(membersCacheKey(userId));
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            sessionStorage.setItem(
+              membersCacheKey(userId),
+              JSON.stringify({ ...parsed, members: sorted, userStatuses: next })
+            );
+          }
+          return sorted;
+        });
         setFilteredMembers((current) => sortByOnlineStatus(current, next));
-        setSuggestedMembers((current) => sortByOnlineStatus(current, next));
+        setSuggestedMembers((current) => {
+          const sorted = sortByOnlineStatus(current, next);
+          const cached = sessionStorage.getItem(membersCacheKey(userId));
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            sessionStorage.setItem(
+              membersCacheKey(userId),
+              JSON.stringify({ ...parsed, suggestedMembers: sorted })
+            );
+          }
+          return sorted;
+        });
         return next;
       });
     };
@@ -235,6 +297,14 @@ const Members = () => {
         statusMap[memberId] = status;
       });
       setMergeStatuses(statusMap);
+      const cached = sessionStorage.getItem(membersCacheKey(userId));
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        sessionStorage.setItem(
+          membersCacheKey(userId),
+          JSON.stringify({ ...parsed, mergeStatuses: statusMap })
+        );
+      }
     };
 
     loadMembers();

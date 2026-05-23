@@ -1,0 +1,1 @@
+import{aI as o,aq as m,aJ as u}from"./index-BkOsIhrV.js";const p=o();function c({props:t,name:a,defaultTheme:r,themeId:s}){let e=m(r);return s&&(e=e[s]||e),u({theme:e,name:a,props:t})}export{p as s,c as u};

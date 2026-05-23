@@ -1,1 +1,0 @@
-import{aF as o,an as m,aG as n}from"./index-CviHbw3-.js";const p=o();function c({props:t,name:a,defaultTheme:r,themeId:s}){let e=m(r);return s&&(e=e[s]||e),n({theme:e,name:a,props:t})}export{p as s,c as u};

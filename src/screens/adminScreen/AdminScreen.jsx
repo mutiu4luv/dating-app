@@ -23,6 +23,7 @@ import {
   Pagination,
   Paper,
   Select,
+  Skeleton,
   Snackbar,
   Stack,
   Table,
@@ -216,7 +217,12 @@ const AdminScreen = () => {
   const [editTier, setEditTier] = useState("");
   const [editHasPaid, setEditHasPaid] = useState(false);
   const [editIsAdmin, setEditIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState({
+    users: true,
+    subscribers: true,
+    chats: true,
+    contacts: true,
+  });
   const [toast, setToast] = useState({
     open: false,
     message: "",
@@ -241,37 +247,58 @@ const AdminScreen = () => {
   );
 
   const fetchAdminData = async () => {
-    setLoading(true);
-    try {
-      const [usersRes, subscribersRes, chatRes, contactRes] = await Promise.all([
-        api.get(`${BASE_URL}/api/user/`, authHeaders),
-        api.get(`${BASE_URL}/api/subscription`, authHeaders),
-        api.get(`${BASE_URL}/api/chat/admin/activity`, authHeaders),
-        api.get(`${BASE_URL}/api/contact`, authHeaders),
-      ]);
+    setDataLoading({
+      users: true,
+      subscribers: true,
+      chats: true,
+      contacts: true,
+    });
 
+    try {
+      const usersRes = await api.get(`${BASE_URL}/api/user/`, authHeaders);
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
-      setSubscribers(subscribersRes.data?.data || []);
-      const chatRows = chatRes.data?.data || [];
-      setChatActivity(chatRows);
-      setChatSummary({
-        totalConversations:
-          chatRes.data?.totalConversations ?? chatRows.length,
-        totalMessages:
-          chatRes.data?.totalMessages ??
-          chatRows.reduce((sum, chat) => sum + (chat.totalMessages || 0), 0),
-      });
-      setContactMessages(contactRes.data?.data || []);
     } catch (err) {
-      console.error("Admin fetch failed:", err);
+      console.error("Admin users fetch failed:", err);
       setToast({
         open: true,
-        message: "Failed to load admin dashboard",
+        message: "Failed to load users",
         severity: "error",
       });
     } finally {
-      setLoading(false);
+      setDataLoading((prev) => ({ ...prev, users: false }));
     }
+
+    api
+      .get(`${BASE_URL}/api/subscription`, authHeaders)
+      .then((subscribersRes) => {
+        setSubscribers(subscribersRes.data?.data || []);
+      })
+      .catch((err) => console.error("Admin subscribers fetch failed:", err))
+      .finally(() =>
+        setDataLoading((prev) => ({ ...prev, subscribers: false }))
+      );
+
+    api
+      .get(`${BASE_URL}/api/chat/admin/activity`, authHeaders)
+      .then((chatRes) => {
+        const chatRows = chatRes.data?.data || [];
+        setChatActivity(chatRows);
+        setChatSummary({
+          totalConversations:
+            chatRes.data?.totalConversations ?? chatRows.length,
+          totalMessages:
+            chatRes.data?.totalMessages ??
+            chatRows.reduce((sum, chat) => sum + (chat.totalMessages || 0), 0),
+        });
+      })
+      .catch((err) => console.error("Admin chat activity fetch failed:", err))
+      .finally(() => setDataLoading((prev) => ({ ...prev, chats: false })));
+
+    api
+      .get(`${BASE_URL}/api/contact`, authHeaders)
+      .then((contactRes) => setContactMessages(contactRes.data?.data || []))
+      .catch((err) => console.error("Admin contacts fetch failed:", err))
+      .finally(() => setDataLoading((prev) => ({ ...prev, contacts: false })));
   };
 
   useEffect(() => {
@@ -459,6 +486,37 @@ const AdminScreen = () => {
       : selectedTab === "contacts"
       ? filteredContactMessages.length
       : activeRows.length;
+
+  const currentTabLoading =
+    selectedTab === "chats"
+      ? dataLoading.chats
+      : selectedTab === "contacts"
+      ? dataLoading.contacts
+      : selectedTab === "subscribers"
+      ? dataLoading.subscribers
+      : dataLoading.users;
+
+  const renderTableSkeleton = (columns = 6) => (
+    <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2 }}>
+      <Table size={isMobile ? "small" : "medium"}>
+        <TableBody>
+          {Array.from({ length: 8 }).map((_, rowIndex) => (
+            <TableRow key={rowIndex}>
+              {Array.from({ length: columns }).map((__, columnIndex) => (
+                <TableCell key={columnIndex}>
+                  <Skeleton
+                    variant={columnIndex === 0 ? "rounded" : "text"}
+                    width={columnIndex === 0 ? 150 : "82%"}
+                    height={columnIndex === 0 ? 42 : 24}
+                  />
+                </TableCell>
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
 
   const openEditModal = (user) => {
     setSelectedUser(user);
@@ -1218,12 +1276,7 @@ const AdminScreen = () => {
         </Stack>
       </Paper>
 
-      {loading ? (
-        <Box minHeight="60vh" display="grid" sx={{ placeItems: "center" }}>
-          <CircularProgress color="secondary" />
-        </Box>
-      ) : (
-        <AdminContentShell
+      <AdminContentShell
           sidebar={renderSidebar()}
           mobileOpen={mobileSidebarOpen}
           onMobileClose={() => setMobileSidebarOpen(false)}
@@ -1234,8 +1287,16 @@ const AdminScreen = () => {
                   <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="Total Users"
-                      value={users.length}
-                      helper={`${activeUsers} truly online now`}
+                      value={
+                        dataLoading.users ? <Skeleton width={60} /> : users.length
+                      }
+                      helper={
+                        dataLoading.users ? (
+                          <Skeleton width={130} />
+                        ) : (
+                          `${activeUsers} truly online now`
+                        )
+                      }
                       accent="#f3e8ff"
                       icon={<GroupIcon />}
                     />
@@ -1243,8 +1304,20 @@ const AdminScreen = () => {
                   <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="All-Time Subscribers"
-                      value={subscribers.length}
-                      helper={`${activeSubscribers} active, ${expiredSubscribers} expired`}
+                      value={
+                        dataLoading.subscribers ? (
+                          <Skeleton width={60} />
+                        ) : (
+                          subscribers.length
+                        )
+                      }
+                      helper={
+                        dataLoading.subscribers ? (
+                          <Skeleton width={145} />
+                        ) : (
+                          `${activeSubscribers} active, ${expiredSubscribers} expired`
+                        )
+                      }
                       accent="#fdf2f8"
                       icon={<PremiumIcon />}
                     />
@@ -1310,8 +1383,20 @@ const AdminScreen = () => {
                   <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="Chat Conversations"
-                      value={chatSummary.totalConversations}
-                      helper={`${chatSummary.totalMessages} total messages. Click to inspect conversations.`}
+                      value={
+                        dataLoading.chats ? (
+                          <Skeleton width={60} />
+                        ) : (
+                          chatSummary.totalConversations
+                        )
+                      }
+                      helper={
+                        dataLoading.chats ? (
+                          <Skeleton width={185} />
+                        ) : (
+                          `${chatSummary.totalMessages} total messages. Click to inspect conversations.`
+                        )
+                      }
                       accent="#fef3c7"
                       icon={<BarChartIcon />}
                       onClick={() => openAdminSection("chats")}
@@ -1661,7 +1746,17 @@ const AdminScreen = () => {
                 </Box>
 
                 <Box sx={{ overflowX: "auto" }}>
-                  {selectedTab === "chats"
+                  {currentTabLoading && currentRowCount === 0
+                    ? renderTableSkeleton(
+                        selectedTab === "users" || selectedTab === "online"
+                          ? 8
+                          : selectedTab === "chats"
+                          ? 6
+                          : selectedTab === "contacts"
+                          ? 5
+                          : 10
+                      )
+                    : selectedTab === "chats"
                     ? renderChatActivityTable()
                     : selectedTab === "contacts"
                     ? renderContactMessagesTable()
@@ -1684,7 +1779,6 @@ const AdminScreen = () => {
               </Paper>
             )}
         </AdminContentShell>
-      )}
 
       <Dialog open={editModalOpen} onClose={() => setEditModalOpen(false)}>
         <DialogTitle>Edit User</DialogTitle>
