@@ -23,6 +23,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import UpgradeIcon from "@mui/icons-material/WorkspacePremium"; // ★ UPGRADE ICON
 import LockResetIcon from "@mui/icons-material/LockReset";
 import ContactSupportIcon from "@mui/icons-material/ContactSupport";
+import HealthAndSafetyIcon from "@mui/icons-material/HealthAndSafety";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import api from "../../components/api/Api";
 
@@ -132,6 +133,10 @@ const Navbar = () => {
 
       case "Contact Us":
         navigate("/contact");
+        break;
+
+      case "Dating Safety Tips":
+        navigate("/safetyTips");
         break;
 
       case "Upgrade":
@@ -257,6 +262,11 @@ const Navbar = () => {
                 <MenuItem onClick={() => handleMenuClick("Contact Us")}>
                   <ContactSupportIcon sx={{ mr: 1, color: "#2d0052" }} />
                   Contact Us
+                </MenuItem>
+
+                <MenuItem onClick={() => handleMenuClick("Dating Safety Tips")}>
+                  <HealthAndSafetyIcon sx={{ mr: 1, color: "#2d0052" }} />
+                  Dating Safety Tips
                 </MenuItem>
 
                 {/* ⭐ NEW UPGRADE MENU ITEM */}

@@ -37,7 +37,6 @@ const hiddenPaths = [
   "/privacy",
   "/terms",
   "/disclaimer",
-  "/safetyTips",
   "/about",
 ];
 
@@ -64,7 +63,7 @@ const moreItems = [
   },
   {
     label: "Dating Safety Tips",
-    path: "/coming-soon/dating-safety-tips",
+    path: "/safetyTips",
     icon: <HealthAndSafetyIcon />,
   },
 ];
@@ -168,6 +167,7 @@ const MobileBottomNav = () => {
           location.pathname === "/profile" ||
           location.pathname === "/change-password" ||
           location.pathname === "/contact" ||
+          location.pathname === "/safetyTips" ||
           location.pathname.startsWith("/coming-soon/")
         );
       }
@@ -180,12 +180,14 @@ const MobileBottomNav = () => {
         anchor="bottom"
         open={moreOpen}
         onClose={() => setMoreOpen(false)}
+        sx={{ zIndex: 1500 }}
         PaperProps={{
           sx: {
             borderRadius: "18px 18px 0 0",
-            pb: "env(safe-area-inset-bottom)",
+            pb: "calc(env(safe-area-inset-bottom) + 18px)",
             maxHeight: "78vh",
             overflowY: "auto",
+            zIndex: 1501,
           },
         }}
       >
@@ -202,7 +204,7 @@ const MobileBottomNav = () => {
                   setMoreOpen(false);
                   navigate(item.path);
                 }}
-                sx={{ borderRadius: 2, mb: 0.5 }}
+                sx={{ borderRadius: 2, mb: 0.75, minHeight: 52 }}
               >
                 <ListItemIcon sx={{ color: "#2d0052", minWidth: 42 }}>
                   {item.icon}

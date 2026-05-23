@@ -1,0 +1,1 @@
+import{aD as o,al as m,aE as u}from"./index-BfeqA2fU.js";const n=o();function p({props:t,name:a,defaultTheme:r,themeId:s}){let e=m(r);return s&&(e=e[s]||e),u({theme:e,name:a,props:t})}export{n as s,p as u};

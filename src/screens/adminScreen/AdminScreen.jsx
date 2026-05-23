@@ -115,15 +115,24 @@ const isReallyOnline = (user) => {
   return Date.now() - lastSeenTime < 5 * 60 * 1000;
 };
 
-const StatCard = ({ label, value, icon, accent, helper }) => (
+const StatCard = ({ label, value, icon, accent, helper, onClick }) => (
   <Card
     elevation={0}
+    onClick={onClick}
     sx={{
       height: "100%",
       borderRadius: 3,
       border: "1px solid rgba(15,23,42,0.08)",
       bgcolor: "#fff",
       boxShadow: "0 18px 40px rgba(15,23,42,0.06)",
+      cursor: onClick ? "pointer" : "default",
+      transition: "transform 160ms ease, box-shadow 160ms ease",
+      "&:hover": onClick
+        ? {
+            transform: "translateY(-2px)",
+            boxShadow: "0 22px 46px rgba(15,23,42,0.1)",
+          }
+        : undefined,
     }}
   >
     <CardContent>
@@ -195,6 +204,10 @@ const AdminScreen = () => {
   const [users, setUsers] = useState([]);
   const [subscribers, setSubscribers] = useState([]);
   const [chatActivity, setChatActivity] = useState([]);
+  const [chatSummary, setChatSummary] = useState({
+    totalConversations: 0,
+    totalMessages: 0,
+  });
   const [contactMessages, setContactMessages] = useState([]);
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [selectedUser, setSelectedUser] = useState(null);
@@ -239,7 +252,15 @@ const AdminScreen = () => {
 
       setUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
       setSubscribers(subscribersRes.data?.data || []);
-      setChatActivity(chatRes.data?.data || []);
+      const chatRows = chatRes.data?.data || [];
+      setChatActivity(chatRows);
+      setChatSummary({
+        totalConversations:
+          chatRes.data?.totalConversations ?? chatRows.length,
+        totalMessages:
+          chatRes.data?.totalMessages ??
+          chatRows.reduce((sum, chat) => sum + (chat.totalMessages || 0), 0),
+      });
       setContactMessages(contactRes.data?.data || []);
     } catch (err) {
       console.error("Admin fetch failed:", err);
@@ -578,7 +599,7 @@ const AdminScreen = () => {
     {
       value: "chats",
       label: "Users That Chat",
-      helper: `${chatActivity.length} conversations`,
+      helper: `${chatSummary.totalConversations} conversations`,
       icon: <BarChartIcon />,
     },
     {
@@ -591,6 +612,13 @@ const AdminScreen = () => {
 
   const handleSidebarSelect = (value) => {
     setSelectedTab(value);
+    setPage(1);
+    if (isMobile) setMobileSidebarOpen(false);
+  };
+
+  const openAdminSection = (value) => {
+    setSelectedTab(value);
+    setPage(1);
     if (isMobile) setMobileSidebarOpen(false);
   };
 
@@ -775,7 +803,7 @@ const AdminScreen = () => {
                 },
                 {
                   icon: <ChatIcon />,
-                  label: `${chatActivity.length} chat rooms`,
+                  label: `${chatSummary.totalConversations} chat rooms`,
                   bg: "#fef3c7",
                   color: "#92400e",
                 },
@@ -1282,10 +1310,11 @@ const AdminScreen = () => {
                   <Grid item xs={12} sm={6} lg={3}>
                     <StatCard
                       label="Chat Conversations"
-                      value={chatActivity.length}
-                      helper="Rooms with at least one message"
+                      value={chatSummary.totalConversations}
+                      helper={`${chatSummary.totalMessages} total messages. Click to inspect conversations.`}
                       accent="#fef3c7"
                       icon={<BarChartIcon />}
+                      onClick={() => openAdminSection("chats")}
                     />
                   </Grid>
                 </Grid>
