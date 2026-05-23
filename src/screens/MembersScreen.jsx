@@ -1,36 +1,35 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import axiosInstance from "..//utility/axiosInstance";
 import {
   Box,
+  Button,
   Card,
   CardContent,
   CardMedia,
-  Typography,
-  Stack,
-  Button,
-  TextField,
-  InputAdornment,
-  Pagination,
-  Tooltip,
   Chip,
+  InputAdornment,
   LinearProgress,
+  Pagination,
+  Skeleton,
+  Stack,
+  TextField,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import ImageIcon from "@mui/icons-material/Image";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import PersonSearchIcon from "@mui/icons-material/PersonSearch";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import Navbar from "../components/Navbar/Navbar";
-import Footer from "../components/Footer/Footer";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import ImageIcon from "@mui/icons-material/Image";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import PersonSearchIcon from "@mui/icons-material/PersonSearch";
+import SearchIcon from "@mui/icons-material/Search";
 import { useNavigate } from "react-router-dom";
-import ClipLoader from "react-spinners/ClipLoader";
 import io from "socket.io-client";
+import Footer from "../components/Footer/Footer";
+import Navbar from "../components/Navbar/Navbar";
+import axiosInstance from "../utility/axiosInstance";
 import { cloudinaryImage } from "../utility/cloudinaryImage";
 
-const getCurrentUserId = () => localStorage.getItem("userId");
 const MAX_DESCRIPTION_LINES = 2;
 const CARD_HEIGHT = 486;
 const CARD_CONTENT_HEIGHT = 206;
@@ -38,22 +37,31 @@ const CARDS_PER_PAGE = 8;
 
 const getLastSeenDate = (lastSeen) => {
   if (!lastSeen) return null;
-
   const rawDate =
     typeof lastSeen === "string"
       ? lastSeen
       : lastSeen.date || lastSeen.exact || lastSeen.value || null;
-
   if (!rawDate) return null;
-
   const parsedDate = new Date(rawDate);
   return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
 };
 
+const getLastSeenLabel = (status) => {
+  if (status?.isOnline) return "Online now";
+  const lastSeenDate = getLastSeenDate(status?.lastSeen);
+  if (!lastSeenDate) return "Not active recently";
+
+  const elapsedHours = (Date.now() - lastSeenDate.getTime()) / (1000 * 60 * 60);
+  const elapsedDays = elapsedHours / 24;
+  if (elapsedHours <= 48) return "Recently online";
+  if (elapsedDays <= 14) return "Active this week";
+  return "Away for a while";
+};
+
 const sortByOnlineStatus = (items, statuses) =>
   [...items].sort((a, b) => {
-    const aStatus = statuses[a._id] || {};
-    const bStatus = statuses[b._id] || {};
+    const aStatus = statuses[a._id] || a;
+    const bStatus = statuses[b._id] || b;
 
     if (Boolean(aStatus.isOnline) !== Boolean(bStatus.isOnline)) {
       return aStatus.isOnline ? -1 : 1;
@@ -61,50 +69,24 @@ const sortByOnlineStatus = (items, statuses) =>
 
     const aLastSeen = getLastSeenDate(aStatus.lastSeen)?.getTime() || 0;
     const bLastSeen = getLastSeenDate(bStatus.lastSeen)?.getTime() || 0;
-
-    if (aLastSeen !== bLastSeen) {
-      return bLastSeen - aLastSeen;
-    }
-
+    if (aLastSeen !== bLastSeen) return bLastSeen - aLastSeen;
     return (a.name || "").localeCompare(b.name || "");
   });
 
-const getLastSeenLabel = (status) => {
-  if (status?.isOnline) return "Online now";
-
-  const lastSeenDate = getLastSeenDate(status?.lastSeen);
-  if (!lastSeenDate) return "Not active recently";
-
-  const elapsedMs = Date.now() - lastSeenDate.getTime();
-  const elapsedHours = elapsedMs / (1000 * 60 * 60);
-  const elapsedDays = elapsedHours / 24;
-
-  if (elapsedHours <= 48) return "Recently online";
-  if (elapsedDays <= 14) return "Active this week";
-  return "Away for a while";
-};
-
 const Members = () => {
   const navigate = useNavigate();
+  const suggestionsRef = useRef(null);
+  const userId = useMemo(() => localStorage.getItem("userId"), []);
+
   const [members, setMembers] = useState([]);
   const [filteredMembers, setFilteredMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [mergeStatuses, setMergeStatuses] = useState({});
   const [userStatuses, setUserStatuses] = useState({});
   const [suggestedMembers, setSuggestedMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hasPaid, setHasPaid] = useState(false);
-  const suggestionsRef = useRef(null);
-
-  // const userId = localStorage.getItem("userId") || getCurrentUserId();
-  const userId = useMemo(() => {
-    const id = localStorage.getItem("userId");
-    if (!id) {
-      console.error("No userId found. Redirecting to login.");
-    }
-    return id;
-  }, []);
+  const [loadingMembers, setLoadingMembers] = useState(true);
 
   useEffect(() => {
     if (!userId) {
@@ -112,142 +94,155 @@ const Members = () => {
       return;
     }
 
-    //     const fetchMembers = async () => {
-    //       setLoading(true);
-    //       try {
-    //         const token = localStorage.getItem("token");
-    //         const res = await axiosInstance.get(
-    //           `${import.meta.env.VITE_BASE_URL}/api/user
-    // `,
-    //           { headers: { Authorization: `Bearer ${token}` } }
-    //         );
+    let cancelled = false;
+    const token = localStorage.getItem("token");
+    const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
 
-    //         const data = Array.isArray(res.data)
-    //           ? res.data
-    //           : res.data.members || res.data.matches || [];
-
-    //         const onlineStatuses = await Promise.all(
-    //           data.map(async (member) => {
-    //             try {
-    //               const res = await axiosInstance.get(
-    //                 `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
-    //               );
-    //               console.log(res);
-    //               return { memberId: member._id, status: res.data };
-    //             } catch {
-    //               return {
-    //                 memberId: member._id,
-    //                 status: { isOnline: false, lastSeen: null },
-    //               };
-    //             }
-    //           })
-    //         );
-    const fetchMembers = async () => {
-      setLoading(true);
+    const loadMembers = async () => {
+      setLoadingMembers(true);
       try {
-        const token = localStorage.getItem("token");
         const res = await axiosInstance.get(
           `${import.meta.env.VITE_BASE_URL}/api/user/merge/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          authHeaders
         );
 
+        if (cancelled) return;
         const data = Array.isArray(res.data)
           ? res.data
           : res.data.members || res.data.matches || [];
 
-        const suggestedRes = await axiosInstance.get(
-          `${import.meta.env.VITE_BASE_URL}/api/user/suggested/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        const suggestions = Array.isArray(suggestedRes.data?.suggestions)
-          ? suggestedRes.data.suggestions
-          : [];
-
-        const membersById = new Map();
-        [...data, ...suggestions].forEach((member) => {
-          if (member?._id) membersById.set(member._id, member);
-        });
-        const statusMembers = [...membersById.values()];
-
-        const onlineStatuses = await Promise.all(
-          statusMembers.map(async (member) => {
-            try {
-              const res = await axiosInstance.get(
-                `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
-              );
-              // console.log(res);
-              return { memberId: member._id, status: res.data };
-            } catch {
-              return {
-                memberId: member._id,
-                status: { isOnline: false, lastSeen: null },
-              };
-            }
-          })
-        );
-
-        const statusObj = {};
-        onlineStatuses.forEach(({ memberId, status }) => {
-          statusObj[memberId] = status;
-        });
-        setUserStatuses(statusObj);
-
-        const sorted = sortByOnlineStatus(data, statusObj);
-
-        const mergeStatusMembers = [...membersById.values()];
-        const statuses = await Promise.all(
-          mergeStatusMembers.map(async (member) => {
-            try {
-              const statusRes = await axiosInstance.get(
-                `${
-                  import.meta.env.VITE_BASE_URL
-                }/api/merge/status?member1=${userId}&member2=${member._id}`
-              );
-              return { memberId: member._id, status: statusRes.data };
-            } catch {
-              return { memberId: member._id, status: {} };
-            }
-          })
-        );
-
-        const statusMap = {};
-        statuses.forEach(({ memberId, status }) => {
-          statusMap[memberId] = status;
+        const initialStatuses = {};
+        data.forEach((member) => {
+          initialStatuses[member._id] = {
+            isOnline: Boolean(member.isOnline),
+            lastSeen: member.lastSeen || null,
+          };
         });
 
-        setMergeStatuses(statusMap);
+        const sorted = sortByOnlineStatus(data, initialStatuses);
+        setUserStatuses(initialStatuses);
         setMembers(sorted);
         setFilteredMembers(sorted);
-        setSuggestedMembers(sortByOnlineStatus(suggestions, statusObj));
+        setLoadingMembers(false);
 
-        // ✅ Check if any member has a valid paid record
-        const now = new Date();
-        const hasPaidForAnyone = sorted.some((member) => {
-          const paidKey = `hasPaid_${member._id}`;
-          const stored = localStorage.getItem(paidKey);
+        const paidFromStorage = sorted.some((member) => {
+          const stored = localStorage.getItem(`hasPaid_${member._id}`);
           if (!stored) return false;
           try {
             const parsed = JSON.parse(stored);
-            if (!parsed.paidAt) return false;
-            const paidAt = new Date(parsed.paidAt);
-            const diff = now - paidAt;
-            const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-            return diff <= thirtyDays;
+            const paidAt = parsed.paidAt ? new Date(parsed.paidAt) : null;
+            return paidAt && Date.now() - paidAt.getTime() <= 30 * 24 * 60 * 60 * 1000;
           } catch {
             return false;
           }
         });
-      } catch {
-        setMembers([]);
-        setFilteredMembers([]);
-        setSuggestedMembers([]);
+        setHasPaid(localStorage.getItem("hasPaid") === "true" || paidFromStorage);
+
+        loadSecondaryData(data, initialStatuses, authHeaders, cancelled);
+      } catch (err) {
+        console.error("Members load failed:", err);
+        if (!cancelled) {
+          setMembers([]);
+          setFilteredMembers([]);
+          setSuggestedMembers([]);
+          setLoadingMembers(false);
+        }
       }
-      setLoading(false);
     };
-    const hasPaid = localStorage.getItem("hasPaid");
-    setHasPaid(hasPaid === "true");
-    if (userId) fetchMembers();
-  }, [userId]);
+
+    const loadSecondaryData = async (baseMembers, initialStatuses, headers, isCancelled) => {
+      try {
+        const suggestedRes = await axiosInstance.get(
+          `${import.meta.env.VITE_BASE_URL}/api/user/suggested/${userId}`,
+          headers
+        );
+        if (isCancelled) return;
+
+        const suggestions = Array.isArray(suggestedRes.data?.suggestions)
+          ? suggestedRes.data.suggestions
+          : [];
+        setSuggestedMembers(sortByOnlineStatus(suggestions, initialStatuses));
+
+        const membersById = new Map();
+        [...baseMembers, ...suggestions].forEach((member) => {
+          if (member?._id) membersById.set(member._id, member);
+        });
+        const allKnownMembers = [...membersById.values()];
+
+        Promise.all([
+          loadOnlineStatuses(allKnownMembers),
+          loadMergeStatuses(allKnownMembers),
+        ]).catch((err) => console.error("Secondary member data failed:", err));
+      } catch (err) {
+        console.error("Suggestions load failed:", err);
+      }
+    };
+
+    const loadOnlineStatuses = async (items) => {
+      const statuses = await Promise.all(
+        items.map(async (member) => {
+          try {
+            const res = await axiosInstance.get(
+              `${import.meta.env.VITE_BASE_URL}/api/user/${member._id}/status`
+            );
+            return { memberId: member._id, status: res.data };
+          } catch {
+            return {
+              memberId: member._id,
+              status: {
+                isOnline: Boolean(member.isOnline),
+                lastSeen: member.lastSeen || null,
+              },
+            };
+          }
+        })
+      );
+
+      if (cancelled) return;
+      const statusObj = {};
+      statuses.forEach(({ memberId, status }) => {
+        statusObj[memberId] = status;
+      });
+
+      setUserStatuses((prev) => {
+        const next = { ...prev, ...statusObj };
+        setMembers((current) => sortByOnlineStatus(current, next));
+        setFilteredMembers((current) => sortByOnlineStatus(current, next));
+        setSuggestedMembers((current) => sortByOnlineStatus(current, next));
+        return next;
+      });
+    };
+
+    const loadMergeStatuses = async (items) => {
+      const statuses = await Promise.all(
+        items.map(async (member) => {
+          try {
+            const res = await axiosInstance.get(
+              `${
+                import.meta.env.VITE_BASE_URL
+              }/api/merge/status?member1=${userId}&member2=${member._id}`
+            );
+            return { memberId: member._id, status: res.data };
+          } catch {
+            return { memberId: member._id, status: {} };
+          }
+        })
+      );
+
+      if (cancelled) return;
+      const statusMap = {};
+      statuses.forEach(({ memberId, status }) => {
+        statusMap[memberId] = status;
+      });
+      setMergeStatuses(statusMap);
+    };
+
+    loadMembers();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, userId]);
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -255,7 +250,6 @@ const Members = () => {
     const socket = io(import.meta.env.VITE_BASE_URL, {
       transports: ["websocket"],
     });
-
     socket.emit("register_user", userId);
 
     const handlePresenceUpdate = ({ userId: changedUserId, isOnline, lastSeen }) => {
@@ -268,16 +262,14 @@ const Members = () => {
             lastSeen,
           },
         };
-
         setMembers((current) => sortByOnlineStatus(current, next));
         setFilteredMembers((current) => sortByOnlineStatus(current, next));
-
+        setSuggestedMembers((current) => sortByOnlineStatus(current, next));
         return next;
       });
     };
 
     socket.on("presence_update", handlePresenceUpdate);
-
     return () => {
       socket.off("presence_update", handlePresenceUpdate);
       socket.disconnect();
@@ -286,26 +278,26 @@ const Members = () => {
 
   const handleMerge = (member2) => navigate(`/merge/${userId}/${member2}`);
   const handleChat = (member2) => navigate(`/chat/${userId}/${member2}`);
+
   const scrollSuggestions = (direction) => {
     const container = suggestionsRef.current;
     if (!container) return;
-
     container.scrollBy({
       left: direction * Math.min(container.clientWidth * 0.9, 720),
       behavior: "smooth",
     });
   };
 
-  const handleSearch = (e) => {
-    const term = e.target.value.toLowerCase();
+  const handleSearch = (event) => {
+    const term = event.target.value.toLowerCase();
     setSearchTerm(term);
 
     const filtered = members.filter(
-      (m) =>
-        m.name?.toLowerCase().includes(term) ||
-        m.location?.toLowerCase().includes(term) ||
-        m.occupation?.toLowerCase().includes(term) ||
-        m.relationshipType?.toLowerCase().includes(term)
+      (member) =>
+        member.name?.toLowerCase().includes(term) ||
+        member.location?.toLowerCase().includes(term) ||
+        member.occupation?.toLowerCase().includes(term) ||
+        member.relationshipType?.toLowerCase().includes(term)
     );
 
     setFilteredMembers(sortByOnlineStatus(filtered, userStatuses));
@@ -317,7 +309,46 @@ const Members = () => {
     currentPage * CARDS_PER_PAGE
   );
 
-  if (!userId)
+  const renderMemberSkeletons = () =>
+    Array.from({ length: CARDS_PER_PAGE }).map((_, index) => (
+      <Card
+        key={`member-skeleton-${index}`}
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          background: "rgba(255,255,255,0.96)",
+          border: "1px solid rgba(217,164,240,0.35)",
+          height: `${CARD_HEIGHT}px`,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Skeleton variant="rectangular" height={214} />
+        <CardContent
+          sx={{
+            height: `${CARD_CONTENT_HEIGHT}px`,
+            p: 1.75,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <Skeleton width="68%" height={28} />
+          <Skeleton width="58%" height={22} sx={{ mt: 1 }} />
+          <Skeleton width="44%" height={20} sx={{ mt: 1 }} />
+          <Skeleton width="92%" height={20} sx={{ mt: 2 }} />
+          <Skeleton width="78%" height={20} />
+          <Skeleton
+            variant="rounded"
+            width="100%"
+            height={40}
+            sx={{ mt: "auto", borderRadius: 1.5 }}
+          />
+        </CardContent>
+      </Card>
+    ));
+
+  if (!userId) {
     return (
       <Box
         minHeight="100vh"
@@ -331,21 +362,7 @@ const Members = () => {
         <Typography color="#fff">Please log in to view members.</Typography>
       </Box>
     );
-
-  if (loading)
-    return (
-      <Box
-        minHeight="100vh"
-        sx={{
-          background: "#181c2b",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <ClipLoader size={70} color="#ec4899" />
-      </Box>
-    );
+  }
 
   return (
     <>
@@ -366,7 +383,7 @@ const Members = () => {
           </Typography>
         </Box>
 
-        {suggestedMembers.length > 0 && (
+        {!loadingMembers && suggestedMembers.length > 0 && (
           <Box
             sx={{
               maxWidth: 1180,
@@ -410,11 +427,7 @@ const Members = () => {
               />
             </Stack>
 
-            <Box
-              sx={{
-                position: "relative",
-              }}
-            >
+            <Box sx={{ position: "relative" }}>
               <Button
                 onClick={() => scrollSuggestions(-1)}
                 aria-label="Previous suggestions"
@@ -430,7 +443,6 @@ const Members = () => {
                   zIndex: 2,
                   color: "#fff",
                   bgcolor: "rgba(23,24,39,0.88)",
-                  boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
                   "&:hover": { bgcolor: "#8b3ba8" },
                 }}
               >
@@ -451,7 +463,6 @@ const Members = () => {
                   zIndex: 2,
                   color: "#fff",
                   bgcolor: "rgba(23,24,39,0.88)",
-                  boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
                   "&:hover": { bgcolor: "#8b3ba8" },
                 }}
               >
@@ -475,264 +486,163 @@ const Members = () => {
                   scrollSnapType: "x mandatory",
                   scrollBehavior: "smooth",
                   scrollbarWidth: "thin",
-                  "&::-webkit-scrollbar": { height: 8 },
-                  "&::-webkit-scrollbar-thumb": {
-                    background: "rgba(217,164,240,0.42)",
-                    borderRadius: 99,
-                  },
                 }}
               >
-              {suggestedMembers.slice(0, 24).map((member) => {
-                const status = mergeStatuses[member._id];
-                const score = Number(member.compatibilityScore || 0);
-                const onlineStatus = userStatuses[member._id] || member;
-                const isOnline = Boolean(onlineStatus?.isOnline || member.isOnline);
-                const freeLimitReached = Boolean(
-                  status?.freeTierChatLimitReached
-                );
-                const activityLabel = isOnline
-                  ? "Online now - best time to connect"
-                  : `${getLastSeenLabel(onlineStatus)} - review profile`;
-                const promptLabel = status?.canChat
-                  ? "Chat access ready"
-                  : freeLimitReached
-                  ? "Free chats used - upgrade to continue"
-                  : "View profile before you merge";
+                {suggestedMembers.slice(0, 24).map((member) => {
+                  const status = mergeStatuses[member._id];
+                  const score = Number(member.compatibilityScore || 0);
+                  const onlineStatus = userStatuses[member._id] || member;
+                  const isOnline = Boolean(onlineStatus?.isOnline || member.isOnline);
+                  const freeLimitReached = Boolean(
+                    status?.freeTierChatLimitReached
+                  );
 
-                return (
-                  <Box
-                    key={`suggested-${member._id}`}
-                    sx={{
-                      scrollSnapAlign: "start",
-                      minWidth: 0,
-                      borderRadius: 2,
-                      p: 1.25,
-                      background: "#ffffff",
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      display: "grid",
-                      gridTemplateColumns: "72px minmax(0, 1fr)",
-                      gap: 1.25,
-                      alignItems: "center",
-                    }}
-                  >
+                  return (
                     <Box
+                      key={`suggested-${member._id}`}
                       sx={{
-                        width: 72,
-                        height: 84,
-                        borderRadius: 1.5,
-                        overflow: "hidden",
-                        bgcolor: "#f4e8fb",
-                        display: "flex",
+                        scrollSnapAlign: "start",
+                        borderRadius: 2,
+                        p: 1.25,
+                        background: "#fff",
+                        display: "grid",
+                        gridTemplateColumns: "72px minmax(0, 1fr)",
+                        gap: 1.25,
                         alignItems: "center",
-                        justifyContent: "center",
                       }}
                     >
-                      {member.photo ? (
-                        <Box
-                          component="img"
-                          src={cloudinaryImage(member.photo, {
-                            width: 520,
-                            height: 620,
-                            crop: "fill",
-                          })}
-                          alt={member.name}
-                          sx={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                        />
-                      ) : (
-                        <ImageIcon sx={{ color: "#9d63b7", fontSize: 36 }} />
-                      )}
-                    </Box>
-
-                    <Box minWidth={0}>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        spacing={1}
-                      >
-                        <Typography
-                          fontWeight={900}
-                          color="#171827"
-                          noWrap
-                          sx={{ minWidth: 0 }}
-                        >
-                          {member.name}
-                        </Typography>
-                        <Typography
-                          fontWeight={900}
-                          color="#8b3ba8"
-                          fontSize={13}
-                          whiteSpace="nowrap"
-                        >
-                          {score}% match
-                        </Typography>
-                      </Stack>
-
-                      <LinearProgress
-                        variant="determinate"
-                        value={score}
+                      <Box
                         sx={{
-                          my: 0.85,
-                          height: 6,
-                          borderRadius: 99,
-                          bgcolor: "#eee7f2",
-                          "& .MuiLinearProgress-bar": {
-                            borderRadius: 99,
-                            background:
-                              "linear-gradient(90deg, #8b3ba8, #ec4899)",
-                          },
+                          width: 72,
+                          height: 84,
+                          borderRadius: 1.5,
+                          overflow: "hidden",
+                          bgcolor: "#f4e8fb",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
-                      />
-
-                      <Typography
-                        color="#5b5f72"
-                        fontSize={12}
-                        fontWeight={700}
-                        noWrap
                       >
-                        {member.relationshipType || "Relationship goal"} -{" "}
-                        {isOnline ? "Online now" : getLastSeenLabel(onlineStatus)}
-                      </Typography>
+                        {member.photo ? (
+                          <Box
+                            component="img"
+                            src={cloudinaryImage(member.photo, {
+                              width: 520,
+                              height: 620,
+                              crop: "fill",
+                            })}
+                            alt={member.name}
+                            sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          />
+                        ) : (
+                          <ImageIcon sx={{ color: "#9d63b7", fontSize: 36 }} />
+                        )}
+                      </Box>
 
-                      <Stack
-                        direction="row"
-                        spacing={0.75}
-                        mt={1}
-                        sx={{ overflow: "hidden", flexWrap: "nowrap" }}
-                      >
-                        <Chip
-                          label={activityLabel}
-                          size="small"
+                      <Box minWidth={0}>
+                        <Stack direction="row" justifyContent="space-between" spacing={1}>
+                          <Typography fontWeight={900} color="#171827" noWrap>
+                            {member.name}
+                          </Typography>
+                          <Typography fontWeight={900} color="#8b3ba8" fontSize={13}>
+                            {score}% match
+                          </Typography>
+                        </Stack>
+                        <LinearProgress
+                          variant="determinate"
+                          value={score}
                           sx={{
-                            maxWidth: 170,
-                            height: 24,
-                            borderRadius: 1,
-                            bgcolor: isOnline ? "#dcfce7" : "#eef2ff",
-                            color: isOnline ? "#166534" : "#3730a3",
-                            fontWeight: 900,
-                            "& .MuiChip-label": {
-                              px: 0.75,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
+                            my: 0.85,
+                            height: 6,
+                            borderRadius: 99,
+                            bgcolor: "#eee7f2",
+                            "& .MuiLinearProgress-bar": {
+                              borderRadius: 99,
+                              background: "linear-gradient(90deg, #8b3ba8, #ec4899)",
                             },
                           }}
                         />
-                        <Chip
-                          label={promptLabel}
-                          size="small"
-                          sx={{
-                            maxWidth: 190,
-                            height: 24,
-                            borderRadius: 1,
-                            bgcolor: freeLimitReached ? "#fff1f2" : "#f7eefb",
-                            color: freeLimitReached ? "#be123c" : "#6f2a86",
-                            fontWeight: 900,
-                            "& .MuiChip-label": {
-                              px: 0.75,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            },
-                          }}
-                        />
-                        {(member.compatibilityReasons || [])
-                          .slice(0, freeLimitReached ? 0 : 1)
-                          .map((reason) => (
-                            <Chip
-                              key={`${member._id}-${reason}`}
-                              label={reason}
-                              size="small"
-                              sx={{
-                                maxWidth: 118,
-                                height: 24,
-                                borderRadius: 1,
-                                bgcolor: "#f7eefb",
-                                color: "#6f2a86",
-                                fontWeight: 800,
-                                "& .MuiChip-label": {
-                                  px: 0.75,
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                },
-                              }}
-                            />
-                          ))}
-                      </Stack>
-
-                      <Stack direction="row" spacing={0.75} mt={1.1}>
-                        <Button
-                          fullWidth
-                          size="small"
-                          variant="outlined"
-                          startIcon={<PersonSearchIcon />}
-                          sx={{
-                            borderColor: "#8b3ba8",
-                            color: "#6f2a86",
-                            borderRadius: 1.25,
-                            textTransform: "none",
-                            fontWeight: 850,
-                            minWidth: 0,
-                            "& .MuiButton-startIcon": { mr: 0.4 },
-                          }}
-                          onClick={() => navigate(`/member-profile/${member._id}`)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          fullWidth
-                          size="small"
-                          variant="contained"
-                          sx={{
-                            bgcolor: "#171827",
-                            borderRadius: 1.25,
-                            textTransform: "none",
-                            fontWeight: 850,
-                            minWidth: 0,
-                            "&:hover": { bgcolor: "#8b3ba8" },
-                          }}
-                          onClick={
-                            status?.canChat
-                              ? () => handleChat(member._id)
+                        <Typography color="#5b5f72" fontSize={12} fontWeight={700} noWrap>
+                          {member.relationshipType || "Relationship goal"} -{" "}
+                          {isOnline ? "Online now" : getLastSeenLabel(onlineStatus)}
+                        </Typography>
+                        <Stack direction="row" spacing={0.75} mt={1}>
+                          <Button
+                            fullWidth
+                            size="small"
+                            variant="outlined"
+                            startIcon={<PersonSearchIcon />}
+                            sx={{
+                              borderColor: "#8b3ba8",
+                              color: "#6f2a86",
+                              borderRadius: 1.25,
+                              textTransform: "none",
+                              fontWeight: 850,
+                            }}
+                            onClick={() => navigate(`/member-profile/${member._id}`)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            fullWidth
+                            size="small"
+                            variant="contained"
+                            sx={{
+                              bgcolor: "#171827",
+                              borderRadius: 1.25,
+                              textTransform: "none",
+                              fontWeight: 850,
+                              "&:hover": { bgcolor: "#8b3ba8" },
+                            }}
+                            onClick={
+                              status?.canChat
+                                ? () => handleChat(member._id)
+                                : freeLimitReached
+                                ? () => navigate(`/merge/${userId}/upgrade`)
+                                : () => handleMerge(member._id)
+                            }
+                          >
+                            {status?.canChat
+                              ? "Chat"
                               : freeLimitReached
-                              ? () => navigate(`/merge/${userId}/upgrade`)
-                              : () => handleMerge(member._id)
-                          }
-                        >
-                          {status?.canChat
-                            ? "Chat"
-                            : freeLimitReached
-                            ? "Upgrade"
-                            : "Merge"}
-                        </Button>
-                      </Stack>
+                              ? "Upgrade"
+                              : "Merge"}
+                          </Button>
+                        </Stack>
+                      </Box>
                     </Box>
-                  </Box>
-                );
-              })}
+                  );
+                })}
               </Box>
             </Box>
           </Box>
         )}
 
         <Box display="flex" justifyContent="center" mb={4}>
-          <TextField
-            variant="outlined"
-            size="small"
-            placeholder="Search by name or location"
-            value={searchTerm}
-            onChange={handleSearch}
-            sx={{ backgroundColor: "#fff", borderRadius: 2, width: "300px" }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-            }}
-          />
+          {loadingMembers ? (
+            <Skeleton
+              variant="rounded"
+              width={300}
+              height={42}
+              sx={{ bgcolor: "rgba(255,255,255,0.24)", borderRadius: 2 }}
+            />
+          ) : (
+            <TextField
+              variant="outlined"
+              size="small"
+              placeholder="Search by name or location"
+              value={searchTerm}
+              onChange={handleSearch}
+              sx={{ backgroundColor: "#fff", borderRadius: 2, width: "300px" }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+              }}
+            />
+          )}
         </Box>
 
         <Box
@@ -749,186 +659,174 @@ const Members = () => {
             alignItems: "stretch",
           }}
         >
-          {paginatedMembers.map((member) => {
-            const status = mergeStatuses[member._id];
-            const onlineStatus = userStatuses[member._id];
+          {loadingMembers
+            ? renderMemberSkeletons()
+            : paginatedMembers.map((member) => {
+                const status = mergeStatuses[member._id];
+                const onlineStatus = userStatuses[member._id] || member;
 
-            return (
-              <Card
-                key={member._id}
-                sx={{
-                  borderRadius: 2,
-                  overflow: "hidden",
-                  boxShadow: "0 18px 44px rgba(5, 8, 20, 0.32)",
-                  background: "rgba(255,255,255,0.96)",
-                  border: "1px solid rgba(217,164,240,0.35)",
-                  width: "100%",
-                  minWidth: 0,
-                  height: `${CARD_HEIGHT}px`,
-                  p: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  transition:
-                    "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: "0 24px 54px rgba(5, 8, 20, 0.42)",
-                    borderColor: "rgba(217,164,240,0.72)",
-                  },
-                }}
-              >
-                  <Box sx={{ position: "relative" }}>
-                    {member.photo ? (
-                      <CardMedia
-                        component="img"
-                        image={cloudinaryImage(member.photo, {
-                          width: 700,
-                          height: 700,
-                          crop: "fill",
-                        })}
-                        alt={member.name}
-                        sx={{
-                          height: 214,
-                          objectFit: "cover",
-                          borderBottom: "1px solid rgba(17,24,39,0.08)",
-                        }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 214,
-                          borderBottom: "1px solid rgba(17,24,39,0.08)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          background:
-                            "linear-gradient(145deg, #f7eefb, #eef2ff)",
-                        }}
-                        aria-label={`${member.name || "Member"} has no profile image`}
-                      >
-                        <ImageIcon sx={{ color: "#9d63b7", fontSize: 58 }} />
-                      </Box>
-                    )}
+                return (
+                  <Card
+                    key={member._id}
+                    sx={{
+                      borderRadius: 2,
+                      overflow: "hidden",
+                      boxShadow: "0 18px 44px rgba(5, 8, 20, 0.32)",
+                      background: "rgba(255,255,255,0.96)",
+                      border: "1px solid rgba(217,164,240,0.35)",
+                      width: "100%",
+                      minWidth: 0,
+                      height: `${CARD_HEIGHT}px`,
+                      display: "flex",
+                      flexDirection: "column",
+                      transition:
+                        "transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
+                      "&:hover": {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 24px 54px rgba(5, 8, 20, 0.42)",
+                        borderColor: "rgba(217,164,240,0.72)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ position: "relative" }}>
+                      {member.photo ? (
+                        <CardMedia
+                          component="img"
+                          image={cloudinaryImage(member.photo, {
+                            width: 700,
+                            height: 700,
+                            crop: "fill",
+                          })}
+                          alt={member.name}
+                          sx={{
+                            height: 214,
+                            objectFit: "cover",
+                            borderBottom: "1px solid rgba(17,24,39,0.08)",
+                          }}
+                        />
+                      ) : (
+                        <Box
+                          sx={{
+                            height: 214,
+                            borderBottom: "1px solid rgba(17,24,39,0.08)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "linear-gradient(145deg, #f7eefb, #eef2ff)",
+                          }}
+                        >
+                          <ImageIcon sx={{ color: "#9d63b7", fontSize: 58 }} />
+                        </Box>
+                      )}
 
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "linear-gradient(180deg, rgba(0,0,0,0.02) 42%, rgba(5,8,20,0.46) 100%)",
-                        pointerEvents: "none",
-                      }}
-                    />
-
-                    <Tooltip
-                      title={
-                        onlineStatus?.lastSeen?.exact ||
-                        getLastSeenLabel(onlineStatus)
-                      }
-                    >
                       <Box
                         sx={{
                           position: "absolute",
-                          top: 12,
-                          right: 12,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 0.75,
-                          px: 1.1,
-                          py: 0.55,
-                          borderRadius: 1.25,
-                          color: "#fff",
-                          fontSize: 12,
-                          fontWeight: 700,
-                          background: onlineStatus?.isOnline
-                            ? "rgba(20, 132, 73, 0.95)"
-                            : "rgba(17, 24, 39, 0.86)",
-                          border: "1px solid rgba(255,255,255,0.38)",
-                          boxShadow: "0 10px 22px rgba(0,0,0,0.24)",
-                          backdropFilter: "blur(10px)",
+                          inset: 0,
+                          background:
+                            "linear-gradient(180deg, rgba(0,0,0,0.02) 42%, rgba(5,8,20,0.46) 100%)",
+                          pointerEvents: "none",
                         }}
+                      />
+
+                      <Tooltip
+                        title={
+                          onlineStatus?.lastSeen?.exact ||
+                          getLastSeenLabel(onlineStatus)
+                        }
                       >
                         <Box
                           sx={{
-                            width: 9,
-                            height: 9,
-                            borderRadius: "50%",
-                            backgroundColor: onlineStatus?.isOnline
-                              ? "#4ade80"
-                              : "#9ca3af",
-                            boxShadow: onlineStatus?.isOnline
-                              ? "0 0 0 3px rgba(74,222,128,0.25)"
-                              : "none",
+                            position: "absolute",
+                            top: 12,
+                            right: 12,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.75,
+                            px: 1.1,
+                            py: 0.55,
+                            borderRadius: 1.25,
+                            color: "#fff",
+                            fontSize: 12,
+                            fontWeight: 700,
+                            background: onlineStatus?.isOnline
+                              ? "rgba(20, 132, 73, 0.95)"
+                              : "rgba(17, 24, 39, 0.86)",
+                            border: "1px solid rgba(255,255,255,0.38)",
+                            boxShadow: "0 10px 22px rgba(0,0,0,0.24)",
+                            backdropFilter: "blur(10px)",
                           }}
-                        />
-                        {onlineStatus?.isOnline
-                          ? "Online now"
-                          : getLastSeenLabel(onlineStatus)}
-                      </Box>
-                    </Tooltip>
-                  </Box>
-                  <CardContent
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "stretch",
-                      height: `${CARD_CONTENT_HEIGHT}px`,
-                      p: 1.75,
-                      background:
-                        "linear-gradient(180deg, #ffffff 0%, #fbf7fd 100%)",
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      color="#171827"
-                      fontWeight={800}
-                      gutterBottom
-                      align="center"
-                      noWrap
-                      sx={{ fontSize: "1rem", lineHeight: 1.2, mb: 0.75 }}
-                    >
-                      {member.name}
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      alignItems="center"
-                      justifyContent="center"
-                      spacing={1}
-                      mb={1}
-                    >
-                      <LocationOnIcon sx={{ color: "#8b3ba8", fontSize: 18 }} />
-                      <Typography
-                        variant="body2"
-                        color="#5b5f72"
-                        noWrap
-                        sx={{ maxWidth: 160, fontWeight: 600 }}
-                      >
-                        {member.location || "Location not set"}
-                      </Typography>
-                    </Stack>
+                        >
+                          <Box
+                            sx={{
+                              width: 9,
+                              height: 9,
+                              borderRadius: "50%",
+                              backgroundColor: onlineStatus?.isOnline
+                                ? "#4ade80"
+                                : "#9ca3af",
+                              boxShadow: onlineStatus?.isOnline
+                                ? "0 0 0 3px rgba(74,222,128,0.25)"
+                                : "none",
+                            }}
+                          />
+                          {getLastSeenLabel(onlineStatus)}
+                        </Box>
+                      </Tooltip>
+                    </Box>
 
-                    <Tooltip
-                      title={
-                        onlineStatus?.lastSeen?.exact ||
-                        getLastSeenLabel(onlineStatus)
-                      }
+                    <CardContent
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "stretch",
+                        height: `${CARD_CONTENT_HEIGHT}px`,
+                        p: 1.75,
+                        background: "linear-gradient(180deg, #ffffff 0%, #fbf7fd 100%)",
+                      }}
                     >
+                      <Typography
+                        variant="h6"
+                        color="#171827"
+                        fontWeight={800}
+                        gutterBottom
+                        align="center"
+                        noWrap
+                        sx={{ fontSize: "1rem", lineHeight: 1.2, mb: 0.75 }}
+                      >
+                        {member.name}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="center"
+                        spacing={1}
+                        mb={1}
+                      >
+                        <LocationOnIcon sx={{ color: "#8b3ba8", fontSize: 18 }} />
+                        <Typography
+                          variant="body2"
+                          color="#5b5f72"
+                          noWrap
+                          sx={{ maxWidth: 160, fontWeight: 600 }}
+                        >
+                          {member.location || "Location not set"}
+                        </Typography>
+                      </Stack>
+
                       <Typography
                         variant="body2"
                         sx={{
                           fontWeight: 700,
                           fontSize: 12,
                           color: onlineStatus?.isOnline ? "#16834f" : "#6b7280",
-                          cursor: "help",
                           mb: 1.25,
                           textAlign: "center",
                         }}
                       >
                         {getLastSeenLabel(onlineStatus)}
                       </Typography>
-                    </Tooltip>
 
-                    <Box sx={{ width: "100%", mb: 2 }}>
                       <Typography
                         variant="body2"
                         color="#4b5563"
@@ -938,8 +836,6 @@ const Members = () => {
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
                           WebkitLineClamp: MAX_DESCRIPTION_LINES,
-                          textOverflow: "ellipsis",
-                          whiteSpace: "initial",
                           maxHeight: "4.6em",
                           fontSize: "0.83rem",
                           lineHeight: 1.45,
@@ -947,53 +843,57 @@ const Members = () => {
                       >
                         {member.description || "No profile description yet."}
                       </Typography>
-                    </Box>
-                    <Button
-                      variant="contained"
-                      sx={{
-                        mt: "auto",
-                        background: "#171827",
-                        color: "#fff",
-                        fontWeight: 800,
-                        borderRadius: 1.5,
-                        boxShadow: "0 10px 22px rgba(23,24,39,0.2)",
-                        minWidth: 80,
-                        py: 1,
-                        textTransform: "none",
-                        "&:hover": {
-                          background: "#8b3ba8",
-                          boxShadow: "0 12px 24px rgba(139,59,168,0.26)",
-                        },
-                      }}
-                      onClick={
-                        status?.canChat
-                          ? () => handleChat(member._id)
-                          : () => handleMerge(member._id)
-                      }
-                    >
-                      {status?.canChat
-                        ? status?.hasChattedBefore
-                          ? "Open Chat"
-                          : "Chat"
-                        : "Merge"}
-                    </Button>
-                  </CardContent>
-              </Card>
-            );
-          })}
+
+                      <Button
+                        variant="contained"
+                        sx={{
+                          mt: "auto",
+                          background: "#171827",
+                          color: "#fff",
+                          fontWeight: 800,
+                          borderRadius: 1.5,
+                          minWidth: 80,
+                          py: 1,
+                          textTransform: "none",
+                          "&:hover": { background: "#8b3ba8" },
+                        }}
+                        onClick={
+                          status?.canChat
+                            ? () => handleChat(member._id)
+                            : () => handleMerge(member._id)
+                        }
+                      >
+                        {status?.canChat
+                          ? status?.hasChattedBefore
+                            ? "Open Chat"
+                            : "Chat"
+                          : "Merge"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })}
         </Box>
 
-        <Box mt={4} display="flex" justifyContent="center">
-          <Pagination
-            count={Math.ceil(filteredMembers.length / CARDS_PER_PAGE)}
-            page={currentPage}
-            onChange={(_, value) => setCurrentPage(value)}
-            color="secondary"
-            shape="rounded"
-          />
-        </Box>
+        {!loadingMembers && filteredMembers.length > CARDS_PER_PAGE && (
+          <Box mt={4} display="flex" justifyContent="center">
+            <Pagination
+              count={Math.ceil(filteredMembers.length / CARDS_PER_PAGE)}
+              page={currentPage}
+              onChange={(_, value) => setCurrentPage(value)}
+              color="secondary"
+              shape="rounded"
+            />
+          </Box>
+        )}
 
-        {/* Show eBook WhatsApp section if paid for any member */}
+        {!loadingMembers && filteredMembers.length === 0 && (
+          <Box textAlign="center" mt={4}>
+            <Typography color="#fff" fontWeight={800}>
+              No members found.
+            </Typography>
+          </Box>
+        )}
 
         {hasPaid && (
           <Box mt={8} px={2} display="flex" justifyContent="center">
@@ -1010,11 +910,6 @@ const Members = () => {
                 maxWidth: 700,
                 width: "100%",
                 textAlign: "center",
-                animation: "fadeIn 1s ease-in-out",
-                "@keyframes fadeIn": {
-                  from: { opacity: 0, transform: "translateY(30px)" },
-                  to: { opacity: 1, transform: "translateY(0)" },
-                },
               }}
             >
               <Typography
@@ -1029,24 +924,16 @@ const Members = () => {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                💡 Want to Improve Your Love Life?
+                Want to Improve Your Love Life?
               </Typography>
-
               <Typography
                 variant="body1"
                 color="#e0e0e0"
-                sx={{
-                  mb: 3,
-                  fontSize: "1rem",
-                  lineHeight: 1.7,
-                }}
+                sx={{ mb: 3, fontSize: "1rem", lineHeight: 1.7 }}
               >
-                Get our <strong>exclusive relationship e-book</strong> packed
-                with practical tips and secrets to help you build a stronger,
-                lasting bond. Message us now on WhatsApp to receive your copy
-                instantly!
+                Get our exclusive relationship e-book packed with practical
+                tips and secrets to help you build a stronger, lasting bond.
               </Typography>
-
               <Button
                 variant="contained"
                 color="success"
@@ -1060,13 +947,9 @@ const Members = () => {
                   py: 1.8,
                   borderRadius: 3,
                   background: "linear-gradient(to right, #22c55e, #16a34a)",
-                  boxShadow: "0 4px 16px rgba(34,197,94,0.3)",
-                  "&:hover": {
-                    background: "linear-gradient(to right, #16a34a, #15803d)",
-                  },
                 }}
               >
-                📩 Get eBook on WhatsApp
+                Get eBook on WhatsApp
               </Button>
             </Box>
           </Box>

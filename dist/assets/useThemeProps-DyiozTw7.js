@@ -1,1 +1,0 @@
-import{aG as r,ao as m,aH as u}from"./index-wtBLAlpL.js";const p=r();function c({props:t,name:a,defaultTheme:o,themeId:s}){let e=m(o);return s&&(e=e[s]||e),u({theme:e,name:a,props:t})}export{p as s,c as u};
