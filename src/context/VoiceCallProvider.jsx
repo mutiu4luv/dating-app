@@ -20,6 +20,8 @@ import CallIcon from "@mui/icons-material/Call";
 import CallEndIcon from "@mui/icons-material/CallEnd";
 import MicIcon from "@mui/icons-material/Mic";
 import MicOffIcon from "@mui/icons-material/MicOff";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import io from "socket.io-client";
 import { useLocation } from "react-router-dom";
 
@@ -45,7 +47,9 @@ export const VoiceCallProvider = ({ children }) => {
   const [remoteUser, setRemoteUser] = useState(null);
   const [incomingOffer, setIncomingOffer] = useState(null);
   const [muted, setMuted] = useState(false);
+  const [speakerOn, setSpeakerOn] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [speakerMessage, setSpeakerMessage] = useState("");
   const [authUser, setAuthUser] = useState({
     id: localStorage.getItem("userId") || "",
     username:
@@ -65,6 +69,27 @@ export const VoiceCallProvider = ({ children }) => {
   useEffect(() => {
     callStateRef.current = callState;
   }, [callState]);
+
+  useEffect(() => {
+    const syncAuthUser = () => {
+      setAuthUser({
+        id: localStorage.getItem("userId") || "",
+        username:
+          localStorage.getItem("username") ||
+          localStorage.getItem("name") ||
+          "User",
+      });
+    };
+
+    syncAuthUser();
+    window.addEventListener("authChanged", syncAuthUser);
+    window.addEventListener("storage", syncAuthUser);
+
+    return () => {
+      window.removeEventListener("authChanged", syncAuthUser);
+      window.removeEventListener("storage", syncAuthUser);
+    };
+  }, []);
 
   useEffect(() => {
     setAuthUser({
@@ -90,6 +115,8 @@ export const VoiceCallProvider = ({ children }) => {
     setIncomingOffer(null);
     setRemoteUser(null);
     setMuted(false);
+    setSpeakerOn(false);
+    setSpeakerMessage("");
     setErrorMessage("");
     setCallState("idle");
   }, []);
@@ -248,13 +275,47 @@ export const VoiceCallProvider = ({ children }) => {
     setMuted(nextMuted);
   };
 
+  const toggleSpeaker = async () => {
+    const audioElement = remoteAudioRef.current;
+    const nextSpeakerOn = !speakerOn;
+
+    if (!audioElement?.setSinkId) {
+      setSpeakerOn(nextSpeakerOn);
+      setSpeakerMessage(
+        "Your browser controls speaker output. Use your phone speaker button if audio stays on earpiece."
+      );
+      return;
+    }
+
+    try {
+      await audioElement.setSinkId(nextSpeakerOn ? "default" : "communications");
+      setSpeakerOn(nextSpeakerOn);
+      setSpeakerMessage(nextSpeakerOn ? "Speaker mode enabled." : "Speaker mode off.");
+    } catch {
+      try {
+        await audioElement.setSinkId("default");
+        setSpeakerOn(nextSpeakerOn);
+        setSpeakerMessage("Speaker output set to your default audio device.");
+      } catch {
+        setSpeakerMessage(
+          "Unable to change speaker output in this browser. Use your device audio controls."
+        );
+      }
+    }
+  };
+
   useEffect(() => {
     if (!currentUserId) return undefined;
 
     const socket = io(socketUrl, { transports: ["websocket", "polling"] });
     socketRef.current = socket;
 
-    socket.emit("register_user", currentUserId);
+    const registerForCalls = () => {
+      socket.emit("register_user", currentUserId);
+      socket.emit("heartbeat", currentUserId);
+    };
+
+    registerForCalls();
 
     const handleOffer = (data) => {
       if (callStateRef.current !== "idle") {
@@ -305,6 +366,10 @@ export const VoiceCallProvider = ({ children }) => {
     socket.on("voice_call_ice_candidate", handleIceCandidate);
     socket.on("voice_call_rejected", handleRejected);
     socket.on("voice_call_ended", cleanupCall);
+    socket.on("connect", registerForCalls);
+    socket.io.on("reconnect", registerForCalls);
+    window.addEventListener("authChanged", registerForCalls);
+    window.addEventListener("online", registerForCalls);
 
     return () => {
       socket.off("voice_call_offer", handleOffer);
@@ -312,6 +377,10 @@ export const VoiceCallProvider = ({ children }) => {
       socket.off("voice_call_ice_candidate", handleIceCandidate);
       socket.off("voice_call_rejected", handleRejected);
       socket.off("voice_call_ended", cleanupCall);
+      socket.off("connect", registerForCalls);
+      socket.io.off("reconnect", registerForCalls);
+      window.removeEventListener("authChanged", registerForCalls);
+      window.removeEventListener("online", registerForCalls);
       socket.disconnect();
       cleanupCall();
     };
@@ -397,9 +466,14 @@ export const VoiceCallProvider = ({ children }) => {
               </Typography>
             </Box>
             {callState === "active" && (
-              <IconButton onClick={toggleMute} sx={{ bgcolor: "#f3e8ff" }}>
-                {muted ? <MicOffIcon /> : <MicIcon />}
-              </IconButton>
+              <>
+                <IconButton onClick={toggleSpeaker} sx={{ bgcolor: "#f3e8ff" }}>
+                  {speakerOn ? <VolumeUpIcon /> : <VolumeOffIcon />}
+                </IconButton>
+                <IconButton onClick={toggleMute} sx={{ bgcolor: "#f3e8ff" }}>
+                  {muted ? <MicOffIcon /> : <MicIcon />}
+                </IconButton>
+              </>
             )}
             <IconButton
               onClick={endCall}
@@ -408,6 +482,11 @@ export const VoiceCallProvider = ({ children }) => {
               <CallEndIcon />
             </IconButton>
           </Box>
+          {speakerMessage && (
+            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+              {speakerMessage}
+            </Typography>
+          )}
         </Paper>
       )}
     </VoiceCallContext.Provider>

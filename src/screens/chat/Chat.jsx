@@ -112,10 +112,13 @@ const Chat = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [reactionAnchor, setReactionAnchor] = useState(null);
   const [reactionMessage, setReactionMessage] = useState(null);
+  const [receiverTyping, setReceiverTyping] = useState(false);
   const messagesEndRef = useRef();
   const imageInputRef = useRef(null);
   const swipeRef = useRef({ messageId: null, x: 0, y: 0 });
   const longPressTimerRef = useRef(null);
+  const typingStopTimerRef = useRef(null);
+  const typingActiveRef = useRef(false);
   const isPrependingMessagesRef = useRef(false);
   const token = localStorage.getItem("token");
   const isSmallDialog = useMediaQuery("(max-width:600px)");
@@ -173,6 +176,7 @@ const Chat = () => {
 
     const handleReceive = (data) => {
       if (data.room === room) {
+        if (getSenderId(data) === member2) setReceiverTyping(false);
         setMessages((prev) => [...prev, data]);
         return;
       }
@@ -221,11 +225,25 @@ const Chat = () => {
       }
     };
 
+    const handleTypingStart = (data) => {
+      if (data.room === room && data.senderId === member2) {
+        setReceiverTyping(true);
+      }
+    };
+
+    const handleTypingStop = (data) => {
+      if (data.room === room && data.senderId === member2) {
+        setReceiverTyping(false);
+      }
+    };
+
     socketInstance.on("receive_message", handleReceive);
     socketInstance.on("message_edited", handleMessageEdited);
     socketInstance.on("message_deleted", handleMessageDeleted);
     socketInstance.on("message_reacted", handleMessageReacted);
     socketInstance.on("presence_update", handlePresenceUpdate);
+    socketInstance.on("typing_start", handleTypingStart);
+    socketInstance.on("typing_stop", handleTypingStop);
 
     return () => {
       socketInstance.off("receive_message", handleReceive);
@@ -233,8 +251,23 @@ const Chat = () => {
       socketInstance.off("message_deleted", handleMessageDeleted);
       socketInstance.off("message_reacted", handleMessageReacted);
       socketInstance.off("presence_update", handlePresenceUpdate);
+      socketInstance.off("typing_start", handleTypingStart);
+      socketInstance.off("typing_stop", handleTypingStop);
     };
   }, [socketInstance, room, member1, member2]);
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(typingStopTimerRef.current);
+      if (typingActiveRef.current) {
+        socketInstance?.emit("typing_stop", {
+          room,
+          senderId: member1,
+          receiverId: member2,
+        });
+      }
+    };
+  }, [member1, member2, room, socketInstance]);
 
   // Fetch latest chat messages first, then hydrate older messages quietly.
   useEffect(() => {
@@ -386,6 +419,7 @@ const Chat = () => {
     }
 
     requestNotificationPermission();
+    emitTypingStop();
 
     const formData = new FormData();
     formData.append("senderId", member1);
@@ -442,6 +476,36 @@ const Chat = () => {
     setReplyingTo(null);
     setSelectedImage(null);
     if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
+  const emitTypingStop = () => {
+    window.clearTimeout(typingStopTimerRef.current);
+    if (!socketInstance || !typingActiveRef.current) return;
+
+    typingActiveRef.current = false;
+    socketInstance.emit("typing_stop", {
+      room,
+      senderId: member1,
+      receiverId: member2,
+    });
+  };
+
+  const handleMessageInputChange = (event) => {
+    setMessage(event.target.value);
+
+    if (!socketInstance || !member1 || !member2) return;
+
+    if (!typingActiveRef.current) {
+      typingActiveRef.current = true;
+      socketInstance.emit("typing_start", {
+        room,
+        senderId: member1,
+        receiverId: member2,
+      });
+    }
+
+    window.clearTimeout(typingStopTimerRef.current);
+    typingStopTimerRef.current = window.setTimeout(emitTypingStop, 1300);
   };
 
   const closeActionMenu = () => {
@@ -658,6 +722,20 @@ const Chat = () => {
           >
             {receiver ? getActivityLabel(receiver) : "Loading profile..."}
           </Typography>
+          {receiverTyping && (
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{
+                display: "block",
+                color: "#D9A4F0",
+                fontWeight: 900,
+                mt: 0.25,
+              }}
+            >
+              {receiverName || "User"} is typing...
+            </Typography>
+          )}
         </Box>
         <IconButton
           onClick={() =>
@@ -992,7 +1070,7 @@ const Chat = () => {
           variant="outlined"
           placeholder="Type a message..."
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleMessageInputChange}
           onKeyDown={(e) => {
             if (e.key !== "Enter") return;
             if (editingMessage) editMessage();

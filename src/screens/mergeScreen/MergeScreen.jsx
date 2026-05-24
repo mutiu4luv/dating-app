@@ -26,6 +26,8 @@ const MergeScreen = () => {
   const [canChat, setCanChat] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [activeTier, setActiveTier] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -68,7 +70,7 @@ const MergeScreen = () => {
   );
 
   useEffect(() => {
-    if (isUpgradeOnly || !member1) {
+    if (!member1) {
       setLoading(false);
       return;
     }
@@ -77,12 +79,13 @@ const MergeScreen = () => {
 
     const fetchStatus = async () => {
       try {
-        const res = await api.get(
-          `/merge/status?member1=${member1}&member2=${member2}`
-        );
+        const res = await api.get(`/merge/status?member1=${member1}`, {
+          params: isUpgradeOnly ? undefined : { member2 },
+        });
 
         if (cancelled) return;
-        setCanChat(Boolean(res.data.canChat));
+        setCanChat(isUpgradeOnly ? false : Boolean(res.data.canChat));
+        setActiveTier(res.data.subscriptionTier || "");
         setUserEmail(
           res.data.email ||
             localStorage.getItem("email") ||
@@ -105,13 +108,13 @@ const MergeScreen = () => {
 
   useEffect(() => {
     const reference = new URLSearchParams(location.search).get("reference");
-    if (!reference || !member1 || !member2 || member2 === "upgrade") return;
+    if (!reference || !member1 || !member2) return;
 
     const selectedPlan = sessionStorage.getItem("selectedPlan") || "Free";
 
     const afterPayment = async () => {
       try {
-        await api.post(
+        const confirmRes = await api.post(
           "/subscription/confirm",
           { memberId: member1, plan: selectedPlan, reference },
           {
@@ -121,9 +124,20 @@ const MergeScreen = () => {
           }
         );
 
+        setActiveTier(confirmRes.data?.subscriptionTier || selectedPlan);
+        setSuccessMessage(
+          `${selectedPlan} plan activated. Your new benefits are now available.`
+        );
+        sessionStorage.removeItem("selectedPlan");
+
+        if (member2 === "upgrade") {
+          navigate(`/merge/${member1}/upgrade`, { replace: true });
+          return;
+        }
+
         const mergeRes = await api.post(
           "/merge",
-          { memberId1: member1, memberId2: member2, plan: selectedPlan },
+          { memberId1: member1, memberId2: member2 },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -145,6 +159,7 @@ const MergeScreen = () => {
 
   const handlePlanClick = async (planKey) => {
     setErrorMessage("");
+    setSuccessMessage("");
 
     if (loading) return;
 
@@ -156,10 +171,15 @@ const MergeScreen = () => {
     const plan = subscriptionPlans[planKey];
 
     if (plan.amount === 0) {
+      if (isUpgradeOnly) {
+        setErrorMessage("Free plan is already available. Choose a paid plan to upgrade.");
+        return;
+      }
+
       try {
         const res = await api.post(
           "/merge",
-          { memberId1: member1, memberId2: member2, plan: planKey },
+          { memberId1: member1, memberId2: member2 },
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -172,7 +192,9 @@ const MergeScreen = () => {
           if (res.data.canChat) navigate(`/chat/${member1}/${member2}`);
         }
       } catch (err) {
-        setErrorMessage(err?.response?.data?.message || "Free merge failed.");
+        setErrorMessage(
+          err?.response?.data?.message || "Unable to merge these members."
+        );
       }
       return;
     }
@@ -206,6 +228,14 @@ const MergeScreen = () => {
       setErrorMessage("Payment initiation failed.");
     }
   };
+
+  const visiblePlans = useMemo(
+    () =>
+      Object.entries(subscriptionPlans).filter(
+        ([key]) => !(isUpgradeOnly && key === "Free")
+      ),
+    [isUpgradeOnly, subscriptionPlans]
+  );
 
   const renderPlanSkeletons = () => (
     <Grid
@@ -299,6 +329,7 @@ const MergeScreen = () => {
           >
             Choose the monthly access level that matches how actively you want
             to connect.
+            {activeTier ? ` Current plan: ${activeTier}.` : ""}
           </Typography>
         </Paper>
 
@@ -318,6 +349,12 @@ const MergeScreen = () => {
         {errorMessage && (
           <Typography color="error" textAlign="center" mb={2}>
             {errorMessage}
+          </Typography>
+        )}
+
+        {successMessage && (
+          <Typography color="success.main" textAlign="center" mb={2} fontWeight={900}>
+            {successMessage}
           </Typography>
         )}
 
@@ -353,7 +390,7 @@ const MergeScreen = () => {
             justifyContent="center"
             sx={{ maxWidth: 1100, width: "100%" }}
           >
-            {Object.entries(subscriptionPlans).map(([key, plan]) => (
+            {visiblePlans.map(([key, plan]) => (
               <Grid item xs={12} sm={6} md={3} key={key}>
                 <Paper
                   elevation={3}
