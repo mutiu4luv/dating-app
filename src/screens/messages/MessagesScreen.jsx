@@ -372,8 +372,13 @@ const MessagesScreen = () => {
     setVisibleMembersCount(membersBatchSize);
   }, [searchTerm]);
 
-  const handleChatOpen = (memberId) => {
-    navigate(`/chat/${userId}/${memberId}`);
+  const handleChatOpen = (member) => {
+    const memberId = typeof member === "string" ? member : member?._id || member?.matchId;
+    navigate(`/chat/${userId}/${memberId}`, {
+      state: {
+        member: typeof member === "string" ? null : member,
+      },
+    });
   };
 
   const renderAvatar = (name, photo, isOnline = false) => (
@@ -510,7 +515,16 @@ const MessagesScreen = () => {
                       return (
                         <ListItemButton
                           key={chat.matchId}
-                          onClick={() => handleChatOpen(chat.matchId)}
+                          onClick={() =>
+                            handleChatOpen({
+                              _id: chat.matchId,
+                              username: chat.name,
+                              name: chat.name,
+                              photo: chat.photo,
+                              isOnline: chat.isOnline,
+                              lastSeen: chat.lastSeen,
+                            })
+                          }
                           sx={{
                             borderRadius: 2,
                             mb: 1,
@@ -625,7 +639,7 @@ const MessagesScreen = () => {
                     {visibleMembers.map((member) => (
                       <ListItemButton
                         key={member._id}
-                        onClick={() => handleChatOpen(member._id)}
+                        onClick={() => handleChatOpen(member)}
                         sx={{
                           borderRadius: 2,
                           mb: 1,

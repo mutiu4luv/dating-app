@@ -119,7 +119,10 @@ const MemberProfilePreview = () => {
       return {
         label: "Chat Now",
         icon: <ChatIcon />,
-        onClick: () => navigate(`/chat/${currentUserId}/${memberId}`),
+        onClick: () =>
+          navigate(`/chat/${currentUserId}/${memberId}`, {
+            state: { member },
+          }),
       };
     }
 
@@ -128,7 +131,7 @@ const MemberProfilePreview = () => {
       icon: <FavoriteIcon />,
       onClick: () => navigate(`/merge/${currentUserId}/${memberId}`),
     };
-  }, [canChat, currentUserId, memberId, navigate]);
+  }, [canChat, currentUserId, member, memberId, navigate]);
 
   if (loading) {
     return (

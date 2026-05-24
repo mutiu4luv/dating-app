@@ -11,16 +11,39 @@ import {
   ListItemText,
   Menu,
   MenuItem,
+  Avatar,
+  Dialog,
+  DialogContent,
+  Chip,
+  Stack,
+  useMediaQuery,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ReplyIcon from "@mui/icons-material/Reply";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
 import { requestNotificationPermission } from "../../utility/notifications";
+import { cloudinaryImage } from "../../utility/cloudinaryImage";
+
+const CHAT_PAGE_SIZE = 40;
+
+const getCachedReceiver = (memberId) => {
+  if (!memberId) return null;
+  try {
+    return JSON.parse(sessionStorage.getItem(`chatReceiver_${memberId}`));
+  } catch {
+    return null;
+  }
+};
+
+const cacheReceiver = (member) => {
+  if (!member?._id) return;
+  sessionStorage.setItem(`chatReceiver_${member._id}`, JSON.stringify(member));
+};
 
 const getSenderId = (message) =>
   typeof message.senderId === "object" ? message.senderId?._id : message.senderId;
@@ -57,22 +80,28 @@ const canEditMessage = (message, currentUserId) => {
 const Chat = () => {
   const { member1, member2 } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const room = [member1, member2].sort().join("_");
+  const initialReceiver =
+    location.state?.member || location.state?.receiver || getCachedReceiver(member2);
 
   const [socketInstance, setSocketInstance] = useState(null);
   const [message, setMessage] = useState("");
   const [selectedImage, setSelectedImage] = useState(null);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [receiver, setReceiver] = useState(null);
+  const [receiver, setReceiver] = useState(initialReceiver);
   const [actionAnchor, setActionAnchor] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const messagesEndRef = useRef();
   const imageInputRef = useRef(null);
   const swipeRef = useRef({ messageId: null, x: 0, y: 0 });
+  const isPrependingMessagesRef = useRef(false);
   const token = localStorage.getItem("token");
+  const isSmallDialog = useMediaQuery("(max-width:600px)");
 
   useEffect(() => {
     const askForNotifications = () => {
@@ -94,7 +123,7 @@ const Chat = () => {
       alert("❌ You can't chat with yourself.");
       navigate("/");
     }
-  }, [member1, member2]);
+  }, [member1, member2, navigate]);
 
   // Initialize socket
   useEffect(() => {
@@ -116,7 +145,7 @@ const Chat = () => {
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [member1]);
 
   // Join room and receive messages
   useEffect(() => {
@@ -179,22 +208,67 @@ const Chat = () => {
     };
   }, [socketInstance, room, member1, member2]);
 
-  // Fetch chat history once
+  // Fetch latest chat messages first, then hydrate older messages quietly.
   useEffect(() => {
     if (!member1 || !member2) return;
+    let cancelled = false;
+
+    const normalizeChatResponse = (payload) =>
+      Array.isArray(payload)
+        ? { messages: payload, hasMore: false, nextBefore: null }
+        : {
+            messages: payload?.messages || [],
+            hasMore: Boolean(payload?.hasMore),
+            nextBefore: payload?.nextBefore || payload?.messages?.[0]?.createdAt,
+          };
+
+    const fetchChatPage = async (before) => {
+      const params = new URLSearchParams({
+        member1,
+        member2,
+        latest: "true",
+        limit: String(CHAT_PAGE_SIZE),
+      });
+      if (before) params.set("before", before);
+
+      const res = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/api/chat?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      return normalizeChatResponse(res.data);
+    };
+
+    const prependOlderMessages = (olderMessages) => {
+      if (!olderMessages.length) return;
+      isPrependingMessagesRef.current = true;
+      setMessages((current) => {
+        const existingIds = new Set(current.map((item) => item._id));
+        const uniqueOlder = olderMessages.filter((item) => !existingIds.has(item._id));
+        return [...uniqueOlder, ...current];
+      });
+    };
 
     const fetchChats = async () => {
       try {
-        const res = await axios.get(
-          `${
-            import.meta.env.VITE_BASE_URL
-          }/api/chat?member1=${member1}&member2=${member2}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const firstPage = await fetchChatPage();
+        if (cancelled) return;
 
-        setMessages(res.data);
+        setMessages(firstPage.messages);
+
+        let nextBefore = firstPage.nextBefore;
+        let hasMore = firstPage.hasMore;
+
+        while (!cancelled && hasMore && nextBefore) {
+          await new Promise((resolve) => window.setTimeout(resolve, 350));
+          const olderPage = await fetchChatPage(nextBefore);
+          if (cancelled) return;
+          prependOlderMessages(olderPage.messages);
+          nextBefore = olderPage.nextBefore;
+          hasMore = olderPage.hasMore;
+        }
       } catch (err) {
         console.log("🔥 Chat fetch error:", err.response?.data || err.message);
         if (err.response?.status === 403) {
@@ -205,6 +279,10 @@ const Chat = () => {
     };
 
     fetchChats();
+
+    return () => {
+      cancelled = true;
+    };
   }, [member1, member2, navigate, token]);
 
   // Fetch receiver info
@@ -213,17 +291,36 @@ const Chat = () => {
 
     const fetchReceiver = async () => {
       try {
-        const res = await axios.get(
-          `${import.meta.env.VITE_BASE_URL}/api/user/single/${member2}`
+        const profileRes = await axios.get(
+          `${import.meta.env.VITE_BASE_URL}/api/user/public-profile/${member2}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
         );
-        setReceiver(res.data);
+        const member = profileRes.data?.member || profileRes.data;
+        setReceiver(member);
+        cacheReceiver(member);
       } catch (err) {
-        console.log("🔥 Failed to fetch receiver info:", err);
+        try {
+          const fallbackRes = await axios.get(
+            `${import.meta.env.VITE_BASE_URL}/api/user/${member2}`,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+          setReceiver(fallbackRes.data);
+          cacheReceiver(fallbackRes.data);
+        } catch (fallbackErr) {
+          console.log(
+            "🔥 Failed to fetch receiver info:",
+            fallbackErr.response?.data || err.response?.data || fallbackErr
+          );
+        }
       }
     };
 
     fetchReceiver();
-  }, [member2]);
+  }, [member2, token]);
   // Mark messages as read
   useEffect(() => {
     if (!member1 || !member2) return;
@@ -248,6 +345,10 @@ const Chat = () => {
 
   // Auto-scroll to bottom on new message
   useEffect(() => {
+    if (isPrependingMessagesRef.current) {
+      isPrependingMessagesRef.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
@@ -406,6 +507,27 @@ const Chat = () => {
     }
   };
 
+  const receiverName = receiver?.username || receiver?.name || "User";
+  const receiverPhoto = cloudinaryImage(receiver?.photo, {
+    width: 640,
+    height: 640,
+    crop: "fill",
+    quality: "auto:best",
+  });
+  const receiverLargePhoto = cloudinaryImage(receiver?.photo, {
+    width: 1100,
+    crop: "limit",
+    quality: "auto:best",
+  });
+  const receiverDescription =
+    receiver?.description || receiver?.bio || receiver?.about || "";
+
+  const profileDetails = [
+    ["Gender", receiver?.gender || "Not provided"],
+    ["Location", receiver?.location || "Not provided"],
+    ["Occupation", receiver?.occupation || "Not provided"],
+  ];
+
   return (
     <Box
       display="flex"
@@ -425,7 +547,13 @@ const Chat = () => {
         gap={1}
         px={1.5}
         pb={1.5}
-        sx={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}
+        sx={{
+          position: "sticky",
+          top: 0,
+          zIndex: 20,
+          bgcolor: "#121212",
+          borderBottom: "1px solid rgba(255,255,255,0.08)",
+        }}
       >
         <IconButton
           onClick={() => navigate(-1)}
@@ -438,9 +566,9 @@ const Chat = () => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Box flex={1} textAlign="center" pr={5}>
+        <Box flex={1} textAlign="center" minWidth={0}>
           <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
-            Chat with <strong>{receiver?.username || "User"}</strong>
+            Chat with <strong>{receiverName}</strong>
           </Typography>
           <Typography
             component="span"
@@ -454,6 +582,33 @@ const Chat = () => {
             {getActivityLabel(receiver)}
           </Typography>
         </Box>
+        <IconButton
+          onClick={() => receiver && setProfileOpen(true)}
+          aria-label={`View ${receiverName} profile`}
+          disabled={!receiver}
+          sx={{
+            p: 0.35,
+            border: "2px solid rgba(217,164,240,0.75)",
+            boxShadow: receiver?.isOnline
+              ? "0 0 0 3px rgba(74,222,128,0.22)"
+              : "none",
+          }}
+        >
+          <Avatar
+            src={receiverPhoto}
+            alt={receiverName}
+            imgProps={{ loading: "eager" }}
+            sx={{
+              width: 44,
+              height: 44,
+              bgcolor: "#D9A4F0",
+              color: "#2d0052",
+              fontWeight: 900,
+            }}
+          >
+            {receiverName.charAt(0).toUpperCase()}
+          </Avatar>
+        </IconButton>
       </Box>
 
       <Paper
@@ -727,6 +882,179 @@ const Chat = () => {
             </MenuItem>
           )}
       </Menu>
+
+      <Dialog
+        open={profileOpen}
+        onClose={() => setProfileOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        fullScreen={isSmallDialog}
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 0, sm: 4 },
+            overflow: "hidden",
+            height: { xs: "100dvh", sm: "auto" },
+            maxHeight: { xs: "100dvh", sm: "calc(100dvh - 24px)" },
+            display: "flex",
+            background: "#fff",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            p: 0,
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
+          <Box
+            sx={{
+              position: "relative",
+              background:
+                "linear-gradient(135deg, rgba(45,0,82,0.98), rgba(139,59,168,0.92))",
+            }}
+          >
+            <IconButton
+              onClick={() => setProfileOpen(false)}
+              aria-label="Close profile"
+              sx={{
+                position: "absolute",
+                top: 12,
+                right: 12,
+                zIndex: 2,
+                color: "#fff",
+                bgcolor: "rgba(0,0,0,0.28)",
+                "&:hover": { bgcolor: "rgba(0,0,0,0.42)" },
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+
+            {receiverLargePhoto ? (
+              <Box
+                component="img"
+                src={receiverLargePhoto}
+                alt={receiverName}
+                sx={{
+                  width: "100%",
+                  height: { xs: "42dvh", sm: 320 },
+                  minHeight: { xs: 230, sm: 320 },
+                  maxHeight: { xs: 360, sm: 320 },
+                  display: "block",
+                  objectFit: "cover",
+                  objectPosition: "center",
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  height: { xs: "36dvh", sm: 320 },
+                  minHeight: { xs: 220, sm: 320 },
+                  display: "grid",
+                  placeItems: "center",
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 132,
+                    height: 132,
+                    bgcolor: "#D9A4F0",
+                    color: "#2d0052",
+                    fontSize: 54,
+                    fontWeight: 900,
+                  }}
+                >
+                  {receiverName.charAt(0).toUpperCase()}
+                </Avatar>
+              </Box>
+            )}
+          </Box>
+
+          <Box sx={{ p: { xs: 2.25, sm: 3 } }}>
+          <Box display="flex" alignItems="flex-start" gap={1.5} mb={2}>
+            <Box flex={1} minWidth={0}>
+              <Typography variant="h5" fontWeight={900} color="#2d0052">
+                {receiverName}
+              </Typography>
+              <Typography
+                variant="caption"
+                fontWeight={900}
+                color="#8b3ba8"
+                textTransform="uppercase"
+              >
+                Profile details shared with you
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Description, occupation, location, and gender are shown below to
+                help you know who you are chatting with.
+              </Typography>
+            </Box>
+            <Chip
+              label={getActivityLabel(receiver)}
+              size="small"
+              sx={{
+                bgcolor: receiver?.isOnline ? "#dcfce7" : "#f3e8ff",
+                color: receiver?.isOnline ? "#166534" : "#2d0052",
+                fontWeight: 900,
+              }}
+            />
+          </Box>
+
+          <Box
+            sx={{
+              p: 1.5,
+              mb: 1.5,
+              borderRadius: 2,
+              bgcolor: "#fff",
+              border: "1px solid rgba(217,164,240,0.45)",
+              boxShadow: "0 10px 28px rgba(45,0,82,0.08)",
+            }}
+          >
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={900}
+              textTransform="uppercase"
+            >
+              Description
+            </Typography>
+            <Typography color="#2d0052" fontWeight={700} mt={0.5}>
+              {receiverDescription || "No description added yet."}
+            </Typography>
+          </Box>
+
+          <Stack spacing={1.2}>
+            {profileDetails.map(([label, value]) => (
+              <Box
+                key={label}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "140px 1fr" },
+                  gap: { xs: 0.25, sm: 1.5 },
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: "#fbf5ff",
+                  border: "1px solid rgba(217,164,240,0.35)",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight={900}
+                  textTransform="uppercase"
+                >
+                  {label}
+                </Typography>
+                <Typography fontWeight={800} color="#2d0052">
+                  {value}
+                </Typography>
+              </Box>
+            ))}
+          </Stack>
+          </Box>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };

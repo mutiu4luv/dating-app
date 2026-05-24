@@ -347,7 +347,14 @@ const Members = () => {
   }, [userId]);
 
   const handleMerge = (member2) => navigate(`/merge/${userId}/${member2}`);
-  const handleChat = (member2) => navigate(`/chat/${userId}/${member2}`);
+  const handleChat = (member) => {
+    const memberId = typeof member === "string" ? member : member?._id;
+    navigate(`/chat/${userId}/${memberId}`, {
+      state: {
+        member: typeof member === "string" ? null : member,
+      },
+    });
+  };
 
   const scrollSuggestions = (direction) => {
     const container = suggestionsRef.current;
@@ -666,7 +673,7 @@ const Members = () => {
                             }}
                             onClick={
                               status?.canChat
-                                ? () => handleChat(member._id)
+                                ? () => handleChat(member)
                                 : freeLimitReached
                                 ? () => navigate(`/merge/${userId}/upgrade`)
                                 : () => handleMerge(member._id)
@@ -929,7 +936,7 @@ const Members = () => {
                         }}
                         onClick={
                           status?.canChat
-                            ? () => handleChat(member._id)
+                            ? () => handleChat(member)
                             : () => handleMerge(member._id)
                         }
                       >
