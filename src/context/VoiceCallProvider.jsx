@@ -48,6 +48,8 @@ export const VoiceCallProvider = ({ children }) => {
   const [incomingOffer, setIncomingOffer] = useState(null);
   const [muted, setMuted] = useState(false);
   const [speakerOn, setSpeakerOn] = useState(false);
+  const [callStartedAt, setCallStartedAt] = useState(null);
+  const [callDuration, setCallDuration] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [speakerMessage, setSpeakerMessage] = useState("");
   const [authUser, setAuthUser] = useState({
@@ -62,6 +64,13 @@ export const VoiceCallProvider = ({ children }) => {
   const currentPeerIdRef = useRef(null);
   const currentCallIdRef = useRef(null);
   const callStateRef = useRef("idle");
+  const pendingIceCandidatesRef = useRef([]);
+  const pendingIceByCallIdRef = useRef({});
+  const ringtoneAudioContextRef = useRef(null);
+  const ringtoneOscillatorRef = useRef(null);
+  const ringtoneGainRef = useRef(null);
+  const ringtoneTimerRef = useRef(null);
+  const vibrationTimerRef = useRef(null);
 
   const currentUserId = authUser.id;
   const currentUsername = authUser.username;
@@ -91,6 +100,31 @@ export const VoiceCallProvider = ({ children }) => {
     };
   }, []);
 
+  const unlockRingtoneAudio = useCallback(() => {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
+      if (!ringtoneAudioContextRef.current) {
+        ringtoneAudioContextRef.current = new AudioContextClass();
+      }
+
+      ringtoneAudioContextRef.current.resume?.();
+    } catch {
+      // Some mobile browsers will only allow audio after a direct user gesture.
+    }
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("click", unlockRingtoneAudio, { once: true });
+    window.addEventListener("touchstart", unlockRingtoneAudio, { once: true });
+
+    return () => {
+      window.removeEventListener("click", unlockRingtoneAudio);
+      window.removeEventListener("touchstart", unlockRingtoneAudio);
+    };
+  }, [unlockRingtoneAudio]);
+
   useEffect(() => {
     setAuthUser({
       id: localStorage.getItem("userId") || "",
@@ -98,6 +132,80 @@ export const VoiceCallProvider = ({ children }) => {
         localStorage.getItem("username") || localStorage.getItem("name") || "User",
     });
   }, [location.pathname]);
+
+  const stopRingtone = useCallback(() => {
+    window.clearInterval(ringtoneTimerRef.current);
+    ringtoneTimerRef.current = null;
+
+    try {
+      ringtoneOscillatorRef.current?.stop();
+      ringtoneOscillatorRef.current?.disconnect();
+      ringtoneGainRef.current?.disconnect();
+    } catch {
+      // Oscillator may already be stopped.
+    }
+
+    ringtoneOscillatorRef.current = null;
+    ringtoneGainRef.current = null;
+    window.clearInterval(vibrationTimerRef.current);
+    vibrationTimerRef.current = null;
+    navigator.vibrate?.(0);
+  }, []);
+
+  const startRingtone = useCallback(() => {
+    stopRingtone();
+
+    const playTone = () => {
+      try {
+        unlockRingtoneAudio();
+        const context = ringtoneAudioContextRef.current;
+        if (!context) return;
+
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.value = 880;
+        gain.gain.setValueAtTime(0.001, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.14, context.currentTime + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 1.15);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start();
+        ringtoneOscillatorRef.current = oscillator;
+        ringtoneGainRef.current = gain;
+
+        window.setTimeout(() => {
+          try {
+            oscillator.stop();
+            oscillator.disconnect();
+            gain.disconnect();
+          } catch {
+            // Ignore already-stopped oscillator.
+          }
+          if (ringtoneOscillatorRef.current === oscillator) {
+            ringtoneOscillatorRef.current = null;
+            ringtoneGainRef.current = null;
+          }
+        }, 1250);
+      } catch {
+        // Ringtone audio can be blocked by browser autoplay rules.
+      }
+    };
+
+    playTone();
+    ringtoneTimerRef.current = window.setInterval(playTone, 2200);
+
+    try {
+      unlockRingtoneAudio();
+    } catch {
+      // Ringtone audio can be blocked by browser autoplay rules.
+    }
+
+    navigator.vibrate?.([500, 250, 500]);
+    vibrationTimerRef.current = window.setInterval(() => {
+      navigator.vibrate?.([500, 250, 500]);
+    }, 1800);
+  }, [stopRingtone, unlockRingtoneAudio]);
 
   const cleanupCall = useCallback(() => {
     peerRef.current?.close();
@@ -110,8 +218,13 @@ export const VoiceCallProvider = ({ children }) => {
       remoteAudioRef.current.srcObject = null;
     }
 
+    pendingIceCandidatesRef.current = [];
+    pendingIceByCallIdRef.current = {};
+    stopRingtone();
     currentPeerIdRef.current = null;
     currentCallIdRef.current = null;
+    setCallStartedAt(null);
+    setCallDuration(0);
     setIncomingOffer(null);
     setRemoteUser(null);
     setMuted(false);
@@ -119,7 +232,53 @@ export const VoiceCallProvider = ({ children }) => {
     setSpeakerMessage("");
     setErrorMessage("");
     setCallState("idle");
-  }, []);
+  }, [stopRingtone]);
+
+  const markCallActive = useCallback(() => {
+    setCallState("active");
+    setCallStartedAt(Date.now());
+    setCallDuration(0);
+    stopRingtone();
+  }, [stopRingtone]);
+
+  useEffect(() => {
+    if (callState !== "active" || !callStartedAt) return undefined;
+
+    const updateDuration = () => {
+      setCallDuration(Math.max(0, Math.floor((Date.now() - callStartedAt) / 1000)));
+    };
+
+    updateDuration();
+    const timer = window.setInterval(updateDuration, 1000);
+    return () => window.clearInterval(timer);
+  }, [callStartedAt, callState]);
+
+  const formatCallDuration = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const flushPendingIceCandidates = async (callId = currentCallIdRef.current) => {
+    if (!peerRef.current?.remoteDescription) return;
+
+    const candidates = [
+      ...pendingIceCandidatesRef.current,
+      ...(callId ? pendingIceByCallIdRef.current[callId] || [] : []),
+    ];
+    pendingIceCandidatesRef.current = [];
+    if (callId) {
+      delete pendingIceByCallIdRef.current[callId];
+    }
+
+    for (const candidate of candidates) {
+      try {
+        await peerRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      } catch {
+        // Ignore stale candidates from a previous call state.
+      }
+    }
+  };
 
   const createPeerConnection = useCallback(
     (peerUserId) => {
@@ -136,11 +295,29 @@ export const VoiceCallProvider = ({ children }) => {
       };
 
       peer.ontrack = (event) => {
+        if (!remoteAudioRef.current) return;
+
         const [remoteStream] = event.streams;
-        if (remoteAudioRef.current && remoteStream) {
+        if (remoteStream) {
           remoteAudioRef.current.srcObject = remoteStream;
-          remoteAudioRef.current.play().catch(() => {});
+        } else {
+          const fallbackStream =
+            remoteAudioRef.current.srcObject instanceof MediaStream
+              ? remoteAudioRef.current.srcObject
+              : new MediaStream();
+          fallbackStream.addTrack(event.track);
+          remoteAudioRef.current.srcObject = fallbackStream;
         }
+
+        remoteAudioRef.current.muted = false;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.autoplay = true;
+        remoteAudioRef.current.playsInline = true;
+        remoteAudioRef.current.play().catch(() => {
+          setSpeakerMessage(
+            "Tap the call bar once if your browser is waiting for permission to play audio."
+          );
+        });
       };
 
       peer.onconnectionstatechange = () => {
@@ -213,8 +390,8 @@ export const VoiceCallProvider = ({ children }) => {
     if (!incomingOffer || !currentUserId) return;
 
     try {
+      stopRingtone();
       setErrorMessage("");
-      setCallState("active");
       currentPeerIdRef.current = incomingOffer.fromUserId;
       currentCallIdRef.current = incomingOffer.callId;
 
@@ -225,6 +402,7 @@ export const VoiceCallProvider = ({ children }) => {
       await peer.setRemoteDescription(
         new RTCSessionDescription(incomingOffer.offer)
       );
+      await flushPendingIceCandidates(incomingOffer.callId);
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
 
@@ -235,6 +413,10 @@ export const VoiceCallProvider = ({ children }) => {
         answer,
       });
       setIncomingOffer(null);
+      markCallActive();
+      remoteAudioRef.current?.play?.().catch(() => {
+        setSpeakerMessage("Tap the call bar once if audio does not start.");
+      });
     } catch (error) {
       setErrorMessage(
         error?.name === "NotAllowedError"
@@ -246,6 +428,7 @@ export const VoiceCallProvider = ({ children }) => {
   };
 
   const rejectIncomingCall = () => {
+    stopRingtone();
     if (incomingOffer?.fromUserId && currentUserId) {
       socketRef.current?.emit("voice_call_rejected", {
         callId: incomingOffer.callId,
@@ -335,6 +518,7 @@ export const VoiceCallProvider = ({ children }) => {
       });
       setIncomingOffer(data);
       setCallState("incoming");
+      startRingtone();
     };
 
     const handleAnswer = async (data) => {
@@ -342,11 +526,37 @@ export const VoiceCallProvider = ({ children }) => {
       await peerRef.current.setRemoteDescription(
         new RTCSessionDescription(data.answer)
       );
-      setCallState("active");
+      await flushPendingIceCandidates(data.callId);
+      markCallActive();
     };
 
     const handleIceCandidate = async (data) => {
-      if (!peerRef.current || !data.candidate) return;
+      if (!data?.candidate) return;
+
+      if (!peerRef.current) {
+        if (data.callId) {
+          pendingIceByCallIdRef.current[data.callId] = [
+            ...(pendingIceByCallIdRef.current[data.callId] || []),
+            data.candidate,
+          ];
+        } else {
+          pendingIceCandidatesRef.current.push(data.candidate);
+        }
+        return;
+      }
+
+      if (!peerRef.current.remoteDescription) {
+        if (data.callId) {
+          pendingIceByCallIdRef.current[data.callId] = [
+            ...(pendingIceByCallIdRef.current[data.callId] || []),
+            data.candidate,
+          ];
+        } else {
+          pendingIceCandidatesRef.current.push(data.candidate);
+        }
+        return;
+      }
+
       try {
         await peerRef.current.addIceCandidate(
           new RTCIceCandidate(data.candidate)
@@ -357,6 +567,7 @@ export const VoiceCallProvider = ({ children }) => {
     };
 
     const handleRejected = () => {
+      stopRingtone();
       setErrorMessage("Voice call was declined.");
       window.setTimeout(cleanupCall, 1200);
     };
@@ -384,7 +595,7 @@ export const VoiceCallProvider = ({ children }) => {
       socket.disconnect();
       cleanupCall();
     };
-  }, [cleanupCall, currentUserId]);
+  }, [cleanupCall, currentUserId, markCallActive, startRingtone, stopRingtone]);
 
   const displayName = remoteUser?.username || remoteUser?.name || "User";
   const showCallUi = callState !== "idle" || errorMessage;
@@ -392,7 +603,7 @@ export const VoiceCallProvider = ({ children }) => {
   return (
     <VoiceCallContext.Provider value={{ startVoiceCall, callState }}>
       {children}
-      <audio ref={remoteAudioRef} autoPlay playsInline />
+      <audio ref={remoteAudioRef} autoPlay playsInline controls={false} />
 
       <Dialog open={callState === "incoming"} onClose={rejectIncomingCall}>
         <DialogContent sx={{ minWidth: { xs: 280, sm: 360 }, textAlign: "center" }}>
@@ -462,7 +673,7 @@ export const VoiceCallProvider = ({ children }) => {
                 {errorMessage ||
                   (callState === "outgoing"
                     ? "Calling..."
-                    : "Voice call connected")}
+                    : `Voice call connected - ${formatCallDuration(callDuration)}`)}
               </Typography>
             </Box>
             {callState === "active" && (
