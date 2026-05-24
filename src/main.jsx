@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 import { BrowserRouter } from "react-router-dom";
+import { AppThemeProvider } from "./context/AppThemeProvider.jsx";
+import { VoiceCallProvider } from "./context/VoiceCallProvider.jsx";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -11,7 +13,11 @@ if ("serviceWorker" in navigator) {
 }
 
 createRoot(document.getElementById("root")).render(
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
+  <AppThemeProvider>
+    <BrowserRouter>
+      <VoiceCallProvider>
+        <App />
+      </VoiceCallProvider>
+    </BrowserRouter>
+  </AppThemeProvider>
 );

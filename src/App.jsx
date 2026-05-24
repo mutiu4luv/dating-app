@@ -7,6 +7,7 @@ import { getStoredIsAdmin } from "./utility/authState";
 import GlobalMessageNotifications from "./components/GlobalMessageNotifications";
 import NotificationEnablePrompt from "./components/NotificationEnablePrompt";
 import ProfilePhotoPrompt from "./components/ProfilePhotoPrompt";
+import { ThemeModeToggle } from "./context/AppThemeProvider";
 
 const LandingPage = lazy(() => import("./landingPage/LandingPage"));
 const Login = lazy(() => import("./screens/Login"));
@@ -110,6 +111,7 @@ function App() {
       <GlobalMessageNotifications />
       <NotificationEnablePrompt />
       <ProfilePhotoPrompt />
+      <ThemeModeToggle />
       <div className="app-shell">
         <Suspense fallback={<RouteFallback />}>
           <Routes>

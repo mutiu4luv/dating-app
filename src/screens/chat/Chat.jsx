@@ -24,11 +24,13 @@ import ImageIcon from "@mui/icons-material/Image";
 import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ReplyIcon from "@mui/icons-material/Reply";
+import PhoneIcon from "@mui/icons-material/Phone";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
 import { requestNotificationPermission } from "../../utility/notifications";
 import { cloudinaryImage } from "../../utility/cloudinaryImage";
+import { useVoiceCall } from "../../context/VoiceCallProvider";
 
 const CHAT_PAGE_SIZE = 40;
 const MESSAGE_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
@@ -117,6 +119,7 @@ const Chat = () => {
   const isPrependingMessagesRef = useRef(false);
   const token = localStorage.getItem("token");
   const isSmallDialog = useMediaQuery("(max-width:600px)");
+  const { startVoiceCall, callState } = useVoiceCall();
 
   useEffect(() => {
     const askForNotifications = () => {
@@ -656,6 +659,29 @@ const Chat = () => {
             {receiver ? getActivityLabel(receiver) : "Loading profile..."}
           </Typography>
         </Box>
+        <IconButton
+          onClick={() =>
+            startVoiceCall({
+              toUserId: member2,
+              username: receiverName,
+              name: receiver?.name,
+              photo: receiver?.photo,
+            })
+          }
+          disabled={!member2 || callState !== "idle"}
+          aria-label={`Voice call ${receiverName || "member"}`}
+          sx={{
+            color: "#fff",
+            bgcolor: "#16a34a",
+            "&:hover": { bgcolor: "#15803d" },
+            "&.Mui-disabled": {
+              bgcolor: "rgba(255,255,255,0.1)",
+              color: "rgba(255,255,255,0.35)",
+            },
+          }}
+        >
+          <PhoneIcon fontSize="small" />
+        </IconButton>
         <IconButton
           onClick={() => receiver && setProfileOpen(true)}
           aria-label={`View ${receiverName || "member"} profile`}
