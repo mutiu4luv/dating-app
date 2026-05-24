@@ -17,6 +17,7 @@ import {
   Chip,
   Stack,
   useMediaQuery,
+  Popover,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ImageIcon from "@mui/icons-material/Image";
@@ -30,6 +31,7 @@ import { requestNotificationPermission } from "../../utility/notifications";
 import { cloudinaryImage } from "../../utility/cloudinaryImage";
 
 const CHAT_PAGE_SIZE = 40;
+const MESSAGE_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
 
 const getCachedReceiver = (memberId) => {
   if (!memberId) return null;
@@ -77,6 +79,16 @@ const canEditMessage = (message, currentUserId) => {
   return Date.now() - sentAt <= 20 * 60 * 1000;
 };
 
+const formatMessageTime = (dateValue) => {
+  if (!dateValue) return "";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
 const Chat = () => {
   const { member1, member2 } = useParams();
   const navigate = useNavigate();
@@ -96,9 +108,12 @@ const Chat = () => {
   const [replyingTo, setReplyingTo] = useState(null);
   const [editingMessage, setEditingMessage] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [reactionAnchor, setReactionAnchor] = useState(null);
+  const [reactionMessage, setReactionMessage] = useState(null);
   const messagesEndRef = useRef();
   const imageInputRef = useRef(null);
   const swipeRef = useRef({ messageId: null, x: 0, y: 0 });
+  const longPressTimerRef = useRef(null);
   const isPrependingMessagesRef = useRef(false);
   const token = localStorage.getItem("token");
   const isSmallDialog = useMediaQuery("(max-width:600px)");
@@ -181,6 +196,14 @@ const Chat = () => {
       });
     };
 
+    const handleMessageReacted = (updatedMessage) => {
+      setMessages((prev) =>
+        prev.map((item) =>
+          item._id === updatedMessage._id ? { ...item, ...updatedMessage } : item
+        )
+      );
+    };
+
     const handlePresenceUpdate = (data) => {
       if (data.userId === member2) {
         setReceiver((prev) =>
@@ -198,12 +221,14 @@ const Chat = () => {
     socketInstance.on("receive_message", handleReceive);
     socketInstance.on("message_edited", handleMessageEdited);
     socketInstance.on("message_deleted", handleMessageDeleted);
+    socketInstance.on("message_reacted", handleMessageReacted);
     socketInstance.on("presence_update", handlePresenceUpdate);
 
     return () => {
       socketInstance.off("receive_message", handleReceive);
       socketInstance.off("message_edited", handleMessageEdited);
       socketInstance.off("message_deleted", handleMessageDeleted);
+      socketInstance.off("message_reacted", handleMessageReacted);
       socketInstance.off("presence_update", handlePresenceUpdate);
     };
   }, [socketInstance, room, member1, member2]);
@@ -421,6 +446,29 @@ const Chat = () => {
     setSelectedMessage(null);
   };
 
+  const closeReactionPicker = () => {
+    setReactionAnchor(null);
+    setReactionMessage(null);
+  };
+
+  const openReactionPicker = (event, msg) => {
+    if (msg.deletedForEveryone) return;
+    setReactionAnchor(event.currentTarget);
+    setReactionMessage(msg);
+  };
+
+  const startLongPressReaction = (event, msg) => {
+    if (msg.deletedForEveryone) return;
+    window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = window.setTimeout(() => {
+      openReactionPicker(event, msg);
+    }, 520);
+  };
+
+  const clearLongPressReaction = () => {
+    window.clearTimeout(longPressTimerRef.current);
+  };
+
   const beginReply = (msg) => {
     setReplyingTo(msg);
     setEditingMessage(null);
@@ -507,7 +555,27 @@ const Chat = () => {
     }
   };
 
-  const receiverName = receiver?.username || receiver?.name || "User";
+  const reactToMessage = async (emoji) => {
+    if (!reactionMessage) return;
+
+    try {
+      const res = await axios.put(
+        `${import.meta.env.VITE_BASE_URL}/api/chat/message/${reactionMessage._id}/reaction`,
+        { emoji },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMessages((prev) =>
+        prev.map((item) => (item._id === res.data._id ? res.data : item))
+      );
+      socketInstance?.emit("message_reacted", res.data);
+    } catch (err) {
+      alert(err.response?.data?.message || "Unable to react to this message.");
+    } finally {
+      closeReactionPicker();
+    }
+  };
+
+  const receiverName = receiver?.username || receiver?.name || "";
   const receiverPhoto = cloudinaryImage(receiver?.photo, {
     width: 640,
     height: 640,
@@ -568,7 +636,13 @@ const Chat = () => {
         </IconButton>
         <Box flex={1} textAlign="center" minWidth={0}>
           <Typography variant="h6" gutterBottom sx={{ mb: 0 }}>
-            Chat with <strong>{receiverName}</strong>
+            {receiverName ? (
+              <>
+                Chat with <strong>{receiverName}</strong>
+              </>
+            ) : (
+              "Chat"
+            )}
           </Typography>
           <Typography
             component="span"
@@ -579,12 +653,12 @@ const Chat = () => {
               mt: 0.5,
             }}
           >
-            {getActivityLabel(receiver)}
+            {receiver ? getActivityLabel(receiver) : "Loading profile..."}
           </Typography>
         </Box>
         <IconButton
           onClick={() => receiver && setProfileOpen(true)}
-          aria-label={`View ${receiverName} profile`}
+          aria-label={`View ${receiverName || "member"} profile`}
           disabled={!receiver}
           sx={{
             p: 0.35,
@@ -596,7 +670,7 @@ const Chat = () => {
         >
           <Avatar
             src={receiverPhoto}
-            alt={receiverName}
+            alt={receiverName || "Member"}
             imgProps={{ loading: "eager" }}
             sx={{
               width: 44,
@@ -606,7 +680,7 @@ const Chat = () => {
               fontWeight: 900,
             }}
           >
-            {receiverName.charAt(0).toUpperCase()}
+            {(receiverName || "?").charAt(0).toUpperCase()}
           </Avatar>
         </IconButton>
       </Box>
@@ -630,8 +704,22 @@ const Chat = () => {
             return (
               <ListItem
                 key={msg._id}
-                onTouchStart={(event) => handleSwipeStart(event, msg)}
-                onTouchEnd={(event) => handleSwipeEnd(event, msg)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  openReactionPicker(event, msg);
+                }}
+                onMouseDown={(event) => startLongPressReaction(event, msg)}
+                onMouseUp={clearLongPressReaction}
+                onMouseLeave={clearLongPressReaction}
+                onTouchStart={(event) => {
+                  handleSwipeStart(event, msg);
+                  startLongPressReaction(event, msg);
+                }}
+                onTouchMove={clearLongPressReaction}
+                onTouchEnd={(event) => {
+                  clearLongPressReaction();
+                  handleSwipeEnd(event, msg);
+                }}
                 sx={{
                   justifyContent: isMine ? "flex-end" : "flex-start",
                   alignItems: "flex-start",
@@ -640,6 +728,8 @@ const Chat = () => {
                   transition: "background 160ms ease",
                   bgcolor: isReplyTarget
                     ? "rgba(144,202,249,0.12)"
+                    : reactionMessage?._id === msg._id
+                    ? "rgba(217,164,240,0.14)"
                     : "transparent",
                   borderRadius: 2,
                 }}
@@ -682,9 +772,19 @@ const Chat = () => {
                       )}
 
                       {msg.deletedForEveryone ? (
-                        <Typography fontStyle="italic" color="rgba(255,255,255,0.75)">
-                          This message was deleted
-                        </Typography>
+                        <>
+                          <Typography fontStyle="italic" color="rgba(255,255,255,0.75)">
+                            This message was deleted
+                          </Typography>
+                          <Typography
+                            fontSize={10}
+                            color="rgba(255,255,255,0.72)"
+                            textAlign="right"
+                            mt={0.5}
+                          >
+                            {formatMessageTime(msg.createdAt)}
+                          </Typography>
+                        </>
                       ) : (
                         <>
                           {msg.imageUrl && (
@@ -702,11 +802,43 @@ const Chat = () => {
                             />
                           )}
                           {msg.content && <Typography>{msg.content}</Typography>}
-                          {msg.editedAt && (
-                            <Typography fontSize={10} color="rgba(255,255,255,0.7)" mt={0.5}>
-                              Edited
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="flex-end"
+                            gap={0.75}
+                            mt={0.5}
+                          >
+                            {msg.editedAt && (
+                              <Typography fontSize={10} color="rgba(255,255,255,0.7)">
+                                Edited
+                              </Typography>
+                            )}
+                            <Typography fontSize={10} color="rgba(255,255,255,0.72)">
+                              {formatMessageTime(msg.createdAt)}
                             </Typography>
-                          )}
+                          </Box>
+                          {Array.isArray(msg.reactions) &&
+                            msg.reactions.length > 0 && (
+                              <Box display="flex" gap={0.5} mt={0.75} flexWrap="wrap">
+                                {msg.reactions.map((reaction) => (
+                                  <Box
+                                    key={`${reaction.userId}-${reaction.emoji}`}
+                                    component="span"
+                                    sx={{
+                                      px: 0.8,
+                                      py: 0.15,
+                                      borderRadius: 999,
+                                      bgcolor: "rgba(255,255,255,0.18)",
+                                      fontSize: 14,
+                                      lineHeight: 1.3,
+                                    }}
+                                  >
+                                    {reaction.emoji}
+                                  </Box>
+                                ))}
+                              </Box>
+                            )}
                         </>
                       )}
                     </Box>
@@ -883,6 +1015,44 @@ const Chat = () => {
           )}
       </Menu>
 
+      <Popover
+        open={Boolean(reactionAnchor)}
+        anchorEl={reactionAnchor}
+        onClose={closeReactionPicker}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+        transformOrigin={{ vertical: "bottom", horizontal: "center" }}
+        PaperProps={{
+          sx: {
+            borderRadius: 999,
+            bgcolor: "#fff",
+            boxShadow: "0 18px 46px rgba(0,0,0,0.28)",
+            border: "1px solid rgba(217,164,240,0.45)",
+            p: 0.75,
+          },
+        }}
+      >
+        <Box display="flex" gap={0.5}>
+          {MESSAGE_REACTIONS.map((emoji) => (
+            <IconButton
+              key={emoji}
+              size="small"
+              onClick={() => reactToMessage(emoji)}
+              sx={{
+                fontSize: 22,
+                width: 38,
+                height: 38,
+                "&:hover": {
+                  bgcolor: "#fbf5ff",
+                  transform: "translateY(-2px)",
+                },
+              }}
+            >
+              {emoji}
+            </IconButton>
+          ))}
+        </Box>
+      </Popover>
+
       <Dialog
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
@@ -965,7 +1135,7 @@ const Chat = () => {
                     fontWeight: 900,
                   }}
                 >
-                  {receiverName.charAt(0).toUpperCase()}
+                  {(receiverName || "?").charAt(0).toUpperCase()}
                 </Avatar>
               </Box>
             )}
