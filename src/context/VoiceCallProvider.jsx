@@ -566,6 +566,8 @@ export const VoiceCallProvider = ({ children }) => {
         name: data.callerName,
         photo: data.callerPhoto,
       });
+      currentPeerIdRef.current = data.fromUserId;
+      currentCallIdRef.current = data.callId;
       setIncomingOffer(data);
       setCallState("incoming");
       startRingtone();
@@ -645,7 +647,7 @@ export const VoiceCallProvider = ({ children }) => {
     };
 
     const handleMissed = (data = {}) => {
-      if (data.callId !== currentCallIdRef.current && data.callId !== incomingOffer?.callId) {
+      if (data.callId !== currentCallIdRef.current) {
         return;
       }
       stopRingtone();
@@ -686,7 +688,6 @@ export const VoiceCallProvider = ({ children }) => {
   }, [
     cleanupCall,
     currentUserId,
-    incomingOffer?.callId,
     markCallActive,
     startRingtone,
     stopRingtone,
