@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import {
   Box,
   Typography,
@@ -25,6 +25,9 @@ import CloseIcon from "@mui/icons-material/Close";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ReplyIcon from "@mui/icons-material/Reply";
 import PhoneIcon from "@mui/icons-material/Phone";
+import CallMadeIcon from "@mui/icons-material/CallMade";
+import CallReceivedIcon from "@mui/icons-material/CallReceived";
+import CallMissedIcon from "@mui/icons-material/CallMissed";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import io from "socket.io-client";
 import axios from "axios";
@@ -104,6 +107,7 @@ const Chat = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState([]);
+  const [callLogs, setCallLogs] = useState([]);
   const [receiver, setReceiver] = useState(initialReceiver);
   const [actionAnchor, setActionAnchor] = useState(null);
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -255,6 +259,51 @@ const Chat = () => {
       socketInstance.off("typing_stop", handleTypingStop);
     };
   }, [socketInstance, room, member1, member2]);
+
+  const fetchCallLogs = useCallback(async () => {
+    if (!member2 || !token) return;
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_BASE_URL}/api/calls/logs/${member2}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setCallLogs(res.data?.logs || []);
+    } catch (err) {
+      console.log("🔥 Failed to fetch call logs:", err.response?.data || err.message);
+    }
+  }, [member2, token]);
+
+  useEffect(() => {
+    fetchCallLogs();
+  }, [fetchCallLogs]);
+
+  useEffect(() => {
+    if (!socketInstance || !member1 || !member2) return;
+
+    const handleCallLogUpdated = (data = {}) => {
+      const firstId = data.fromUserId?.toString();
+      const secondId = data.toUserId?.toString();
+      const belongsToThisChat =
+        [firstId, secondId].includes(member1) &&
+        [firstId, secondId].includes(member2);
+
+      if (belongsToThisChat) fetchCallLogs();
+    };
+
+    socketInstance.on("voice_call_log_updated", handleCallLogUpdated);
+    socketInstance.on("voice_call_missed", handleCallLogUpdated);
+    socketInstance.on("voice_call_rejected", handleCallLogUpdated);
+    socketInstance.on("voice_call_ended", handleCallLogUpdated);
+
+    return () => {
+      socketInstance.off("voice_call_log_updated", handleCallLogUpdated);
+      socketInstance.off("voice_call_missed", handleCallLogUpdated);
+      socketInstance.off("voice_call_rejected", handleCallLogUpdated);
+      socketInstance.off("voice_call_ended", handleCallLogUpdated);
+    };
+  }, [fetchCallLogs, member1, member2, socketInstance]);
 
   useEffect(() => {
     return () => {
@@ -657,6 +706,85 @@ const Chat = () => {
   const receiverDescription =
     receiver?.description || receiver?.bio || receiver?.about || "";
 
+  const getCallParticipantId = (value) =>
+    typeof value === "object" ? value?._id : value;
+
+  const formatCallDuration = (seconds = 0) => {
+    if (!seconds) return "";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const getCallLogDisplay = (log) => {
+    const isOutgoing = getCallParticipantId(log.callerId) === member1;
+    if (log.status === "missed") {
+      return {
+        icon: <CallMissedIcon fontSize="small" />,
+        color: "#f87171",
+        title: isOutgoing ? "No answer" : "Missed voice call",
+        detail: isOutgoing
+          ? `${receiverName || "This member"} did not pick up.`
+          : `You missed a voice call from ${receiverName || "this member"}.`,
+      };
+    }
+    if (log.status === "declined") {
+      return {
+        icon: <CallMissedIcon fontSize="small" />,
+        color: "#fbbf24",
+        title: isOutgoing ? "Call declined" : "You declined this call",
+        detail: isOutgoing
+          ? `${receiverName || "This member"} declined the call.`
+          : "The call was declined.",
+      };
+    }
+    if (log.status === "ringing") {
+      return {
+        icon: isOutgoing ? (
+          <CallMadeIcon fontSize="small" />
+        ) : (
+          <CallReceivedIcon fontSize="small" />
+        ),
+        color: "#D9A4F0",
+        title: isOutgoing ? "Outgoing call" : "Incoming call",
+        detail: "Ringing...",
+      };
+    }
+    return {
+      icon: isOutgoing ? (
+        <CallMadeIcon fontSize="small" />
+      ) : (
+        <CallReceivedIcon fontSize="small" />
+      ),
+      color: "#4ade80",
+      title: isOutgoing ? "Outgoing voice call" : "Received voice call",
+      detail: log.durationSeconds
+        ? `Duration ${formatCallDuration(log.durationSeconds)}`
+        : "Connected",
+    };
+  };
+
+  const timelineItems = useMemo(
+    () =>
+      [
+        ...messages.map((item) => ({
+          type: "message",
+          id: item._id,
+          createdAt: item.createdAt,
+          data: item,
+        })),
+        ...callLogs.map((item) => ({
+          type: "call",
+          id: item._id || item.callId,
+          createdAt: item.createdAt || item.startedAt,
+          data: item,
+        })),
+      ].sort(
+        (a, b) => new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+      ),
+    [callLogs, messages]
+  );
+
   const profileDetails = [
     ["Gender", receiver?.gender || "Not provided"],
     ["Location", receiver?.location || "Not provided"],
@@ -801,7 +929,46 @@ const Chat = () => {
         }}
       >
         <List>
-          {messages.map((msg) => {
+          {timelineItems.map((item) => {
+            if (item.type === "call") {
+              const call = getCallLogDisplay(item.data);
+              return (
+                <ListItem
+                  key={`call-${item.id}`}
+                  sx={{
+                    justifyContent: "center",
+                    py: 0.75,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      maxWidth: "88%",
+                      px: 1.5,
+                      py: 1,
+                      borderRadius: 999,
+                      bgcolor: "rgba(255,255,255,0.08)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      color: call.color,
+                    }}
+                  >
+                    {call.icon}
+                    <Box minWidth={0}>
+                      <Typography fontSize={12} fontWeight={900} color="#fff">
+                        {call.title}
+                      </Typography>
+                      <Typography fontSize={11} color="rgba(255,255,255,0.72)">
+                        {call.detail} • {formatMessageTime(item.createdAt)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </ListItem>
+              );
+            }
+
+            const msg = item.data;
             const isMine = getSenderId(msg) === member1;
             const isReplyTarget = replyingTo?._id === msg._id;
 

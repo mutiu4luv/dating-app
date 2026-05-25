@@ -5,9 +5,11 @@ self.addEventListener("notificationclick", (event) => {
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const data = event.notification.data || {};
       const senderId =
-        typeof data.senderId === "object" ? data.senderId?._id : data.senderId;
+        (typeof data.senderId === "object" ? data.senderId?._id : data.senderId) ||
+        data.fromUserId;
       const receiverId =
-        typeof data.receiverId === "object" ? data.receiverId?._id : data.receiverId;
+        (typeof data.receiverId === "object" ? data.receiverId?._id : data.receiverId) ||
+        data.toUserId;
       const targetUrl =
         senderId && receiverId
           ? `/chat/${receiverId}/${senderId}`

@@ -14,6 +14,8 @@ import {
   DialogContent,
   IconButton,
   Paper,
+  Snackbar,
+  Alert,
   Typography,
 } from "@mui/material";
 import CallIcon from "@mui/icons-material/Call";
@@ -24,6 +26,7 @@ import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import io from "socket.io-client";
 import { useLocation } from "react-router-dom";
+import api from "../components/api/Api";
 
 const VoiceCallContext = createContext({
   startVoiceCall: () => {},
@@ -39,6 +42,39 @@ const rtcConfig = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
+const showIncomingCallNotification = async (data = {}) => {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  const title = "Incoming voice call";
+  const options = {
+    body: `${data.callerName || "Someone"} is calling you`,
+    icon: data.callerPhoto || "/vite.svg",
+    badge: "/vite.svg",
+    tag: `call-${data.callId}`,
+    requireInteraction: true,
+    vibrate: [500, 250, 500, 250, 500],
+    data: {
+      ...data,
+      senderId: data.fromUserId,
+      receiverId: data.toUserId,
+    },
+  };
+
+  if ("serviceWorker" in navigator) {
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(() => resolve(null), 1200)),
+    ]).catch(() => null);
+
+    if (registration?.showNotification) {
+      await registration.showNotification(title, options);
+      return;
+    }
+  }
+
+  new Notification(title, options);
+};
+
 export const useVoiceCall = () => useContext(VoiceCallContext);
 
 export const VoiceCallProvider = ({ children }) => {
@@ -52,6 +88,7 @@ export const VoiceCallProvider = ({ children }) => {
   const [callDuration, setCallDuration] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [speakerMessage, setSpeakerMessage] = useState("");
+  const [callNotice, setCallNotice] = useState("");
   const [authUser, setAuthUser] = useState({
     id: localStorage.getItem("userId") || "",
     username:
@@ -354,6 +391,13 @@ export const VoiceCallProvider = ({ children }) => {
 
       try {
         setErrorMessage("");
+        setCallNotice("");
+
+        const token = localStorage.getItem("token");
+        await api.get(`/calls/can-start?receiverId=${toUserId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
         setCallState("outgoing");
         setRemoteUser({ _id: toUserId, username, name, photo });
         currentPeerIdRef.current = toUserId;
@@ -375,10 +419,18 @@ export const VoiceCallProvider = ({ children }) => {
           offer,
         });
       } catch (error) {
+        const upgradeMessage =
+          error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message;
         setErrorMessage(
           error?.name === "NotAllowedError"
             ? "Microphone access was blocked. Please allow microphone permission."
-            : "Unable to start voice call."
+            : upgradeMessage || "Unable to start voice call."
+        );
+        setCallNotice(
+          upgradeMessage ||
+            "Upgrade to enjoy a better plan and continue making calls."
         );
         cleanupCall();
       }
@@ -519,6 +571,8 @@ export const VoiceCallProvider = ({ children }) => {
       setIncomingOffer(data);
       setCallState("incoming");
       startRingtone();
+      setCallNotice(`${data.callerName || "Someone"} is calling you.`);
+      showIncomingCallNotification(data);
     };
 
     const handleAnswer = async (data) => {
@@ -569,13 +623,46 @@ export const VoiceCallProvider = ({ children }) => {
     const handleRejected = () => {
       stopRingtone();
       setErrorMessage("Voice call was declined.");
+      setCallNotice("Voice call was declined.");
       window.setTimeout(cleanupCall, 1200);
+    };
+
+    const handleBlocked = (data = {}) => {
+      stopRingtone();
+      const message =
+        data.message ||
+        "You have reached your monthly plan limit. Upgrade to enjoy a better plan.";
+      setErrorMessage(message);
+      setCallNotice(message);
+      window.setTimeout(cleanupCall, 3200);
+    };
+
+    const handleUnavailable = (data = {}) => {
+      stopRingtone();
+      const message =
+        data.message || "User is not available for calls right now.";
+      setErrorMessage(message);
+      setCallNotice(message);
+      window.setTimeout(cleanupCall, 2200);
+    };
+
+    const handleMissed = (data = {}) => {
+      if (data.callId !== currentCallIdRef.current && data.callId !== incomingOffer?.callId) {
+        return;
+      }
+      stopRingtone();
+      setCallNotice(callStateRef.current === "incoming" ? "Missed voice call." : "No answer.");
+      setErrorMessage(callStateRef.current === "incoming" ? "Missed voice call." : "No answer.");
+      window.setTimeout(cleanupCall, 1600);
     };
 
     socket.on("voice_call_offer", handleOffer);
     socket.on("voice_call_answer", handleAnswer);
     socket.on("voice_call_ice_candidate", handleIceCandidate);
     socket.on("voice_call_rejected", handleRejected);
+    socket.on("voice_call_blocked", handleBlocked);
+    socket.on("voice_call_unavailable", handleUnavailable);
+    socket.on("voice_call_missed", handleMissed);
     socket.on("voice_call_ended", cleanupCall);
     socket.on("connect", registerForCalls);
     socket.io.on("reconnect", registerForCalls);
@@ -587,6 +674,9 @@ export const VoiceCallProvider = ({ children }) => {
       socket.off("voice_call_answer", handleAnswer);
       socket.off("voice_call_ice_candidate", handleIceCandidate);
       socket.off("voice_call_rejected", handleRejected);
+      socket.off("voice_call_blocked", handleBlocked);
+      socket.off("voice_call_unavailable", handleUnavailable);
+      socket.off("voice_call_missed", handleMissed);
       socket.off("voice_call_ended", cleanupCall);
       socket.off("connect", registerForCalls);
       socket.io.off("reconnect", registerForCalls);
@@ -595,7 +685,14 @@ export const VoiceCallProvider = ({ children }) => {
       socket.disconnect();
       cleanupCall();
     };
-  }, [cleanupCall, currentUserId, markCallActive, startRingtone, stopRingtone]);
+  }, [
+    cleanupCall,
+    currentUserId,
+    incomingOffer?.callId,
+    markCallActive,
+    startRingtone,
+    stopRingtone,
+  ]);
 
   const displayName = remoteUser?.username || remoteUser?.name || "User";
   const showCallUi = callState !== "idle" || errorMessage;
@@ -623,7 +720,7 @@ export const VoiceCallProvider = ({ children }) => {
             {displayName.charAt(0).toUpperCase()}
           </Avatar>
           <Typography variant="h6" fontWeight={900}>
-            Incoming voice call
+            Ringing...
           </Typography>
           <Typography color="text.secondary" mb={2}>
             {displayName} is calling you
@@ -672,7 +769,7 @@ export const VoiceCallProvider = ({ children }) => {
               <Typography variant="caption" color="text.secondary">
                 {errorMessage ||
                   (callState === "outgoing"
-                    ? "Calling..."
+                    ? "Ringing..."
                     : `Voice call connected - ${formatCallDuration(callDuration)}`)}
               </Typography>
             </Box>
@@ -700,6 +797,20 @@ export const VoiceCallProvider = ({ children }) => {
           )}
         </Paper>
       )}
+      <Snackbar
+        open={Boolean(callNotice)}
+        autoHideDuration={5000}
+        onClose={() => setCallNotice("")}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          severity={errorMessage ? "warning" : "info"}
+          onClose={() => setCallNotice("")}
+          sx={{ width: "100%" }}
+        >
+          {callNotice}
+        </Alert>
+      </Snackbar>
     </VoiceCallContext.Provider>
   );
 };

@@ -40,6 +40,29 @@ const BRAND_DARK = "#2d0052";
 const BRAND_PINK = "#D9A4F0";
 const BRAND_SOFT = "#fbf5ff";
 
+const formatDateInputValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().split("T")[0];
+};
+
+const calculateAgeFromDateOfBirth = (dateOfBirth) => {
+  if (!dateOfBirth) return "";
+  const birthDate = new Date(dateOfBirth);
+  if (Number.isNaN(birthDate.getTime())) return "";
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayHasNotHappened =
+    today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() < birthDate.getDate());
+
+  if (birthdayHasNotHappened) age -= 1;
+  return age;
+};
+
 const UpdateProfileScreen = () => {
   const [form, setForm] = useState({});
   const [photoPreview, setPhotoPreview] = useState("");
@@ -59,7 +82,10 @@ const UpdateProfileScreen = () => {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        setForm(res.data);
+        setForm({
+          ...res.data,
+          dateOfBirth: formatDateInputValue(res.data.dateOfBirth),
+        });
         setPhotoPreview(res.data.photo);
       } catch {
         setMessage("Failed to fetch profile");
@@ -69,7 +95,17 @@ const UpdateProfileScreen = () => {
   }, [token, userId]);
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "dateOfBirth") {
+      setForm({
+        ...form,
+        dateOfBirth: value,
+        age: calculateAgeFromDateOfBirth(value),
+      });
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
   };
 
   const handlePhotoChange = async (e) => {
@@ -102,6 +138,7 @@ const UpdateProfileScreen = () => {
       const allowedFields = [
         "name",
         "age",
+        "dateOfBirth",
         "gender",
         "location",
         "occupation",
@@ -232,13 +269,26 @@ const UpdateProfileScreen = () => {
               required
             />
             <TextField
-              name="age"
-              label="Age"
-              type="number"
-              value={form.age || ""}
+              name="dateOfBirth"
+              label="Date of Birth"
+              type="date"
+              value={form.dateOfBirth || ""}
               onChange={handleChange}
               fullWidth
               required
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                max: new Date(
+                  new Date().setFullYear(new Date().getFullYear() - 18)
+                )
+                  .toISOString()
+                  .split("T")[0],
+              }}
+              helperText={
+                form.age
+                  ? `Your age updates automatically every birthday. Current age: ${form.age}`
+                  : "Choose your date of birth."
+              }
             />
             <TextField
               select

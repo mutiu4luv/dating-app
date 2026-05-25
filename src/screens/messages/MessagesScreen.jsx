@@ -20,6 +20,8 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import ChatIcon from "@mui/icons-material/Chat";
 import PeopleIcon from "@mui/icons-material/People";
+import CallIcon from "@mui/icons-material/Call";
+import CallMissedIcon from "@mui/icons-material/CallMissed";
 import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
@@ -77,8 +79,10 @@ const getActivityChipSx = (item) =>
 const MessagesScreen = () => {
   const [conversations, setConversations] = useState([]);
   const [members, setMembers] = useState([]);
+  const [callLogs, setCallLogs] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [loadingCallLogs, setLoadingCallLogs] = useState(false);
   const [membersError, setMembersError] = useState("");
   const [tab, setTab] = useState("conversations");
   const [searchTerm, setSearchTerm] = useState("");
@@ -88,6 +92,22 @@ const MessagesScreen = () => {
 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
+
+  const loadCallLogs = useCallback(async () => {
+    if (!token) return;
+    setLoadingCallLogs(true);
+    try {
+      const res = await api.get("/calls/logs", {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 12000,
+      });
+      setCallLogs(res.data?.logs || []);
+    } catch (err) {
+      console.error("Failed to load call logs:", err);
+    } finally {
+      setLoadingCallLogs(false);
+    }
+  }, [token]);
 
   useEffect(() => {
     if (!userId || !token) return;
@@ -334,17 +354,29 @@ const MessagesScreen = () => {
 
     socket.on("presence_update", handlePresenceUpdate);
     socket.on("receive_message", handleReceiveMessage);
+    socket.on("voice_call_offer", loadCallLogs);
+    socket.on("voice_call_log_updated", loadCallLogs);
+    socket.on("voice_call_missed", loadCallLogs);
+    socket.on("voice_call_ended", loadCallLogs);
+    socket.on("voice_call_rejected", loadCallLogs);
+    socket.on("voice_call_unavailable", loadCallLogs);
     window.addEventListener("click", askForNotifications, { once: true });
     window.addEventListener("touchstart", askForNotifications, { once: true });
 
     return () => {
       socket.off("presence_update", handlePresenceUpdate);
       socket.off("receive_message", handleReceiveMessage);
+      socket.off("voice_call_offer", loadCallLogs);
+      socket.off("voice_call_log_updated", loadCallLogs);
+      socket.off("voice_call_missed", loadCallLogs);
+      socket.off("voice_call_ended", loadCallLogs);
+      socket.off("voice_call_rejected", loadCallLogs);
+      socket.off("voice_call_unavailable", loadCallLogs);
       window.removeEventListener("click", askForNotifications);
       window.removeEventListener("touchstart", askForNotifications);
       socket.disconnect();
     };
-  }, [userId]);
+  }, [loadCallLogs, userId]);
 
   const filteredMembers = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -379,6 +411,46 @@ const MessagesScreen = () => {
         member: typeof member === "string" ? null : member,
       },
     });
+  };
+
+  const formatCallTime = (value) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString([], {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
+
+  const formatCallDuration = (seconds = 0) => {
+    if (!seconds) return "";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  const getCallPartner = (log) => {
+    const callerId = getIdValue(log.callerId);
+    return callerId === userId ? log.receiverId : log.callerId;
+  };
+
+  const getCallLabel = (log) => {
+    const callerId = getIdValue(log.callerId);
+    const isOutgoing = callerId === userId;
+
+    if (log.status === "missed") {
+      return isOutgoing ? "No answer" : "Missed voice call";
+    }
+    if (log.status === "declined") {
+      return isOutgoing ? "Call declined" : "You declined this call";
+    }
+    if (log.status === "ringing") return isOutgoing ? "Ringing" : "Incoming call";
+    return `${isOutgoing ? "Outgoing" : "Incoming"} voice call${
+      log.durationSeconds ? ` - ${formatCallDuration(log.durationSeconds)}` : ""
+    }`;
   };
 
   const renderAvatar = (name, photo, isOnline = false) => (
@@ -456,6 +528,9 @@ const MessagesScreen = () => {
                 if (value === "members" && members.length === 0) {
                   loadAllUsers();
                 }
+                if (value === "calls" && callLogs.length === 0) {
+                  loadCallLogs();
+                }
               }}
               variant="fullWidth"
               sx={{
@@ -481,6 +556,12 @@ const MessagesScreen = () => {
                 icon={<PeopleIcon />}
                 iconPosition="start"
                 label="All Users"
+              />
+              <Tab
+                value="calls"
+                icon={<CallIcon />}
+                iconPosition="start"
+                label="Calls"
               />
             </Tabs>
 
@@ -586,7 +667,7 @@ const MessagesScreen = () => {
                   </List>
                 )}
               </Box>
-            ) : (
+            ) : tab === "members" ? (
               <Box sx={{ bgcolor: "#fff", p: { xs: 1.5, sm: 2 } }}>
                 <TextField
                   fullWidth
@@ -711,6 +792,93 @@ const MessagesScreen = () => {
                     </Box>
                   )}
                   </>
+                )}
+              </Box>
+            ) : (
+              <Box sx={{ bgcolor: "#fff", p: { xs: 1, sm: 2 } }}>
+                {loadingCallLogs && callLogs.length === 0 ? (
+                  renderMessageSkeletons()
+                ) : callLogs.length === 0 ? (
+                  <Box textAlign="center" py={6}>
+                    <Typography color="#6b4679">
+                      No voice call history yet.
+                    </Typography>
+                    <Button
+                      onClick={loadCallLogs}
+                      sx={{
+                        mt: 1.5,
+                        color: "#2d0052",
+                        fontWeight: 900,
+                        textTransform: "none",
+                      }}
+                    >
+                      Refresh call logs
+                    </Button>
+                  </Box>
+                ) : (
+                  <List disablePadding>
+                    {callLogs.map((log) => {
+                      const partner = getCallPartner(log) || {};
+                      const missed = log.status === "missed";
+
+                      return (
+                        <ListItemButton
+                          key={log._id}
+                          onClick={() =>
+                            handleChatOpen({
+                              _id: getIdValue(partner),
+                              username: partner.username || partner.name,
+                              name: partner.name,
+                              photo: partner.photo,
+                            })
+                          }
+                          sx={{
+                            borderRadius: 2,
+                            mb: 1,
+                            py: 1.5,
+                            "&:hover": { backgroundColor: "#fce7f3" },
+                          }}
+                        >
+                          <ListItemAvatar>
+                            {renderAvatar(
+                              partner.username || partner.name,
+                              partner.photo,
+                              false
+                            )}
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography fontWeight={900} color="#2d0052">
+                                  {partner.username || partner.name || "Member"}
+                                </Typography>
+                                {missed ? (
+                                  <CallMissedIcon
+                                    fontSize="small"
+                                    sx={{ color: "#dc2626" }}
+                                  />
+                                ) : (
+                                  <CallIcon
+                                    fontSize="small"
+                                    sx={{ color: "#16a34a" }}
+                                  />
+                                )}
+                              </Box>
+                            }
+                            secondary={
+                              <Typography
+                                variant="body2"
+                                color={missed ? "#dc2626" : "#6b4679"}
+                                noWrap
+                              >
+                                {getCallLabel(log)} - {formatCallTime(log.createdAt)}
+                              </Typography>
+                            }
+                          />
+                        </ListItemButton>
+                      );
+                    })}
+                  </List>
                 )}
               </Box>
             )}

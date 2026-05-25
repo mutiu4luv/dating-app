@@ -448,11 +448,28 @@ const relationshipTypes = [
   "Causal Dating",
 ];
 
+const calculateAgeFromDateOfBirth = (dateOfBirth) => {
+  if (!dateOfBirth) return "";
+  const birthDate = new Date(dateOfBirth);
+  if (Number.isNaN(birthDate.getTime())) return "";
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayHasNotHappened =
+    today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() < birthDate.getDate());
+
+  if (birthdayHasNotHappened) age -= 1;
+  return age;
+};
+
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({
     name: "",
     age: "",
+    dateOfBirth: "",
     gender: "",
     location: "",
     occupation: "",
@@ -471,7 +488,17 @@ const Signup = () => {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === "dateOfBirth") {
+      setForm({
+        ...form,
+        dateOfBirth: value,
+        age: calculateAgeFromDateOfBirth(value),
+      });
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
   };
 
   const handlePhotoChange = async (e) => {
@@ -514,6 +541,13 @@ const Signup = () => {
       });
       formData.append("photo", photoFile);
 
+      const calculatedAge = calculateAgeFromDateOfBirth(form.dateOfBirth);
+      if (!calculatedAge || calculatedAge < 18) {
+        setLoading(false);
+        setMessage("You must be at least 18 years old to register.");
+        return;
+      }
+
       const res = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/api/user/register`,
         formData,
@@ -532,6 +566,7 @@ const Signup = () => {
         setForm({
           name: "",
           age: "",
+          dateOfBirth: "",
           gender: "",
           location: "",
           occupation: "",
@@ -643,14 +678,26 @@ const Signup = () => {
               required
             />
             <TextField
-              label="Age"
-              name="age"
-              type="number"
-              value={form.age}
+              label="Date of Birth"
+              name="dateOfBirth"
+              type="date"
+              value={form.dateOfBirth}
               onChange={handleChange}
               fullWidth
               required
-              inputProps={{ min: 18, max: 100 }}
+              InputLabelProps={{ shrink: true }}
+              inputProps={{
+                max: new Date(
+                  new Date().setFullYear(new Date().getFullYear() - 18)
+                )
+                  .toISOString()
+                  .split("T")[0],
+              }}
+              helperText={
+                form.age
+                  ? `Your age will update automatically every birthday. Current age: ${form.age}`
+                  : "Choose your date of birth."
+              }
             />
             <TextField
               select
