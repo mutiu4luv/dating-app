@@ -26,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
 import api from "../../components/api/Api";
 import Navbar from "../../components/Navbar/Navbar";
+import { useVoiceCall } from "../../context/VoiceCallProvider";
 import {
   getIdValue,
   requestNotificationPermission,
@@ -35,6 +36,7 @@ const conversationCacheKey = (userId) => `chatConversations_${userId}`;
 const chatDirectoryCacheKey = (userId) => `chatDirectoryAllUsers_${userId}_v2`;
 const conversationTimeoutMs = 6500;
 const membersTimeoutMs = 6500;
+const conversationsBatchSize = 25;
 const membersBatchSize = 35;
 const socketUrl =
   import.meta.env.VITE_BASE_URL ||
@@ -85,10 +87,15 @@ const MessagesScreen = () => {
   const [loadingCallLogs, setLoadingCallLogs] = useState(false);
   const [membersError, setMembersError] = useState("");
   const [tab, setTab] = useState("conversations");
+  const [conversationSearchTerm, setConversationSearchTerm] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [callSearchTerm, setCallSearchTerm] = useState("");
+  const [visibleConversationsCount, setVisibleConversationsCount] =
+    useState(conversationsBatchSize);
   const [visibleMembersCount, setVisibleMembersCount] =
     useState(membersBatchSize);
   const navigate = useNavigate();
+  const { startVoiceCall, callState } = useVoiceCall();
 
   const userId = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
@@ -395,6 +402,66 @@ const MessagesScreen = () => {
     );
   }, [members, searchTerm]);
 
+  const filteredConversations = useMemo(() => {
+    const term = conversationSearchTerm.trim().toLowerCase();
+    if (!term) return conversations;
+
+    return conversations.filter((chat) =>
+      [
+        chat.username,
+        chat.name,
+        chat.lastMessage,
+        chat.location,
+        chat.occupation,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(term))
+    );
+  }, [conversationSearchTerm, conversations]);
+
+  const visibleConversations = useMemo(
+    () => filteredConversations.slice(0, visibleConversationsCount),
+    [filteredConversations, visibleConversationsCount]
+  );
+
+  const memberMatchesSearch = (member, term) =>
+    [
+      member?.name,
+      member?.username,
+      member?.location,
+      member?.occupation,
+      member?.relationshipType,
+      member?.phoneNumber,
+    ]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(term));
+
+  const getCallPartner = useCallback((log) => {
+    const callerId = getIdValue(log.callerId);
+    return callerId === userId ? log.receiverId : log.callerId;
+  }, [userId]);
+
+  const filteredCallLogs = useMemo(() => {
+    const term = callSearchTerm.trim().toLowerCase();
+    if (!term) return callLogs;
+
+    return callLogs.filter((log) => memberMatchesSearch(getCallPartner(log), term));
+  }, [callLogs, callSearchTerm, getCallPartner]);
+
+  const callSearchMembers = useMemo(() => {
+    const term = callSearchTerm.trim().toLowerCase();
+    if (!term) return [];
+
+    const calledPartnerIds = new Set(
+      callLogs.map((log) => getIdValue(getCallPartner(log))).filter(Boolean)
+    );
+
+    return members
+      .filter((member) => !calledPartnerIds.has(member._id))
+      .filter((member) => memberMatchesSearch(member, term))
+      .slice(0, 12);
+  }, [callLogs, callSearchTerm, getCallPartner, members]);
+
   const visibleMembers = useMemo(
     () => filteredMembers.slice(0, visibleMembersCount),
     [filteredMembers, visibleMembersCount]
@@ -404,12 +471,29 @@ const MessagesScreen = () => {
     setVisibleMembersCount(membersBatchSize);
   }, [searchTerm]);
 
+  useEffect(() => {
+    setVisibleConversationsCount(conversationsBatchSize);
+  }, [conversationSearchTerm]);
+
   const handleChatOpen = (member) => {
     const memberId = typeof member === "string" ? member : member?._id || member?.matchId;
     navigate(`/chat/${userId}/${memberId}`, {
       state: {
         member: typeof member === "string" ? null : member,
       },
+    });
+  };
+
+  const handleStartCall = (event, member) => {
+    event.stopPropagation();
+    const memberId = getIdValue(member) || member?._id || member?.matchId;
+    if (!memberId || callState !== "idle") return;
+
+    startVoiceCall({
+      toUserId: memberId,
+      username: member.username || member.name,
+      name: member.name,
+      photo: member.photo,
     });
   };
 
@@ -430,11 +514,6 @@ const MessagesScreen = () => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
-
-  const getCallPartner = (log) => {
-    const callerId = getIdValue(log.callerId);
-    return callerId === userId ? log.receiverId : log.callerId;
   };
 
   const getCallLabel = (log) => {
@@ -495,6 +574,7 @@ const MessagesScreen = () => {
     <>
       <Navbar />
       <Box
+        className="messages-screen"
         sx={{
           minHeight: "100vh",
           background:
@@ -514,6 +594,7 @@ const MessagesScreen = () => {
           </Box>
 
           <Paper
+            className="messages-panel"
             elevation={0}
             sx={{
               borderRadius: 3,
@@ -530,6 +611,9 @@ const MessagesScreen = () => {
                 }
                 if (value === "calls" && callLogs.length === 0) {
                   loadCallLogs();
+                }
+                if (value === "calls" && members.length === 0) {
+                  loadAllUsers();
                 }
               }}
               variant="fullWidth"
@@ -567,13 +651,37 @@ const MessagesScreen = () => {
 
             {tab === "conversations" ? (
               <Box sx={{ bgcolor: "#fff", p: { xs: 1, sm: 2 } }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search conversations by name or message"
+                  value={conversationSearchTerm}
+                  onChange={(event) =>
+                    setConversationSearchTerm(event.target.value)
+                  }
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      bgcolor: "#fdf2f8",
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: "#6b4679" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
                 {loadingConversations && conversations.length === 0 ? (
                   renderMessageSkeletons()
-                ) : conversations.length === 0 ? (
+                ) : filteredConversations.length === 0 ? (
                   <Box textAlign="center" py={6}>
                     <Typography color="#6b4679">
-                      No conversations loaded yet. Open All Users to start a
-                      chat, or refresh this page if you already have messages.
+                      {conversationSearchTerm
+                        ? "No conversations match your search."
+                        : "No conversations loaded yet. Open All Users to start a chat, or refresh this page if you already have messages."}
                     </Typography>
                     <Button
                       onClick={() => window.location.reload()}
@@ -588,8 +696,9 @@ const MessagesScreen = () => {
                     </Button>
                   </Box>
                 ) : (
+                  <>
                   <List disablePadding>
-                    {conversations.map((chat) => {
+                    {visibleConversations.map((chat) => {
                       const unreadCount = chat.unreadCount ?? 0;
                       const isUnread = chat.unread === true;
 
@@ -665,6 +774,32 @@ const MessagesScreen = () => {
                       );
                     })}
                   </List>
+                  {visibleConversations.length < filteredConversations.length && (
+                    <Box display="flex" justifyContent="center" py={2}>
+                      <Button
+                        variant="outlined"
+                        onClick={() =>
+                          setVisibleConversationsCount((count) =>
+                            Math.min(
+                              count + conversationsBatchSize,
+                              filteredConversations.length
+                            )
+                          )
+                        }
+                        sx={{
+                          borderColor: "#2d0052",
+                          color: "#2d0052",
+                          fontWeight: 900,
+                          borderRadius: 2,
+                          textTransform: "none",
+                        }}
+                      >
+                        Load more conversations (
+                        {filteredConversations.length - visibleConversations.length} left)
+                      </Button>
+                    </Box>
+                  )}
+                  </>
                 )}
               </Box>
             ) : tab === "members" ? (
@@ -796,12 +931,103 @@ const MessagesScreen = () => {
               </Box>
             ) : (
               <Box sx={{ bgcolor: "#fff", p: { xs: 1, sm: 2 } }}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search users to call or search call history"
+                  value={callSearchTerm}
+                  onChange={(event) => setCallSearchTerm(event.target.value)}
+                  sx={{
+                    mb: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 3,
+                      bgcolor: "#fdf2f8",
+                    },
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: "#6b4679" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {callSearchMembers.length > 0 && (
+                  <Box mb={2}>
+                    <Typography
+                      variant="caption"
+                      color="#6b4679"
+                      fontWeight={900}
+                      display="block"
+                      mb={1}
+                    >
+                      Users you can call
+                    </Typography>
+                    <List disablePadding>
+                      {callSearchMembers.map((member) => (
+                        <ListItemButton
+                          key={`call-user-${member._id}`}
+                          onClick={() => handleChatOpen(member)}
+                          sx={{
+                            borderRadius: 2,
+                            mb: 1,
+                            py: 1.25,
+                            bgcolor: "#fbf5ff",
+                            "&:hover": { backgroundColor: "#fce7f3" },
+                          }}
+                        >
+                          <ListItemAvatar>
+                            {renderAvatar(
+                              member.username || member.name,
+                              member.photo,
+                              member.isOnline
+                            )}
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography fontWeight={900} color="#2d0052">
+                                {member.username || member.name}
+                              </Typography>
+                            }
+                            secondary={
+                              <Typography variant="body2" color="#6b4679" noWrap>
+                                {[member.location, member.occupation]
+                                  .filter(Boolean)
+                                  .join(" - ") || getActivityLabel(member)}
+                              </Typography>
+                            }
+                          />
+                          <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<CallIcon />}
+                            disabled={callState !== "idle"}
+                            onClick={(event) => handleStartCall(event, member)}
+                            sx={{
+                              bgcolor: "#16a34a",
+                              borderRadius: 2,
+                              fontWeight: 900,
+                              textTransform: "none",
+                              "&:hover": { bgcolor: "#15803d" },
+                            }}
+                          >
+                            Call
+                          </Button>
+                        </ListItemButton>
+                      ))}
+                    </List>
+                  </Box>
+                )}
+
                 {loadingCallLogs && callLogs.length === 0 ? (
                   renderMessageSkeletons()
-                ) : callLogs.length === 0 ? (
+                ) : filteredCallLogs.length === 0 ? (
                   <Box textAlign="center" py={6}>
                     <Typography color="#6b4679">
-                      No voice call history yet.
+                      {callSearchTerm
+                        ? "No calls match your search."
+                        : "No voice call history yet."}
                     </Typography>
                     <Button
                       onClick={loadCallLogs}
@@ -817,7 +1043,7 @@ const MessagesScreen = () => {
                   </Box>
                 ) : (
                   <List disablePadding>
-                    {callLogs.map((log) => {
+                    {filteredCallLogs.map((log) => {
                       const partner = getCallPartner(log) || {};
                       const missed = log.status === "missed";
 
@@ -875,6 +1101,26 @@ const MessagesScreen = () => {
                               </Typography>
                             }
                           />
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<CallIcon />}
+                            disabled={callState !== "idle"}
+                            onClick={(event) => handleStartCall(event, partner)}
+                            sx={{
+                              borderColor: "#16a34a",
+                              color: "#166534",
+                              borderRadius: 2,
+                              fontWeight: 900,
+                              textTransform: "none",
+                              "&:hover": {
+                                borderColor: "#15803d",
+                                bgcolor: "#f0fdf4",
+                              },
+                            }}
+                          >
+                            Call
+                          </Button>
                         </ListItemButton>
                       );
                     })}

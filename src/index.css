@@ -14,11 +14,13 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --app-bg: #0f1017;
-  --app-surface: #181a25;
+  --app-bg: #090b12;
+  --app-surface: #141824;
+  --app-surface-2: #1b2030;
   --app-text: #f8fafc;
   --app-muted: #cbd5e1;
   --app-border: rgba(217, 164, 240, 0.28);
+  --app-brand-soft: rgba(217, 164, 240, 0.16);
 }
 
 html,
@@ -41,23 +43,270 @@ body {
 [data-theme="dark"] .MuiPaper-root,
 [data-theme="dark"] .MuiCard-root,
 [data-theme="dark"] .MuiDialog-paper {
-  background-color: var(--app-surface);
-  color: var(--app-text);
-  border-color: var(--app-border);
+  background-color: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+[data-theme="dark"] .MuiBox-root,
+[data-theme="dark"] .MuiContainer-root {
+  color: inherit;
+}
+
+[data-theme="dark"] .MuiTypography-root {
+  color: var(--app-text) !important;
 }
 
 [data-theme="dark"] .MuiTypography-colorTextSecondary,
 [data-theme="dark"] .MuiTypography-colorTextDisabled {
-  color: var(--app-muted);
+  color: var(--app-muted) !important;
 }
 
 [data-theme="dark"] .MuiInputBase-root,
 [data-theme="dark"] .MuiOutlinedInput-root {
-  color: var(--app-text);
+  color: var(--app-text) !important;
+  background-color: var(--app-surface-2) !important;
 }
 
 [data-theme="dark"] .MuiOutlinedInput-notchedOutline {
-  border-color: rgba(217, 164, 240, 0.35);
+  border-color: rgba(217, 164, 240, 0.35) !important;
+}
+
+[data-theme="dark"] .MuiInputLabel-root,
+[data-theme="dark"] .MuiFormHelperText-root,
+[data-theme="dark"] .MuiSvgIcon-root {
+  color: var(--app-muted) !important;
+}
+
+[data-theme="dark"] .MuiButton-contained .MuiSvgIcon-root,
+[data-theme="dark"] .MuiIconButton-root[style*="background"] .MuiSvgIcon-root {
+  color: inherit !important;
+}
+
+[data-theme="dark"] .MuiListItemButton-root,
+[data-theme="dark"] .MuiListItem-root,
+[data-theme="dark"] .MuiTableCell-root,
+[data-theme="dark"] .MuiTableRow-root,
+[data-theme="dark"] .MuiMenu-paper,
+[data-theme="dark"] .MuiPopover-paper {
+  background-color: transparent;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+[data-theme="dark"] .MuiListItemButton-root:hover {
+  background-color: rgba(217, 164, 240, 0.12) !important;
+}
+
+[data-theme="dark"] .MuiTabs-root,
+[data-theme="dark"] .MuiBottomNavigation-root,
+[data-theme="dark"] .MuiAppBar-root,
+[data-theme="dark"] nav {
+  background-color: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
+[data-theme="dark"] .MuiTab-root,
+[data-theme="dark"] .MuiBottomNavigationAction-root,
+[data-theme="dark"] a {
+  color: var(--app-muted) !important;
+}
+
+[data-theme="dark"] .Mui-selected,
+[data-theme="dark"] .MuiBottomNavigationAction-root.Mui-selected {
+  color: #f0c7ff !important;
+}
+
+[data-theme="dark"] .MuiChip-root {
+  background-color: var(--app-brand-soft) !important;
+  color: var(--app-text) !important;
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea {
+  color: var(--app-text) !important;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+[data-theme="dark"] img {
+  opacity: 1;
+  filter: none;
+}
+
+[data-theme="dark"] body {
+  background: var(--app-bg);
+}
+
+[data-theme="dark"] .messages-screen {
+  background: linear-gradient(135deg, #090b12 0%, #111827 52%, #1b1028 100%) !important;
+}
+
+[data-theme="dark"] .messages-panel,
+[data-theme="dark"] .messages-screen .MuiBox-root[style],
+[data-theme="dark"] .messages-screen .MuiBox-root {
+  border-color: var(--app-border) !important;
+}
+
+[data-theme="dark"] .messages-screen .MuiPaper-root,
+[data-theme="dark"] .messages-screen .MuiTabs-root,
+[data-theme="dark"] .messages-screen .MuiList-root,
+[data-theme="dark"] .messages-screen .MuiListItemButton-root {
+  background-color: var(--app-surface) !important;
+}
+
+[data-theme="dark"] .messages-screen .MuiListItemButton-root.MuiButtonBase-root {
+  background-color: var(--app-surface-2) !important;
+}
+
+[data-theme="dark"] .messages-screen .MuiListItemButton-root.MuiButtonBase-root:hover {
+  background-color: rgba(217, 164, 240, 0.14) !important;
+}
+
+[data-theme="dark"] .messages-screen .MuiButton-outlined {
+  border-color: #d9a4f0 !important;
+  color: #f0c7ff !important;
+}
+
+[data-theme="dark"] .app-navbar {
+  background-color: #15101f !important;
+  border-bottom: 1px solid var(--app-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32) !important;
+}
+
+[data-theme="dark"] .app-navbar .MuiTypography-root,
+[data-theme="dark"] .app-navbar .MuiButton-root,
+[data-theme="dark"] .app-navbar .MuiIconButton-root,
+[data-theme="dark"] .app-navbar .MuiSvgIcon-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .app-navbar .MuiAvatar-root {
+  background-color: #d9a4f0 !important;
+  color: #2d0052 !important;
+}
+
+[data-theme="dark"] .MuiMenu-paper,
+[data-theme="dark"] .app-navbar-menu .MuiPaper-root {
+  background-color: #15101f !important;
+  color: #f8fafc !important;
+  border: 1px solid var(--app-border) !important;
+}
+
+[data-theme="dark"] .MuiMenuItem-root,
+[data-theme="dark"] .MuiMenuItem-root .MuiSvgIcon-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .MuiMenuItem-root:hover {
+  background-color: rgba(217, 164, 240, 0.14) !important;
+  color: #f0c7ff !important;
+}
+
+[data-theme="dark"] .app-footer {
+  background: linear-gradient(135deg, #090b12 0%, #15101f 58%, #2d1438 100%) !important;
+  color: #f8fafc !important;
+  border-top: 1px solid var(--app-border);
+}
+
+[data-theme="dark"] .app-footer .MuiTypography-root,
+[data-theme="dark"] .app-footer .MuiLink-root,
+[data-theme="dark"] .app-footer a,
+[data-theme="dark"] .app-footer strong {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .app-footer .MuiIconButton-root,
+[data-theme="dark"] .app-footer .MuiSvgIcon-root {
+  color: #f0c7ff !important;
+}
+
+[data-theme="dark"] .app-footer .MuiDivider-root {
+  border-color: rgba(217, 164, 240, 0.34) !important;
+}
+
+[data-theme="dark"] .members-screen {
+  background: linear-gradient(135deg, #090b12 0%, #111827 52%, #1b1028 100%) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .members-screen .MuiTypography-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .members-screen .MuiTypography-root[color="#5b5f72"],
+[data-theme="dark"] .members-screen .MuiTypography-root[color="#4b5563"],
+[data-theme="dark"] .members-screen .MuiTypography-root[color="#6b7280"],
+[data-theme="dark"] .members-screen .MuiTypography-root[color="#171827"],
+[data-theme="dark"] .members-screen .MuiTypography-root[color="#8b3ba8"],
+[data-theme="dark"] .members-screen .MuiTypography-root[color="#2d0052"] {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .suggested-member-card,
+[data-theme="dark"] .member-card,
+[data-theme="dark"] .member-card-content {
+  background: #151b2a !important;
+  color: #f8fafc !important;
+  border-color: rgba(217, 164, 240, 0.35) !important;
+}
+
+[data-theme="dark"] .member-card {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.42) !important;
+}
+
+[data-theme="dark"] .members-screen .MuiTextField-root,
+[data-theme="dark"] .members-screen .MuiInputBase-root {
+  background-color: #1b2030 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .members-screen .MuiButton-outlined {
+  border-color: #d9a4f0 !important;
+  color: #f0c7ff !important;
+}
+
+[data-theme="dark"] .members-screen .MuiButton-contained {
+  background-color: #d9a4f0 !important;
+  color: #2d0052 !important;
+}
+
+[data-theme="dark"] .merge-screen {
+  background: linear-gradient(135deg, #090b12 0%, #111827 52%, #1b1028 100%) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .merge-screen .MuiTypography-root,
+[data-theme="dark"] .merge-screen .MuiSvgIcon-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .merge-hero,
+[data-theme="dark"] .merge-plan-card {
+  background: #151b2a !important;
+  color: #f8fafc !important;
+  border-color: rgba(217, 164, 240, 0.35) !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38) !important;
+}
+
+[data-theme="dark"] .merge-plan-card .MuiButton-outlined {
+  border-color: #d9a4f0 !important;
+  color: #f0c7ff !important;
+}
+
+[data-theme="dark"] .merge-plan-card .MuiButton-contained,
+[data-theme="dark"] .merge-screen .MuiButton-contained {
+  background-color: #d9a4f0 !important;
+  color: #2d0052 !important;
+}
+
+[data-theme="dark"] .merge-plan-card .MuiBox-root {
+  border-color: rgba(217, 164, 240, 0.35) !important;
 }
 
 img,

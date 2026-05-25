@@ -461,8 +461,9 @@ const Members = () => {
         </Box>
 
         {!loadingMembers && suggestedMembers.length > 0 && (
-          <Box
-            sx={{
+      <Box
+        className="members-screen"
+        sx={{
               maxWidth: 1180,
               mx: "auto",
               mb: 4,
@@ -576,6 +577,7 @@ const Members = () => {
 
                   return (
                     <Box
+                      className="suggested-member-card"
                       key={`suggested-${member._id}`}
                       sx={{
                         scrollSnapAlign: "start",
@@ -744,6 +746,7 @@ const Members = () => {
 
                 return (
                   <Card
+                    className="member-card"
                     key={member._id}
                     sx={{
                       borderRadius: 2,
@@ -853,6 +856,7 @@ const Members = () => {
                     </Box>
 
                     <CardContent
+                      className="member-card-content"
                       sx={{
                         display: "flex",
                         flexDirection: "column",

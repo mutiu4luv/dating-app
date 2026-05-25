@@ -285,6 +285,7 @@ const MergeScreen = () => {
       <Navbar />
 
       <Box
+        className="merge-screen"
         display="flex"
         flexDirection="column"
         alignItems="center"
@@ -297,6 +298,7 @@ const MergeScreen = () => {
         }}
       >
         <Paper
+          className="merge-hero"
           elevation={0}
           sx={{
             width: "100%",
@@ -393,6 +395,7 @@ const MergeScreen = () => {
             {visiblePlans.map(([key, plan]) => (
               <Grid item xs={12} sm={6} md={3} key={key}>
                 <Paper
+                  className="merge-plan-card"
                   elevation={3}
                   sx={{
                     p: 3,

@@ -971,6 +971,9 @@ const Chat = () => {
             const msg = item.data;
             const isMine = getSenderId(msg) === member1;
             const isReplyTarget = replyingTo?._id === msg._id;
+            const msgReactions = Array.isArray(msg.reactions)
+              ? msg.reactions
+              : [];
 
             return (
               <ListItem
@@ -1018,116 +1021,131 @@ const Chat = () => {
                   </IconButton>
                 )}
 
-                <ListItemText
-                  primary={
-                    <Box>
-                      {msg.replyTo?.messageId && (
-                        <Box
-                          sx={{
-                            borderLeft: "3px solid #f8c7ff",
-                            bgcolor: "rgba(255,255,255,0.14)",
-                            borderRadius: 1,
-                            px: 1,
-                            py: 0.75,
-                            mb: 1,
-                          }}
-                        >
-                          <Typography fontSize={11} fontWeight={900}>
-                            Replying to message
-                          </Typography>
-                          <Typography fontSize={12} noWrap>
-                            {msg.replyTo.content ||
-                              (msg.replyTo.imageUrl ? "Photo" : "Message")}
-                          </Typography>
-                        </Box>
-                      )}
-
-                      {msg.deletedForEveryone ? (
-                        <>
-                          <Typography fontStyle="italic" color="rgba(255,255,255,0.75)">
-                            This message was deleted
-                          </Typography>
-                          <Typography
-                            fontSize={10}
-                            color="rgba(255,255,255,0.72)"
-                            textAlign="right"
-                            mt={0.5}
-                          >
-                            {formatMessageTime(msg.createdAt)}
-                          </Typography>
-                        </>
-                      ) : (
-                        <>
-                          {msg.imageUrl && (
-                            <Box
-                              component="img"
-                              src={msg.imageUrl}
-                              alt="Chat upload"
-                              sx={{
-                                width: "100%",
-                                maxHeight: 260,
-                                objectFit: "cover",
-                                borderRadius: 2,
-                                mb: msg.content ? 1 : 0,
-                              }}
-                            />
-                          )}
-                          {msg.content && <Typography>{msg.content}</Typography>}
+                <Box
+                  sx={{
+                    position: "relative",
+                    maxWidth: "75%",
+                    pb: msgReactions.length ? 1.6 : 0,
+                  }}
+                >
+                  <ListItemText
+                    primary={
+                      <Box>
+                        {msg.replyTo?.messageId && (
                           <Box
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="flex-end"
-                            gap={0.75}
-                            mt={0.5}
+                            sx={{
+                              borderLeft: "3px solid #f8c7ff",
+                              bgcolor: "rgba(255,255,255,0.14)",
+                              borderRadius: 1,
+                              px: 1,
+                              py: 0.75,
+                              mb: 1,
+                            }}
                           >
-                            {msg.editedAt && (
-                              <Typography fontSize={10} color="rgba(255,255,255,0.7)">
-                                Edited
-                              </Typography>
-                            )}
-                            <Typography fontSize={10} color="rgba(255,255,255,0.72)">
-                              {formatMessageTime(msg.createdAt)}
+                            <Typography fontSize={11} fontWeight={900}>
+                              Replying to message
+                            </Typography>
+                            <Typography fontSize={12} noWrap>
+                              {msg.replyTo.content ||
+                                (msg.replyTo.imageUrl ? "Photo" : "Message")}
                             </Typography>
                           </Box>
-                          {Array.isArray(msg.reactions) &&
-                            msg.reactions.length > 0 && (
-                              <Box display="flex" gap={0.5} mt={0.75} flexWrap="wrap">
-                                {msg.reactions.map((reaction) => (
-                                  <Box
-                                    key={`${reaction.userId}-${reaction.emoji}`}
-                                    component="span"
-                                    sx={{
-                                      px: 0.8,
-                                      py: 0.15,
-                                      borderRadius: 999,
-                                      bgcolor: "rgba(255,255,255,0.18)",
-                                      fontSize: 14,
-                                      lineHeight: 1.3,
-                                    }}
-                                  >
-                                    {reaction.emoji}
-                                  </Box>
-                                ))}
-                              </Box>
+                        )}
+
+                        {msg.deletedForEveryone ? (
+                          <>
+                            <Typography fontStyle="italic" color="rgba(255,255,255,0.75)">
+                              This message was deleted
+                            </Typography>
+                            <Typography
+                              fontSize={10}
+                              color="rgba(255,255,255,0.72)"
+                              textAlign="right"
+                              mt={0.5}
+                            >
+                              {formatMessageTime(msg.createdAt)}
+                            </Typography>
+                          </>
+                        ) : (
+                          <>
+                            {msg.imageUrl && (
+                              <Box
+                                component="img"
+                                src={msg.imageUrl}
+                                alt="Chat upload"
+                                sx={{
+                                  width: "100%",
+                                  maxHeight: 260,
+                                  objectFit: "cover",
+                                  borderRadius: 2,
+                                  mb: msg.content ? 1 : 0,
+                                }}
+                              />
                             )}
-                        </>
-                      )}
+                            {msg.content && <Typography>{msg.content}</Typography>}
+                            <Box
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="flex-end"
+                              gap={0.75}
+                              mt={0.5}
+                            >
+                              {msg.editedAt && (
+                                <Typography fontSize={10} color="rgba(255,255,255,0.7)">
+                                  Edited
+                                </Typography>
+                              )}
+                              <Typography fontSize={10} color="rgba(255,255,255,0.72)">
+                                {formatMessageTime(msg.createdAt)}
+                              </Typography>
+                            </Box>
+                          </>
+                        )}
+                      </Box>
+                    }
+                    sx={{
+                      background: isMine ? "#2979ff" : "#424242",
+                      color: "#fff",
+                      p: 1.5,
+                      borderRadius: "12px",
+                      border: isReplyTarget
+                        ? "2px solid #90caf9"
+                        : "2px solid transparent",
+                      boxShadow: isReplyTarget
+                        ? "0 0 0 3px rgba(144,202,249,0.18)"
+                        : "none",
+                    }}
+                  />
+                  {msgReactions.length > 0 && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        bottom: 0,
+                        right: isMine ? 8 : "auto",
+                        left: isMine ? "auto" : 8,
+                        display: "flex",
+                        gap: 0.35,
+                        px: 0.75,
+                        py: 0.2,
+                        borderRadius: 999,
+                        bgcolor: "#111827",
+                        border: "1px solid rgba(255,255,255,0.16)",
+                        boxShadow: "0 8px 18px rgba(0,0,0,0.28)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {msgReactions.map((reaction) => (
+                        <Box
+                          key={`${reaction.userId}-${reaction.emoji}`}
+                          component="span"
+                          sx={{ fontSize: 14, lineHeight: 1.2 }}
+                        >
+                          {reaction.emoji}
+                        </Box>
+                      ))}
                     </Box>
-                  }
-                  sx={{
-                    background: isMine ? "#2979ff" : "#424242",
-                    color: "#fff",
-                    p: 1.5,
-                    borderRadius: "12px",
-                    maxWidth: "75%",
-                    border: isReplyTarget
-                      ? "2px solid #90caf9"
-                      : "2px solid transparent",
-                    boxShadow: isReplyTarget
-                      ? "0 0 0 3px rgba(144,202,249,0.18)"
-                      : "none",
-                  }}
-                />
+                  )}
+                </Box>
 
                 {!isMine && !msg.deletedForEveryone && (
                   <IconButton

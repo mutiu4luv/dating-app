@@ -153,7 +153,11 @@ const Navbar = () => {
   };
 
   return (
-    <AppBar position="sticky" sx={{ backgroundColor: "#D9A4F0" }}>
+    <AppBar
+      position="sticky"
+      className="app-navbar"
+      sx={{ backgroundColor: "#D9A4F0" }}
+    >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         <Box display="flex" alignItems="center">
           <FavoriteIcon sx={{ mr: 1, color: "#2d0052" }} />
@@ -215,6 +219,7 @@ const Navbar = () => {
 
               {/* Dropdown Menu */}
               <Menu
+                className="app-navbar-menu"
                 anchorEl={anchorEl}
                 open={Boolean(anchorEl)}
                 onClose={handleMenuClose}
