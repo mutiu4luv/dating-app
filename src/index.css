@@ -83,6 +83,24 @@ body {
   color: inherit !important;
 }
 
+.voice-call-incoming .voice-call-action .MuiSvgIcon-root {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .voice-call-incoming .MuiPaper-root {
+  background: linear-gradient(180deg, #181124, #111827) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .voice-call-incoming .MuiTypography-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .voice-call-incoming .voice-call-actions {
+  background-color: rgba(17, 24, 39, 0.96) !important;
+  border-color: rgba(217, 164, 240, 0.38) !important;
+}
+
 [data-theme="dark"] .MuiListItemButton-root,
 [data-theme="dark"] .MuiListItem-root,
 [data-theme="dark"] .MuiTableCell-root,

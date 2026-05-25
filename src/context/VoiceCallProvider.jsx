@@ -10,8 +10,6 @@ import {
   Avatar,
   Box,
   Button,
-  Dialog,
-  DialogContent,
   IconButton,
   Paper,
   Snackbar,
@@ -702,45 +700,169 @@ export const VoiceCallProvider = ({ children }) => {
       {children}
       <audio ref={remoteAudioRef} autoPlay playsInline controls={false} />
 
-      <Dialog open={callState === "incoming"} onClose={rejectIncomingCall}>
-        <DialogContent sx={{ minWidth: { xs: 280, sm: 360 }, textAlign: "center" }}>
-          <Avatar
-            src={remoteUser?.photo || ""}
+      {callState === "incoming" && (
+        <Box
+          className="voice-call-incoming"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Incoming voice call from ${displayName}`}
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 3000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            px: { xs: 1.5, sm: 2 },
+            py: { xs: 1.5, sm: 4 },
+            bgcolor: "rgba(9, 11, 18, 0.88)",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          <Paper
+            elevation={20}
             sx={{
-              width: 82,
-              height: 82,
-              mx: "auto",
-              mb: 1.5,
-              bgcolor: "#D9A4F0",
-              color: "#2d0052",
-              fontWeight: 900,
-              fontSize: 30,
+              width: "min(100%, 420px)",
+              minHeight: { xs: "auto", sm: 440 },
+              maxHeight: { xs: "calc(100dvh - 24px)", sm: "none" },
+              overflowY: "auto",
+              borderRadius: { xs: 4, sm: 4 },
+              p: { xs: 2.5, sm: 4 },
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              border: "1px solid rgba(217, 164, 240, 0.42)",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(249,242,253,0.98))",
+              boxShadow: "0 30px 80px rgba(0,0,0,0.45)",
             }}
           >
-            {displayName.charAt(0).toUpperCase()}
-          </Avatar>
-          <Typography variant="h6" fontWeight={900}>
-            Ringing...
-          </Typography>
-          <Typography color="text.secondary" mb={2}>
-            {displayName} is calling you
-          </Typography>
-          <Box display="flex" justifyContent="center" gap={2}>
-            <IconButton
-              onClick={rejectIncomingCall}
-              sx={{ bgcolor: "#ef4444", color: "#fff", "&:hover": { bgcolor: "#dc2626" } }}
-            >
-              <CallEndIcon />
-            </IconButton>
-            <IconButton
-              onClick={acceptIncomingCall}
-              sx={{ bgcolor: "#22c55e", color: "#fff", "&:hover": { bgcolor: "#16a34a" } }}
-            >
-              <CallIcon />
-            </IconButton>
-          </Box>
-        </DialogContent>
-      </Dialog>
+            <Box>
+              <Typography
+                variant="overline"
+                sx={{ color: "#7c3a9f", fontWeight: 900, letterSpacing: 1 }}
+              >
+                Incoming voice call
+              </Typography>
+              <Avatar
+                src={remoteUser?.photo || ""}
+                sx={{
+                  width: { xs: 96, sm: 132 },
+                  height: { xs: 96, sm: 132 },
+                  mx: "auto",
+                  mt: { xs: 1.2, sm: 2 },
+                  mb: 2,
+                  bgcolor: "#D9A4F0",
+                  color: "#2d0052",
+                  fontWeight: 900,
+                  fontSize: 44,
+                  border: "5px solid rgba(217, 164, 240, 0.35)",
+                  boxShadow: "0 18px 45px rgba(45, 0, 82, 0.22)",
+                }}
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </Avatar>
+              <Typography variant="h5" fontWeight={950} sx={{ color: "#22112f" }}>
+                {displayName}
+              </Typography>
+              <Typography sx={{ color: "#6b5874", mt: 0.8 }}>
+                is calling you now
+              </Typography>
+
+              <Box
+                className="voice-call-actions"
+                sx={{
+                  width: "100%",
+                  mt: { xs: 3, sm: 4 },
+                  p: { xs: 1.5, sm: 0 },
+                  borderRadius: { xs: 4, sm: 0 },
+                  backgroundColor: {
+                    xs: "rgba(255, 255, 255, 0.96)",
+                    sm: "transparent",
+                  },
+                  boxShadow: {
+                    xs: "0 14px 38px rgba(0,0,0,0.16)",
+                    sm: "none",
+                  },
+                  border: {
+                    xs: "1px solid rgba(217, 164, 240, 0.38)",
+                    sm: "none",
+                  },
+                }}
+              >
+                <Box display="flex" justifyContent="center" gap={{ xs: 4, sm: 5 }}>
+                <Box textAlign="center">
+                  <IconButton
+                    className="voice-call-action"
+                    onClick={rejectIncomingCall}
+                    aria-label="Decline call"
+                    sx={{
+                      width: 74,
+                      height: 74,
+                      bgcolor: "#ef4444",
+                      color: "#fff",
+                      boxShadow: "0 16px 35px rgba(239,68,68,0.35)",
+                      "&:hover": { bgcolor: "#dc2626" },
+                    }}
+                  >
+                    <CallEndIcon fontSize="large" />
+                  </IconButton>
+                  <Typography
+                    variant="caption"
+                    display="block"
+                    mt={1}
+                    sx={{ color: "#6b5874", fontWeight: 800 }}
+                  >
+                    Decline
+                  </Typography>
+                </Box>
+                <Box textAlign="center">
+                  <IconButton
+                    className="voice-call-action"
+                    onClick={acceptIncomingCall}
+                    aria-label="Accept call"
+                    sx={{
+                      width: 74,
+                      height: 74,
+                      bgcolor: "#22c55e",
+                      color: "#fff",
+                      boxShadow: "0 16px 35px rgba(34,197,94,0.35)",
+                      "&:hover": { bgcolor: "#16a34a" },
+                    }}
+                  >
+                    <CallIcon fontSize="large" />
+                  </IconButton>
+                  <Typography
+                    variant="caption"
+                    display="block"
+                    mt={1}
+                    sx={{ color: "#6b5874", fontWeight: 800 }}
+                  >
+                    Accept
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Button
+                fullWidth
+                variant="text"
+                onClick={rejectIncomingCall}
+                sx={{
+                  mt: 3,
+                  color: "#7c3a9f",
+                  fontWeight: 900,
+                  textTransform: "none",
+                }}
+              >
+                Send to missed call
+              </Button>
+              </Box>
+            </Box>
+          </Paper>
+        </Box>
+      )}
 
       {showCallUi && callState !== "incoming" && (
         <Paper
