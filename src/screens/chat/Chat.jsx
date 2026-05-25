@@ -716,6 +716,9 @@ const Chat = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
+  const getCallTimeValue = (log) =>
+    log?.startedAt || log?.answeredAt || log?.endedAt || log?.createdAt;
+
   const getCallLogDisplay = (log) => {
     const isOutgoing = getCallParticipantId(log.callerId) === member1;
     if (log.status === "missed") {
@@ -776,7 +779,7 @@ const Chat = () => {
         ...callLogs.map((item) => ({
           type: "call",
           id: item._id || item.callId,
-          createdAt: item.createdAt || item.startedAt,
+          createdAt: getCallTimeValue(item),
           data: item,
         })),
       ].sort(

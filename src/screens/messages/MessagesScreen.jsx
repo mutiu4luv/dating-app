@@ -509,6 +509,9 @@ const MessagesScreen = () => {
     });
   };
 
+  const getCallTimeValue = (log) =>
+    log?.startedAt || log?.answeredAt || log?.endedAt || log?.createdAt;
+
   const formatCallDuration = (seconds = 0) => {
     if (!seconds) return "";
     const minutes = Math.floor(seconds / 60);
@@ -1108,7 +1111,7 @@ const MessagesScreen = () => {
                                   lineHeight: 1.35,
                                 }}
                               >
-                                {getCallLabel(log)} - {formatCallTime(log.createdAt)}
+                                {getCallLabel(log)} - {formatCallTime(getCallTimeValue(log))}
                               </Typography>
                             }
                           />
