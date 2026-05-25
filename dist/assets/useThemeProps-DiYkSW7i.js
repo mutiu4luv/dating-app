@@ -1,0 +1,1 @@
+import{aJ as o,ap as m,aK as p}from"./index-DYRFN3KP.js";const n=o();function c({props:t,name:a,defaultTheme:r,themeId:s}){let e=m(r);return s&&(e=e[s]||e),p({theme:e,name:a,props:t})}export{n as s,c as u};

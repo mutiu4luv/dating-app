@@ -309,6 +309,43 @@ body {
   border-color: rgba(217, 164, 240, 0.35) !important;
 }
 
+[data-theme="dark"] .chat-profile-dialog .MuiDialog-paper {
+  background: #111827 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .chat-profile-body {
+  background: #111827 !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .chat-profile-dialog .MuiTypography-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .chat-profile-dialog .MuiTypography-root.MuiTypography-caption,
+[data-theme="dark"] .chat-profile-dialog .MuiTypography-colorTextSecondary {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .chat-profile-description,
+[data-theme="dark"] .chat-profile-detail-row {
+  background: #1b2030 !important;
+  color: #f8fafc !important;
+  border-color: rgba(217, 164, 240, 0.36) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] .chat-profile-description .MuiTypography-root,
+[data-theme="dark"] .chat-profile-detail-row .MuiTypography-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .chat-profile-dialog .MuiChip-root {
+  background-color: rgba(217, 164, 240, 0.18) !important;
+  color: #f8fafc !important;
+}
+
 img,
 video,
 canvas {

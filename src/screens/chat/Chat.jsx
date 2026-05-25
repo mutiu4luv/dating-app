@@ -1343,6 +1343,7 @@ const Chat = () => {
       </Popover>
 
       <Dialog
+        className="chat-profile-dialog"
         open={profileOpen}
         onClose={() => setProfileOpen(false)}
         fullWidth
@@ -1430,7 +1431,7 @@ const Chat = () => {
             )}
           </Box>
 
-          <Box sx={{ p: { xs: 2.25, sm: 3 } }}>
+          <Box className="chat-profile-body" sx={{ p: { xs: 2.25, sm: 3 } }}>
           <Box display="flex" alignItems="flex-start" gap={1.5} mb={2}>
             <Box flex={1} minWidth={0}>
               <Typography variant="h5" fontWeight={900} color="#2d0052">
@@ -1461,6 +1462,7 @@ const Chat = () => {
           </Box>
 
           <Box
+            className="chat-profile-description"
             sx={{
               p: 1.5,
               mb: 1.5,
@@ -1487,6 +1489,7 @@ const Chat = () => {
             {profileDetails.map(([label, value]) => (
               <Box
                 key={label}
+                className="chat-profile-detail-row"
                 sx={{
                   display: "grid",
                   gridTemplateColumns: { xs: "1fr", sm: "140px 1fr" },
