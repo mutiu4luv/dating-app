@@ -3,6 +3,7 @@ import {
   BottomNavigation,
   BottomNavigationAction,
   Box,
+  Badge,
   Divider,
   Drawer,
   List,
@@ -27,6 +28,7 @@ import ContactSupportIcon from "@mui/icons-material/ContactSupport";
 import LockResetIcon from "@mui/icons-material/LockReset";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getStoredIsAdmin } from "../../utility/authState";
+import api from "../api/Api";
 
 const hiddenPaths = [
   "/login",
@@ -74,6 +76,7 @@ const MobileBottomNav = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [authState, setAuthState] = useState({
     token: localStorage.getItem("token"),
@@ -102,6 +105,43 @@ const MobileBottomNav = () => {
 
   const { token, userId, isAdmin } = authState;
 
+  useEffect(() => {
+    if (!token || !userId) {
+      setUnreadCount(0);
+      return undefined;
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await api.get(`/chat/unread/count/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUnreadCount(res.data?.unreadCount || 0);
+      } catch (error) {
+        console.error("Failed to fetch bottom nav unread count", error);
+      }
+    };
+
+    const handleIncomingMessage = (event) => {
+      if (event.detail?.receiverId === userId) {
+        setUnreadCount((count) => count + 1);
+      }
+    };
+
+    const handleUnreadReset = () => {
+      fetchUnreadCount();
+    };
+
+    fetchUnreadCount();
+    window.addEventListener("incomingMessage", handleIncomingMessage);
+    window.addEventListener("unreadReset", handleUnreadReset);
+
+    return () => {
+      window.removeEventListener("incomingMessage", handleIncomingMessage);
+      window.removeEventListener("unreadReset", handleUnreadReset);
+    };
+  }, [token, userId]);
+
   const items = useMemo(() => {
     const baseItems = [
       {
@@ -120,7 +160,16 @@ const MobileBottomNav = () => {
         label: "Chat",
         value: "chat",
         path: "/messages",
-        icon: <ChatIcon />,
+        icon: (
+          <Badge
+            badgeContent={unreadCount}
+            color="error"
+            max={9}
+            invisible={unreadCount === 0}
+          >
+            <ChatIcon />
+          </Badge>
+        ),
       },
       {
         label: "Merge",
@@ -137,7 +186,7 @@ const MobileBottomNav = () => {
     ];
 
     return baseItems;
-  }, [isAdmin, userId]);
+  }, [isAdmin, unreadCount, userId]);
 
   if (
     !isMobile ||

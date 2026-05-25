@@ -703,7 +703,7 @@ const MessagesScreen = () => {
                   <List disablePadding>
                     {visibleConversations.map((chat) => {
                       const unreadCount = chat.unreadCount ?? 0;
-                      const isUnread = chat.unread === true;
+                      const isUnread = chat.unread === true || unreadCount > 0;
 
                       return (
                         <ListItemButton
@@ -748,7 +748,7 @@ const MessagesScreen = () => {
                           <ListItemText
                             primary={
                               <Box display="flex" alignItems="center" gap={1}>
-                                <Typography fontWeight={isUnread ? 800 : 700}>
+                                <Typography fontWeight={isUnread ? 950 : 700}>
                                   {chat.username}
                                 </Typography>
                                 <Typography
@@ -766,7 +766,7 @@ const MessagesScreen = () => {
                               <Typography
                                 variant="body2"
                                 noWrap
-                                fontWeight={isUnread ? 700 : 400}
+                                fontWeight={isUnread ? 950 : 400}
                                 color={isUnread ? "#2d0052" : "#6b4679"}
                               >
                                 {chat.lastMessage || "Say hi..."}
