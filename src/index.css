@@ -164,6 +164,27 @@ body {
   background-color: var(--app-surface-2) !important;
 }
 
+[data-theme="dark"] .messages-screen .MuiListItemText-primary .MuiTypography-root,
+[data-theme="dark"] .messages-screen .MuiListItemText-secondary .MuiTypography-root,
+[data-theme="dark"] .messages-screen .MuiListItemText-root .MuiTypography-root {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .messages-screen .MuiListItemText-root .MuiTypography-caption,
+[data-theme="dark"] .messages-screen .MuiListItemText-secondary {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .messages-screen .MuiBadge-badge {
+  color: #fff !important;
+}
+
+[data-theme="dark"] .messages-screen .messages-activity-chip {
+  background-color: rgba(217, 164, 240, 0.18) !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(217, 164, 240, 0.34);
+}
+
 [data-theme="dark"] .messages-screen .MuiListItemButton-root.MuiButtonBase-root:hover {
   background-color: rgba(217, 164, 240, 0.14) !important;
 }
@@ -307,6 +328,15 @@ body {
 
 [data-theme="dark"] .merge-plan-card .MuiBox-root {
   border-color: rgba(217, 164, 240, 0.35) !important;
+}
+
+[data-theme="dark"] .merge-plan-icon {
+  background: rgba(217, 164, 240, 0.16) !important;
+  border-color: rgba(217, 164, 240, 0.48) !important;
+}
+
+[data-theme="dark"] .merge-plan-icon .MuiSvgIcon-root {
+  color: #f0c7ff !important;
 }
 
 [data-theme="dark"] .chat-profile-dialog .MuiDialog-paper {

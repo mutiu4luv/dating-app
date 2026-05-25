@@ -4,6 +4,7 @@ import {
   getIdValue,
   requestNotificationPermission,
   showMessageNotification,
+  showReactionNotification,
 } from "../utility/notifications";
 import api from "./api/Api";
 
@@ -92,6 +93,19 @@ const GlobalMessageNotifications = () => {
       showMessageNotification(message);
     };
 
+    const handleMessageReacted = (message) => {
+      const userId = localStorage.getItem("userId");
+      const reaction = message?.reactionEvent || {};
+      const reactorId = getIdValue(reaction.reactorId);
+      const targetUserId = getIdValue(reaction.targetUserId);
+
+      if (!userId || !reaction.added) return;
+      if (reactorId === userId) return;
+      if (targetUserId !== userId) return;
+
+      showReactionNotification(message);
+    };
+
     const handleActiveConnection = () => {
       syncSocketUser();
       checkLatestUnreadMessage();
@@ -114,6 +128,7 @@ const GlobalMessageNotifications = () => {
     socket.on("connect", syncSocketUser);
     socket.io.on("reconnect", handleActiveConnection);
     socket.on("receive_message", handleReceiveMessage);
+    socket.on("message_reacted", handleMessageReacted);
 
     const sendHeartbeat = () => {
       const userId = localStorage.getItem("userId");
@@ -137,6 +152,7 @@ const GlobalMessageNotifications = () => {
       socket.off("connect", syncSocketUser);
       socket.io.off("reconnect", handleActiveConnection);
       socket.off("receive_message", handleReceiveMessage);
+      socket.off("message_reacted", handleMessageReacted);
       window.clearInterval(heartbeatId);
       window.clearTimeout(latestUnreadCheckTimer);
     };

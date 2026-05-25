@@ -64,3 +64,45 @@ export const showMessageNotification = async (message) => {
 
   new Notification(`New message from ${senderName}`, options);
 };
+
+export const showReactionNotification = async (message) => {
+  if (!("Notification" in window) || Notification.permission !== "granted") {
+    return;
+  }
+
+  const reaction = message.reactionEvent || {};
+  if (!reaction.added) return;
+
+  const senderId = getIdValue(message.senderId);
+  const receiverId = getIdValue(message.receiverId);
+  const reactorId = getIdValue(reaction.reactorId);
+  const reactorName = reaction.reactorName || "Someone";
+  const body = `${reaction.emoji || "👍"} reacted to your message`;
+
+  const options = {
+    body,
+    tag: `reaction-${message._id}-${reactorId}-${reaction.emoji || "like"}`,
+    badge: "/vite.svg",
+    icon: reaction.reactorPhoto || "/vite.svg",
+    vibrate: [100, 50, 100],
+    data: {
+      ...message,
+      senderId,
+      receiverId,
+    },
+  };
+
+  if ("serviceWorker" in navigator) {
+    const registration = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise((resolve) => setTimeout(() => resolve(null), 1200)),
+    ]).catch(() => null);
+
+    if (registration?.showNotification) {
+      await registration.showNotification(`${reactorName} reacted`, options);
+      return;
+    }
+  }
+
+  new Notification(`${reactorName} reacted`, options);
+};

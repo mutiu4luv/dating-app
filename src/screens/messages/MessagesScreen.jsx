@@ -882,6 +882,7 @@ const MessagesScreen = () => {
                                 {member.username || member.name}
                               </Typography>
                               <Typography
+                                className="messages-activity-chip"
                                 variant="caption"
                                 sx={{
                                   ...getActivityChipSx(member),
@@ -1062,6 +1063,9 @@ const MessagesScreen = () => {
                             borderRadius: 2,
                             mb: 1,
                             py: 1.5,
+                            alignItems: "flex-start",
+                            gap: 1,
+                            flexWrap: { xs: "wrap", sm: "nowrap" },
                             "&:hover": { backgroundColor: "#fce7f3" },
                           }}
                         >
@@ -1073,8 +1077,9 @@ const MessagesScreen = () => {
                             )}
                           </ListItemAvatar>
                           <ListItemText
+                            sx={{ minWidth: 0, flex: "1 1 220px" }}
                             primary={
-                              <Box display="flex" alignItems="center" gap={1}>
+                              <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                                 <Typography fontWeight={900} color="#2d0052">
                                   {partner.username || partner.name || "Member"}
                                 </Typography>
@@ -1095,7 +1100,13 @@ const MessagesScreen = () => {
                               <Typography
                                 variant="body2"
                                 color={missed ? "#dc2626" : "#6b4679"}
-                                noWrap
+                                sx={{
+                                  display: "block",
+                                  whiteSpace: "normal",
+                                  overflowWrap: "anywhere",
+                                  mt: 0.35,
+                                  lineHeight: 1.35,
+                                }}
                               >
                                 {getCallLabel(log)} - {formatCallTime(log.createdAt)}
                               </Typography>
@@ -1108,6 +1119,9 @@ const MessagesScreen = () => {
                             disabled={callState !== "idle"}
                             onClick={(event) => handleStartCall(event, partner)}
                             sx={{
+                              flexShrink: 0,
+                              mt: { xs: 0, sm: 0.35 },
+                              ml: { xs: 7, sm: 1 },
                               borderColor: "#16a34a",
                               color: "#166534",
                               borderRadius: 2,

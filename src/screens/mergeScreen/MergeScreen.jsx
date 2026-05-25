@@ -419,6 +419,7 @@ const MergeScreen = () => {
                   }}
                 >
                   <Box
+                    className="merge-plan-icon"
                     mb={2}
                     sx={{
                       width: 62,
