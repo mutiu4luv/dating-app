@@ -94,6 +94,32 @@ const formatMessageTime = (dateValue) => {
   });
 };
 
+const getDateKey = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+};
+
+const formatChatDateLabel = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  const key = getDateKey(date);
+  if (key === getDateKey(today)) return "Today";
+  if (key === getDateKey(yesterday)) return "Yesterday";
+
+  const month = date.toLocaleString("en-US", { month: "short" });
+  return `${String(date.getDate()).padStart(2, "0")}/${month}/${date.getFullYear()}`;
+};
+
 const Chat = () => {
   const { member1, member2 } = useParams();
   const navigate = useNavigate();
@@ -383,7 +409,7 @@ const Chat = () => {
         console.log("🔥 Chat fetch error:", err.response?.data || err.message);
         if (err.response?.status === 403) {
           alert(err.response.data?.error || "Renew your subscription to chat.");
-          navigate(`/merge/${member1}/${member2}`);
+          navigate(`/merge/${member1}/upgrade`);
         }
       }
     };
@@ -514,7 +540,7 @@ const Chat = () => {
             err.response.data?.error ||
               "You have reached your monthly chat limit."
           );
-          navigate(`/merge/${member1}/${member2}`);
+          navigate(`/merge/${member1}/upgrade`);
         }
       return;
     } finally {
@@ -788,6 +814,26 @@ const Chat = () => {
     [callLogs, messages]
   );
 
+  const timelineItemsWithDates = useMemo(() => {
+    const items = [];
+    let lastDateKey = "";
+
+    timelineItems.forEach((item) => {
+      const dateKey = getDateKey(item.createdAt);
+      if (dateKey && dateKey !== lastDateKey) {
+        items.push({
+          type: "date",
+          id: `date-${dateKey}`,
+          label: formatChatDateLabel(item.createdAt),
+        });
+        lastDateKey = dateKey;
+      }
+      items.push(item);
+    });
+
+    return items;
+  }, [timelineItems]);
+
   const profileDetails = [
     ["Gender", receiver?.gender || "Not provided"],
     ["Location", receiver?.location || "Not provided"],
@@ -932,7 +978,39 @@ const Chat = () => {
         }}
       >
         <List>
-          {timelineItems.map((item) => {
+          {timelineItemsWithDates.map((item) => {
+            if (item.type === "date") {
+              return (
+                <ListItem
+                  key={item.id}
+                  sx={{
+                    justifyContent: "center",
+                    py: 1,
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 4,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      px: 1.5,
+                      py: 0.55,
+                      borderRadius: 999,
+                      bgcolor: "rgba(217,164,240,0.18)",
+                      border: "1px solid rgba(217,164,240,0.28)",
+                      color: "#f5d6ff",
+                      fontSize: 12,
+                      fontWeight: 900,
+                      letterSpacing: 0.2,
+                    }}
+                  >
+                    {item.label}
+                  </Box>
+                </ListItem>
+              );
+            }
+
             if (item.type === "call") {
               const call = getCallLogDisplay(item.data);
               return (
